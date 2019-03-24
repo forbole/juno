@@ -63,9 +63,9 @@ func (db *database) setValidator(ah, pk string) (uint64, error) {
 	return id, err
 }
 
-// setPrecommit stores a validator's pre-commit and returns the resulting record
+// setPreCommit stores a validator's pre-commit and returns the resulting record
 // ID. An error is returned if the operation fails.
-func (db *database) setPrecommit(pc *tmtypes.CommitSig, vp, pp int64) (uint64, error) {
+func (db *database) setPreCommit(pc *tmtypes.CommitSig, vp, pp int64) (uint64, error) {
 	var id uint64
 
 	sqlStatement := `
@@ -152,7 +152,7 @@ func (db *database) exportPreCommits(block *tmctypes.ResultBlock, vals *tmctypes
 				}
 			}
 
-			if _, err := db.setPrecommit(pc, val.VotingPower, val.ProposerPriority); err != nil {
+			if _, err := db.setPreCommit(pc, val.VotingPower, val.ProposerPriority); err != nil {
 				log.Printf("failed to persist pre-commit for validator %s: %s\n", valAddr, err)
 			}
 		}
