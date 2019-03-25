@@ -32,10 +32,22 @@ func openDB(cfg config) (*database, error) {
 }
 
 // lastBlockHeight returns the latest block stored.
-func (db *database) lastBlockHeight() (uint64, error) {
-	var height uint64
+func (db *database) lastBlockHeight() (int64, error) {
+	var height int64
 	err := db.QueryRow("SELECT coalesce(MAX(height),0) AS height FROM block;").Scan(&height)
 	return height, err
+}
+
+// hasBlock returns true if a block by height exists. An error should never be
+// returned.
+func (db *database) hasBlock(height int64) (bool, error) {
+	var res bool
+	err := db.QueryRow(
+		"SELECT EXISTS(SELECT 1 FROM block WHERE height = $1);",
+		height,
+	).Scan(&res)
+
+	return res, err
 }
 
 // hasValidator returns true if a given validator by HEX address exists. An
@@ -99,17 +111,6 @@ func (db *database) setBlock(b *tmctypes.ResultBlock, tg, pc uint64) (uint64, er
 	).Scan(&id)
 
 	return id, err
-}
-
-// aggAndExport performs the main aggregation and export operation. A block,
-// all known validator's at the block, and all the block's pre-commits are
-// aggregated and stored.
-func (db *database) aggAndExport(
-	b *tmctypes.ResultBlock, txs []*tmctypes.ResultTx, vals *tmctypes.ResultValidators,
-) {
-
-	db.exportPreCommits(b, vals)
-	db.exportBlock(b, txs)
 }
 
 func (db *database) exportBlock(b *tmctypes.ResultBlock, txs []*tmctypes.ResultTx) {
