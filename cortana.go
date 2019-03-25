@@ -30,7 +30,7 @@ func main() {
 
 	rpc := newRPCClient(cfg.Node)
 
-	execExportLoop(cfg, db, rpc)
+	execExportLoop(db, rpc)
 }
 
 func parseConfig(configPath string) config {
@@ -51,7 +51,7 @@ func parseConfig(configPath string) config {
 	return cfg
 }
 
-func execExportLoop(cfg config, db *database, rpc rpcClient) {
+func execExportLoop(db *database, rpc rpcClient) {
 	lastBlockHeight, err := db.lastBlockHeight()
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "failed to get last block from database"))
@@ -68,28 +68,32 @@ func execExportLoop(cfg config, db *database, rpc rpcClient) {
 			continue
 		}
 
-		block, err := rpc.block(i)
-		if err != nil {
-			log.Printf("failed to get block %d: %s\n", i, err)
-			continue
-		}
-
-		txs, err := rpc.txsFromBlock(block)
-		if err != nil {
-			log.Printf("failed to get transactions for block %d: %s\n", i, err)
-			continue
-		}
-
-		vals, err := rpc.validators(i)
-		if err != nil {
-			log.Printf("failed to get validators for block %d: %s\n", i, err)
-			continue
-		}
-
 		if i%10 == 0 {
-			log.Printf("storing block %d (%s)\n", block.Block.Height, block.Block.Hash())
+			log.Println("persisting block %d", i)
 		}
 
-		db.aggAndExport(block, txs, vals)
+		export(db, rpc, i)
 	}
+}
+
+func export(db *database, rpc rpcClient, height int64) {
+	block, err := rpc.block(height)
+	if err != nil {
+		log.Printf("failed to get block %d: %s\n", height, err)
+		return
+	}
+
+	txs, err := rpc.txsFromBlock(block)
+	if err != nil {
+		log.Printf("failed to get transactions for block %d: %s\n", height, err)
+		return
+	}
+
+	vals, err := rpc.validators(height)
+	if err != nil {
+		log.Printf("failed to get validators for block %d: %s\n", height, err)
+		return
+	}
+
+	db.aggAndExport(block, txs, vals)
 }
