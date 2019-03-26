@@ -16,7 +16,6 @@ import (
 var (
 	configPath  string
 	syncMissing bool
-	numWorkers  uint
 
 	wg sync.WaitGroup
 )
@@ -24,7 +23,6 @@ var (
 func main() {
 	flag.StringVar(&configPath, "config", "", "Configuration file")
 	flag.BoolVar(&syncMissing, "sync-missing", false, "Sync missing or failed blocks from a previous export")
-	flag.UintVar(&numWorkers, "workers", 1, "Number of workers to process jobs")
 	flag.Parse()
 
 	cfg := parseConfig(configPath)
@@ -43,28 +41,26 @@ func main() {
 
 	// create a queue that will collect, aggregate, and export blocks and metadata
 	exportQueue := newQueue(10)
+	worker := newWorker(db, rpc, exportQueue)
 
-	workerPool := make(workerPool, numWorkers)
-	for i := uint(0); i < numWorkers; i++ {
-		workerPool[i] = newWorker(db, rpc, exportQueue)
-	}
-
-	// Start a non-blocking worker pool where each worker process jobs off of the
-	// export queue.
+	// Start a blocking worker in a go-routine where the worker consumes jobs off
+	// of the export queue.
 	log.Println("starting worker pool...")
 	wg.Add(1)
-	workerPool.start()
+	go worker.start()
 
 	// listen for and trap any OS signal to gracefully shutdown and exit
 	trapSignal()
 
 	if syncMissing {
+		// sync any missing blocks from a previous export in the background
 		go enqueueSyncMissing(exportQueue, db)
 	}
 
 	go enqueueSyncNew(exportQueue, db, rpc)
+	// TODO: Listen for new blocks
 
-	// block process and allow the external signal capture to gracefully exit
+	// block main process (signal capture will call WaitGroup's Done)
 	wg.Wait()
 }
 

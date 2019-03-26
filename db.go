@@ -118,7 +118,7 @@ func (db *database) exportBlock(b *tmctypes.ResultBlock, txs []*tmctypes.ResultT
 	preCommits := uint64(len(b.Block.LastCommit.Precommits))
 
 	if _, err := db.setBlock(b, totalGas, preCommits); err != nil {
-		log.Printf("failed to persist block #%d: %s\n", b.Block.Height, err)
+		log.Printf("failed to persist block %d: %s\n", b.Block.Height, err)
 		return err
 	}
 
@@ -138,7 +138,7 @@ func (db *database) exportPreCommits(block *tmctypes.ResultBlock, vals *tmctypes
 
 			val := findValidatorByAddr(valAddr, vals)
 			if val == nil {
-				err := fmt.Errorf("failed to find validator by address %s for block #%d\n", valAddr, block.Block.Height)
+				err := fmt.Errorf("failed to find validator by address %s for block %d\n", valAddr, block.Block.Height)
 				log.Println(err)
 				return err
 			}
@@ -153,12 +153,13 @@ func (db *database) exportPreCommits(block *tmctypes.ResultBlock, vals *tmctypes
 
 				if _, err := db.setValidator(valAddr, consPubKey); err != nil {
 					log.Printf("failed to persist validator %s: %s\n", valAddr, err)
-					return err
+					continue
 				}
 			}
 
 			if _, err := db.setPreCommit(pc, val.VotingPower, val.ProposerPriority); err != nil {
 				log.Printf("failed to persist pre-commit for validator %s: %s\n", valAddr, err)
+				return err
 			}
 		}
 	}

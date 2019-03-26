@@ -13,9 +13,6 @@ type (
 		db     *database
 		queue  queue
 	}
-
-	// workerPool is a type alias for a set of workers.
-	workerPool []worker
 )
 
 func newQueue(size int) queue {
@@ -24,13 +21,6 @@ func newQueue(size int) queue {
 
 func newWorker(db *database, rpc rpcClient, q queue) worker {
 	return worker{rpc, db, q}
-}
-
-// start starts each worker in the pool in a go-routine.
-func (wp workerPool) start() {
-	for _, p := range wp {
-		go p.start()
-	}
 }
 
 // start starts a worker by listening for new jobs (block heights) from the
