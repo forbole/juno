@@ -1,4 +1,4 @@
-module github.com/alexanderbez/cortana
+module github.com/alexanderbez/farium
 
 go 1.12
 
