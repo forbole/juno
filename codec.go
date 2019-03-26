@@ -11,11 +11,6 @@ var cdc *codec.Codec
 func init() {
 	cdc = codec.New()
 
-	// bank.RegisterCodec(cdc)
-	// staking.RegisterCodec(cdc)
-	// distr.RegisterCodec(cdc)
-	// slashing.RegisterCodec(cdc)
-	// gov.RegisterCodec(cdc)
 	auth.RegisterCodec(cdc)
 	sdk.RegisterCodec(cdc)
 	codec.RegisterCrypto(cdc)

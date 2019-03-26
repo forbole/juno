@@ -4,22 +4,31 @@ import (
 	"flag"
 	"io/ioutil"
 	"log"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 
 	"github.com/BurntSushi/toml"
 	"github.com/pkg/errors"
 )
 
 var (
-	configPath string
-	sync       bool
+	configPath  string
+	syncMissing bool
+	numWorkers  uint
+
+	wg sync.WaitGroup
 )
 
 func main() {
 	flag.StringVar(&configPath, "config", "", "Configuration file")
-	flag.BoolVar(&sync, "sync", false, "Sync missing blocks from previous export")
+	flag.BoolVar(&syncMissing, "sync-missing", false, "Sync missing or failed blocks from a previous export")
+	flag.UintVar(&numWorkers, "workers", 1, "Number of workers to process jobs")
 	flag.Parse()
 
 	cfg := parseConfig(configPath)
+	rpc := newRPCClient(cfg.Node)
 
 	db, err := openDB(cfg)
 	if err != nil {
@@ -32,13 +41,31 @@ func main() {
 		log.Fatal(errors.Wrap(err, "failed to ping database"))
 	}
 
-	rpc := newRPCClient(cfg.Node)
+	// create a queue that will collect, aggregate, and export blocks and metadata
+	exportQueue := newQueue(10)
 
-	if sync {
-		go syncMissing(db, rpc)
+	workerPool := make(workerPool, numWorkers)
+	for i := uint(0); i < numWorkers; i++ {
+		workerPool[i] = newWorker(db, rpc, exportQueue)
 	}
 
-	execExportLoop(db, rpc)
+	// Start a non-blocking worker pool where each worker process jobs off of the
+	// export queue.
+	log.Println("starting worker pool...")
+	wg.Add(1)
+	workerPool.start()
+
+	// listen for and trap any OS signal to gracefully shutdown and exit
+	trapSignal()
+
+	if syncMissing {
+		go enqueueSyncMissing(exportQueue, db)
+	}
+
+	go enqueueSyncNew(exportQueue, db, rpc)
+
+	// block process and allow the external signal capture to gracefully exit
+	wg.Wait()
 }
 
 func parseConfig(configPath string) config {
@@ -59,9 +86,9 @@ func parseConfig(configPath string) config {
 	return cfg
 }
 
-// execExportLoop aggregates and exports blocks starting from the last persisted
-// block height until the latest known block on the chain.
-func execExportLoop(db *database, rpc rpcClient) {
+// enqueueSyncNew enqueues jobs (block heights) for new blocks starting at the
+// latest stored block height.
+func enqueueSyncNew(exportQueue queue, db *database, rpc rpcClient) {
 	lastBlockHeight, err := db.lastBlockHeight()
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "failed to get last block from database"))
@@ -79,16 +106,20 @@ func execExportLoop(db *database, rpc rpcClient) {
 		}
 
 		if i%10 == 0 {
-			log.Printf("persisting block %d\n", i)
+			log.Printf("enqueueing block %d\n", i)
 		}
 
-		export(db, rpc, i)
+		exportQueue <- i
 	}
 }
 
-// syncMissing aggregates and exports missing blocks from a previous export in
-// cases where the RPC client could fail or timeout but the export continued.
-func syncMissing(db *database, rpc rpcClient) {
+// enqueueSyncMissing enqueues jobs (block heights) missing from a previous
+// export in cases where the RPC client could fail.
+//
+// NOTE: We separate this from enqueueSyncNew to allow skipping scanning the
+// entire database for any missing blocks. Since jobs are re-enqueued, this
+// should be used seldomly.
+func enqueueSyncMissing(exportQueue queue, db *database) {
 	lastBlockHeight, err := db.lastBlockHeight()
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "failed to get last block from database"))
@@ -97,31 +128,23 @@ func syncMissing(db *database, rpc rpcClient) {
 	for i := int64(2); i < lastBlockHeight; i++ {
 		ok, err := db.hasBlock(i)
 		if !ok && err == nil {
-			log.Printf("exporting missing block %d\n", i)
-			export(db, rpc, i)
+			log.Printf("enqueueing missing block %d\n", i)
+			exportQueue <- i
 		}
 	}
 }
 
-func export(db *database, rpc rpcClient, height int64) {
-	block, err := rpc.block(height)
-	if err != nil {
-		log.Printf("failed to get block %d: %s\n", height, err)
-		return
-	}
+// trapSignal will listen for any OS signal and invoke Done on the main
+// WaitGroup allowing the main process to gracefully exit.
+func trapSignal() {
+	var sigCh = make(chan os.Signal)
 
-	txs, err := rpc.txsFromBlock(block)
-	if err != nil {
-		log.Printf("failed to get transactions for block %d: %s\n", height, err)
-		return
-	}
+	signal.Notify(sigCh, syscall.SIGTERM)
+	signal.Notify(sigCh, syscall.SIGINT)
 
-	vals, err := rpc.validators(height)
-	if err != nil {
-		log.Printf("failed to get validators for block %d: %s\n", height, err)
-		return
-	}
-
-	db.exportPreCommits(block, vals)
-	db.exportBlock(block, txs)
+	go func() {
+		sig := <-sigCh
+		log.Printf("caught signal: %+v; shuting down...\n", sig)
+		defer wg.Done()
+	}()
 }
