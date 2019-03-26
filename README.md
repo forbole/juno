@@ -6,7 +6,7 @@ stores them in a relational database allowing for unique and interesting queries
 of the Cosmos Hub as a whole. Cortana spawned out of the simple interest in
 queries like what is the average gas cost of a block?
 
-**TODO**:
+__TODO__:
 
 * Persist governance proposals and tallies
 * Persist transactions
@@ -28,6 +28,9 @@ name = "<db-name>"
 user = "<db-user>"
 password = "<db-password>"
 ```
+
+__Note__: The config will most likely need access to a lite/REST client as well
+to aggregate and persist other data such as governance proposals.
 
 ## API
 
