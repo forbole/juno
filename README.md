@@ -14,7 +14,7 @@ __TODO__:
 
 ## Config
 
-Cortana takes a simple configuration. It needs to only know about a Postgres
+Farium takes a simple configuration. It needs to only know about a Postgres
 instance and a Tendermint RPC node.
 
 Example:
