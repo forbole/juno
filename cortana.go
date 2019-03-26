@@ -140,7 +140,7 @@ func trapSignal() {
 
 	go func() {
 		sig := <-sigCh
-		log.Printf("caught signal: %+v; shuting down...\n", sig)
+		log.Printf("caught signal: %+v; shutting down...\n", sig)
 		defer wg.Done()
 	}()
 }
