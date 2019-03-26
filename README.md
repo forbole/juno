@@ -32,7 +32,7 @@ password = "<db-password>"
 __Note__: The config will most likely need access to a lite/REST client as well
 to aggregate and persist other data such as governance proposals.
 
-## API
+## Usage
 
 Cortana internally runs a single worker that consumes from a single queue. The
 queue contains block heights to aggregate and export to Postgres. Initially, it
