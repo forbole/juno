@@ -8,6 +8,7 @@ queries like what is the average gas cost of a block?
 
 __TODO__:
 
+* Sync incoming new blocks from event feed
 * Persist governance proposals and tallies
 * Persist transactions
 
