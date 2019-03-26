@@ -113,16 +113,19 @@ func (db *database) setBlock(b *tmctypes.ResultBlock, tg, pc uint64) (uint64, er
 	return id, err
 }
 
-func (db *database) exportBlock(b *tmctypes.ResultBlock, txs []*tmctypes.ResultTx) {
+func (db *database) exportBlock(b *tmctypes.ResultBlock, txs []*tmctypes.ResultTx) error {
 	totalGas := sumGasTxs(txs)
 	preCommits := uint64(len(b.Block.LastCommit.Precommits))
 
 	if _, err := db.setBlock(b, totalGas, preCommits); err != nil {
 		log.Printf("failed to persist block #%d: %s\n", b.Block.Height, err)
+		return err
 	}
+
+	return nil
 }
 
-func (db *database) exportPreCommits(block *tmctypes.ResultBlock, vals *tmctypes.ResultValidators) {
+func (db *database) exportPreCommits(block *tmctypes.ResultBlock, vals *tmctypes.ResultValidators) error {
 	// persist all validators and pre-commits
 	for _, pc := range block.Block.LastCommit.Precommits {
 		if pc != nil {
@@ -130,13 +133,14 @@ func (db *database) exportPreCommits(block *tmctypes.ResultBlock, vals *tmctypes
 			ok, err := db.hasValidator(valAddr)
 			if err != nil {
 				log.Printf("failed to query for validator %s: %s\n", valAddr, err)
-				continue
+				return err
 			}
 
 			val := findValidatorByAddr(valAddr, vals)
 			if val == nil {
-				log.Printf("failed to find validator by address %s for block #%d: %s\n", valAddr, block.Block.Height, err)
-				continue
+				err := fmt.Errorf("failed to find validator by address %s for block #%d\n", valAddr, block.Block.Height)
+				log.Println(err)
+				return err
 			}
 
 			// persist the validator if we have not seen them before
@@ -144,12 +148,12 @@ func (db *database) exportPreCommits(block *tmctypes.ResultBlock, vals *tmctypes
 				consPubKey, err := sdk.Bech32ifyConsPub(val.PubKey) // nolint: typecheck
 				if err != nil {
 					log.Printf("failed to convert validator public key %s: %s\n", valAddr, err)
-					continue
+					return err
 				}
 
 				if _, err := db.setValidator(valAddr, consPubKey); err != nil {
 					log.Printf("failed to persist validator %s: %s\n", valAddr, err)
-					continue
+					return err
 				}
 			}
 
@@ -158,4 +162,6 @@ func (db *database) exportPreCommits(block *tmctypes.ResultBlock, vals *tmctypes
 			}
 		}
 	}
+
+	return nil
 }

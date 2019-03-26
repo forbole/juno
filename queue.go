@@ -69,9 +69,13 @@ func (w worker) process(height int64) error {
 		return err
 	}
 
-	// TODO: Return an error
-	w.db.exportPreCommits(block, vals)
-	w.db.exportBlock(block, txs)
+	if err := w.db.exportPreCommits(block, vals); err != nil {
+		return err
+	}
+
+	if err := w.db.exportBlock(block, txs); err != nil {
+		return err
+	}
 
 	return nil
 }
