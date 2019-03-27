@@ -113,7 +113,7 @@ func enqueueSyncNew(exportQueue queue, db *database, rpc rpcClient) {
 		}
 
 		if i%10 == 0 {
-			log.Printf("enqueueing block %d\n", i)
+			log.Printf("enqueueing new block %d\n", i)
 		}
 
 		exportQueue <- i
@@ -162,7 +162,7 @@ func startBlockListener(exportQueue queue, rpc rpcClient) {
 		height := newBlock.Header.Height
 
 		if height%10 == 0 {
-			log.Printf("enqueueing block %d\n", height)
+			log.Printf("enqueueing new block %d\n", height)
 		}
 
 		exportQueue <- height

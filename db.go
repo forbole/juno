@@ -125,9 +125,9 @@ func (db *database) exportBlock(b *tmctypes.ResultBlock, txs []*tmctypes.ResultT
 	return nil
 }
 
-func (db *database) exportPreCommits(block *tmctypes.ResultBlock, vals *tmctypes.ResultValidators) error {
+func (db *database) exportPreCommits(commit *tmtypes.Commit, vals *tmctypes.ResultValidators) error {
 	// persist all validators and pre-commits
-	for _, pc := range block.Block.LastCommit.Precommits {
+	for _, pc := range commit.Precommits {
 		if pc != nil {
 			valAddr := pc.ValidatorAddress.String()
 			ok, err := db.hasValidator(valAddr)
@@ -138,7 +138,7 @@ func (db *database) exportPreCommits(block *tmctypes.ResultBlock, vals *tmctypes
 
 			val := findValidatorByAddr(valAddr, vals)
 			if val == nil {
-				err := fmt.Errorf("failed to find validator by address %s for block %d\n", valAddr, block.Block.Height)
+				err := fmt.Errorf("failed to find validator by address %s for block %d\n", valAddr, commit.Height())
 				log.Println(err)
 				return err
 			}

@@ -53,13 +53,13 @@ func (w worker) process(height int64) error {
 		return err
 	}
 
-	vals, err := w.client.validators(height)
+	vals, err := w.client.validators(block.Block.LastCommit.Height())
 	if err != nil {
 		log.Printf("failed to get validators for block %d: %s\n", height, err)
 		return err
 	}
 
-	if err := w.db.exportPreCommits(block, vals); err != nil {
+	if err := w.db.exportPreCommits(block.Block.LastCommit, vals); err != nil {
 		return err
 	}
 
