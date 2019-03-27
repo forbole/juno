@@ -41,6 +41,11 @@ func (w worker) start() {
 // height and associated metadata and export it to a database. It returns an
 // error if any export process fails.
 func (w worker) process(height int64) error {
+	ok, err := w.db.hasBlock(height)
+	if ok && err == nil {
+		log.Printf("skipping already exported block %d\n", height)
+	}
+
 	block, err := w.client.block(height)
 	if err != nil {
 		log.Printf("failed to get block %d: %s\n", height, err)
