@@ -14,9 +14,14 @@ type rpcClient struct {
 	node    rpcclient.Client
 }
 
-func newRPCClient(nodeURI string) rpcClient {
+func newRPCClient(nodeURI string) (rpcClient, error) {
 	rpc := rpcclient.NewHTTP(nodeURI, "/websocket")
-	return rpcClient{nodeURI, rpc}
+
+	if err := rpc.Start(); err != nil {
+		return rpcClient{}, err
+	}
+
+	return rpcClient{nodeURI, rpc}, nil
 }
 
 // latestHeight returns the latest block height on the active chain. An error

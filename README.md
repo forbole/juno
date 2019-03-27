@@ -1,9 +1,9 @@
-# farium
+# juno
 
-A Cosmos Hub data aggregator and exporter. For now, farium remains simple in
+A Cosmos Hub data aggregator and exporter. For now, juno remains simple in
 that is processes blocks and relevant data (e.g. validators and pre-commits) and
 stores them in a relational database allowing for unique and interesting queries
-of the Cosmos Hub as a whole. Farium spawned out of the simple interest in
+of the Cosmos Hub as a whole. Juno spawned out of the simple interest in
 queries like what is the average gas cost of a block?
 
 __TODO__:
@@ -14,7 +14,7 @@ __TODO__:
 
 ## Config
 
-Farium takes a simple configuration. It needs to only know about a Postgres
+Juno takes a simple configuration. It needs to only know about a Postgres
 instance and a Tendermint RPC node.
 
 Example:
@@ -35,7 +35,7 @@ to aggregate and persist other data such as governance proposals.
 
 ## Usage
 
-Farium internally runs a single worker that consumes from a single queue. The
+Juno internally runs a single worker that consumes from a single queue. The
 queue contains block heights to aggregate and export to Postgres. Initially, it
 will export data starting from the latest block height it has stored until the
 latest known height on the chain. Any failed job (block height) is re-enqueued.
@@ -43,11 +43,11 @@ latest known height on the chain. Any failed job (block height) is re-enqueued.
 Additionally, a `--sync-missing` flag can be provided to sync any failed or
 missing data from a previous export.
 
-For each block, farium will persist the block, the validators that committed/signed
+For each block, juno will persist the block, the validators that committed/signed
 the block, and all the pre-commits for the block.
 
 ```shell
-$ farium --config=<path/to/config> [flags]
+$ juno --config=<path/to/config> [flags]
 ```
 
 ## Schemas

@@ -1,4 +1,4 @@
-module github.com/alexanderbez/farium
+module github.com/alexanderbez/juno
 
 go 1.12
 
@@ -24,7 +24,7 @@ require (
 	github.com/rs/cors v1.6.0 // indirect
 	github.com/spf13/cobra v0.0.3 // indirect
 	github.com/spf13/pflag v1.0.3 // indirect
-	github.com/stretchr/testify v1.3.0
+	github.com/stretchr/testify v1.3.0 // indirect
 	github.com/syndtr/goleveldb v1.0.0 // indirect
 	github.com/tendermint/go-amino v0.14.1 // indirect
 	github.com/tendermint/iavl v0.12.2 // indirect
@@ -32,6 +32,5 @@ require (
 	golang.org/x/crypto v0.0.0-20190325154230-a5d413f7728c // indirect
 	golang.org/x/net v0.0.0-20190326090315-15845e8f865b // indirect
 	golang.org/x/sys v0.0.0-20190322080309-f49334f85ddc // indirect
-	golang.org/x/tools v0.0.0-20190325223049-1d95b17f1b04 // indirect
 	google.golang.org/grpc v1.19.1 // indirect
 )

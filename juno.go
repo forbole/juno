@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"io/ioutil"
 	"log"
@@ -8,9 +9,11 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/BurntSushi/toml"
 	"github.com/pkg/errors"
+	"github.com/tendermint/tendermint/types"
 )
 
 var (
@@ -26,7 +29,12 @@ func main() {
 	flag.Parse()
 
 	cfg := parseConfig(configPath)
-	rpc := newRPCClient(cfg.Node)
+	rpc, err := newRPCClient(cfg.Node)
+	if err != nil {
+		log.Fatal(errors.Wrap(err, "failed to start RPC client"))
+	}
+
+	defer rpc.node.Stop()
 
 	db, err := openDB(cfg)
 	if err != nil {
@@ -53,12 +61,17 @@ func main() {
 	trapSignal()
 
 	if syncMissing {
-		// sync any missing blocks from a previous export in the background
+		// Sync any missing blocks from a previous export in the background. Start
+		// in a go-routine as to not block further exporting.
 		go enqueueSyncMissing(exportQueue, db)
 	}
 
-	go enqueueSyncNew(exportQueue, db, rpc)
-	// TODO: Listen for new blocks
+	// In a go-routine, first enqueue new blocks and then start a (non-blocking)
+	// new block listener.
+	go func() {
+		enqueueSyncNew(exportQueue, db, rpc)
+		go startBlockListener(exportQueue, rpc)
+	}()
 
 	// block main process (signal capture will call WaitGroup's Done)
 	wg.Wait()
@@ -127,6 +140,24 @@ func enqueueSyncMissing(exportQueue queue, db *database) {
 			log.Printf("enqueueing missing block %d\n", i)
 			exportQueue <- i
 		}
+	}
+}
+
+// startBlockListener subscribes to new block events via the Tendermint RPC and
+// enqueues each new block height onto the provided queue. It blocks as new
+// blocks are incoming.
+func startBlockListener(exportQueue queue, rpc rpcClient) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	eventCh, err := rpc.node.Subscribe(ctx, "juno-client", "tm.event = 'NewBlock'")
+	if err != nil {
+		log.Fatal(errors.Wrap(err, "failed to subscribe to new blocks"))
+	}
+
+	for e := range eventCh {
+		newBlock := e.Data.(types.EventDataNewBlock).Block
+		exportQueue <- newBlock.Header.Height
 	}
 }
 
