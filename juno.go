@@ -48,7 +48,7 @@ func main() {
 	}
 
 	// create a queue that will collect, aggregate, and export blocks and metadata
-	exportQueue := newQueue(10)
+	exportQueue := newQueue(100)
 	worker := newWorker(db, rpc, exportQueue)
 
 	// Start a blocking worker in a go-routine where the worker consumes jobs off
@@ -66,12 +66,8 @@ func main() {
 		go enqueueSyncMissing(exportQueue, db)
 	}
 
-	// In a go-routine, first enqueue new blocks and then start a (non-blocking)
-	// new block listener.
-	go func() {
-		enqueueSyncNew(exportQueue, db, rpc)
-		go startBlockListener(exportQueue, rpc)
-	}()
+	enqueueSyncNew(exportQueue, db, rpc)
+	go startBlockListener(exportQueue, rpc)
 
 	// block main process (signal capture will call WaitGroup's Done)
 	wg.Wait()
@@ -108,6 +104,8 @@ func enqueueSyncNew(exportQueue queue, db *database, rpc rpcClient) {
 		log.Fatal(errors.Wrap(err, "failed to get lastest block from RPC client"))
 	}
 
+	log.Println("syncing new blocks...")
+
 	for i := lastBlockHeight + 1; i <= latestBlockHeight; i++ {
 		if i == 1 {
 			// skip the first block since it has no pre-commits (violates table constraints)
@@ -134,6 +132,8 @@ func enqueueSyncMissing(exportQueue queue, db *database) {
 		log.Fatal(errors.Wrap(err, "failed to get last block from database"))
 	}
 
+	log.Println("syncing missing blocks...")
+
 	for i := int64(2); i < lastBlockHeight; i++ {
 		ok, err := db.hasBlock(i)
 		if !ok && err == nil {
@@ -155,9 +155,17 @@ func startBlockListener(exportQueue queue, rpc rpcClient) {
 		log.Fatal(errors.Wrap(err, "failed to subscribe to new blocks"))
 	}
 
+	log.Println("listening for new block events...")
+
 	for e := range eventCh {
 		newBlock := e.Data.(types.EventDataNewBlock).Block
-		exportQueue <- newBlock.Header.Height
+		height := newBlock.Header.Height
+
+		if height%10 == 0 {
+			log.Printf("enqueueing block %d\n", height)
+		}
+
+		exportQueue <- height
 	}
 }
 
