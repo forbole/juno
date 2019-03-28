@@ -69,9 +69,5 @@ func (w worker) process(height int64) error {
 		return err
 	}
 
-	if err := w.db.exportBlock(block, txs); err != nil {
-		return err
-	}
-
-	return nil
+	return w.db.exportBlock(block, txs)
 }
