@@ -36,12 +36,10 @@ to aggregate and persist other data such as governance proposals.
 ## Usage
 
 Juno internally runs a single worker that consumes from a single queue. The
-queue contains block heights to aggregate and export to Postgres. Initially, it
-will export data starting from the latest block height it has stored until the
-latest known height on the chain. Any failed job (block height) is re-enqueued.
-
-Additionally, a `--sync-missing` flag can be provided to sync any failed or
-missing data from a previous export.
+queue contains block heights to aggregate and export to Postgres. Juno will start
+a new block even listener where for each new block, it will enqueue the height.
+In addition, it will also sync missing blocks from `--start-height` to the latest
+known height.
 
 For each block, juno will persist the block, the validators that committed/signed
 the block, and all the pre-commits for the block.
