@@ -1,5 +1,7 @@
 # juno
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/alexanderbez/juno)](https://goreportcard.com/report/github.com/alexanderbez/juno)
+
 A Cosmos Hub data aggregator and exporter. For now, juno remains simple in
 that is processes blocks and relevant data (e.g. validators and pre-commits) and
 stores them in a relational database allowing for unique and interesting queries
