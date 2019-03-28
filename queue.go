@@ -44,6 +44,7 @@ func (w worker) process(height int64) error {
 	ok, err := w.db.hasBlock(height)
 	if ok && err == nil {
 		log.Printf("skipping already exported block %d\n", height)
+		return nil
 	}
 
 	block, err := w.client.block(height)
