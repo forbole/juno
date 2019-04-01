@@ -100,14 +100,15 @@ func (db *database) setBlock(b *tmctypes.ResultBlock, tg, pc uint64) (uint64, er
 	var id uint64
 
 	sqlStatement := `
-	INSERT INTO block (height, hash, num_txs, total_gas, proposer_address, pre_commits)
-	VALUES ($1, $2, $3, $4, $5, $6)
+	INSERT INTO block (height, hash, num_txs, total_gas, proposer_address, pre_commits, timestamp)
+	VALUES ($1, $2, $3, $4, $5, $6, $7)
 	RETURNING id;
 	`
 
 	err := db.QueryRow(
 		sqlStatement,
-		b.Block.Height, b.Block.Hash().String(), b.Block.NumTxs, tg, b.Block.ProposerAddress.String(), pc,
+		b.Block.Height, b.Block.Hash().String(), b.Block.NumTxs,
+		tg, b.Block.ProposerAddress.String(), pc, b.Block.Time,
 	).Scan(&id)
 
 	return id, err
