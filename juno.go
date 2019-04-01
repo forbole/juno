@@ -13,7 +13,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/pkg/errors"
-	"github.com/tendermint/tendermint/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 )
 
 var (
@@ -124,7 +124,7 @@ func startBlockListener(exportQueue queue, rpc rpcClient) {
 	log.Println("listening for new block events...")
 
 	for e := range eventCh {
-		newBlock := e.Data.(types.EventDataNewBlock).Block
+		newBlock := e.Data.(tmtypes.EventDataNewBlock).Block
 		height := newBlock.Header.Height
 
 		if height%10 == 0 {
