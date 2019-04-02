@@ -23,7 +23,7 @@ require (
 	github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a // indirect
 	github.com/rs/cors v1.6.0 // indirect
 	github.com/spf13/cobra v0.0.3 // indirect
-	github.com/spf13/pflag v1.0.3 // indirect
+	github.com/spf13/viper v1.3.2 // indirect
 	github.com/stretchr/testify v1.3.0 // indirect
 	github.com/syndtr/goleveldb v1.0.0 // indirect
 	github.com/tendermint/go-amino v0.14.1 // indirect

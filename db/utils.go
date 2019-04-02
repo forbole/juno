@@ -1,8 +1,9 @@
-package main
+package db
 
 import (
 	"strings"
 
+	"github.com/alexanderbez/juno/codec"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -16,7 +17,7 @@ func parseTxs(txs []*tmctypes.ResultTx) ([]auth.StdTx, error) {
 	for i, tx := range txs {
 		var stdTx auth.StdTx
 
-		err := cdc.UnmarshalBinaryLengthPrefixed(tx.Tx, &stdTx)
+		err := codec.Codec.UnmarshalBinaryLengthPrefixed(tx.Tx, &stdTx)
 		if err != nil {
 			return nil, err
 		}

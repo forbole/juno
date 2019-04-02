@@ -1,6 +1,11 @@
 package main
 
-import "log"
+import (
+	"log"
+
+	"github.com/alexanderbez/juno/client"
+	"github.com/alexanderbez/juno/db"
+)
 
 type (
 	// queue is a simple type alias for a (buffered) channel of block heights.
@@ -9,8 +14,8 @@ type (
 	// worker defines a job consumer that is responsible for getting and
 	// aggregating block and associated data and exporting it to a database.
 	worker struct {
-		client rpcClient
-		db     *database
+		client client.RPCClient
+		db     *db.Database
 		queue  queue
 	}
 )
@@ -19,7 +24,7 @@ func newQueue(size int) queue {
 	return make(chan int64, size)
 }
 
-func newWorker(db *database, rpc rpcClient, q queue) worker {
+func newWorker(db *db.Database, rpc client.RPCClient, q queue) worker {
 	return worker{rpc, db, q}
 }
 
@@ -41,33 +46,33 @@ func (w worker) start() {
 // height and associated metadata and export it to a database. It returns an
 // error if any export process fails.
 func (w worker) process(height int64) error {
-	ok, err := w.db.hasBlock(height)
+	ok, err := w.db.HasBlock(height)
 	if ok && err == nil {
 		log.Printf("skipping already exported block %d\n", height)
 		return nil
 	}
 
-	block, err := w.client.block(height)
+	block, err := w.client.Block(height)
 	if err != nil {
 		log.Printf("failed to get block %d: %s\n", height, err)
 		return err
 	}
 
-	txs, err := w.client.txsFromBlock(block)
+	txs, err := w.client.TxsFromBlock(block)
 	if err != nil {
 		log.Printf("failed to get transactions for block %d: %s\n", height, err)
 		return err
 	}
 
-	vals, err := w.client.validators(block.Block.LastCommit.Height())
+	vals, err := w.client.Validators(block.Block.LastCommit.Height())
 	if err != nil {
 		log.Printf("failed to get validators for block %d: %s\n", height, err)
 		return err
 	}
 
-	if err := w.db.exportPreCommits(block.Block.LastCommit, vals); err != nil {
+	if err := w.db.ExportPreCommits(block.Block.LastCommit, vals); err != nil {
 		return err
 	}
 
-	return w.db.exportBlock(block, txs)
+	return w.db.ExportBlock(block, txs)
 }

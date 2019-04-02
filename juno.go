@@ -1,17 +1,16 @@
 package main
 
 import (
-	"context"
 	"flag"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
-	"time"
 
-	"github.com/BurntSushi/toml"
+	"github.com/alexanderbez/juno/client"
+	"github.com/alexanderbez/juno/config"
+	"github.com/alexanderbez/juno/db"
 	"github.com/pkg/errors"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
@@ -28,15 +27,15 @@ func main() {
 	flag.Int64Var(&startHeight, "start-height", 2, "Sync missing or failed blocks starting from a given height")
 	flag.Parse()
 
-	cfg := parseConfig(configPath)
-	rpc, err := newRPCClient(cfg.Node)
+	cfg := config.ParseConfig(configPath)
+	rpc, err := client.NewRPCClient(cfg.Node)
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "failed to start RPC client"))
 	}
 
-	defer rpc.node.Stop()
+	defer rpc.Stop() // nolint: errcheck
 
-	db, err := openDB(cfg)
+	db, err := db.OpenDB(cfg)
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "failed to open database connection"))
 	}
@@ -67,28 +66,10 @@ func main() {
 	wg.Wait()
 }
 
-func parseConfig(configPath string) config {
-	if configPath == "" {
-		log.Fatal("invalid configuration file")
-	}
-
-	configData, err := ioutil.ReadFile(configPath)
-	if err != nil {
-		log.Fatal(errors.Wrap(err, "failed to read config"))
-	}
-
-	var cfg config
-	if _, err := toml.Decode(string(configData), &cfg); err != nil {
-		log.Fatal(errors.Wrap(err, "failed to decode config"))
-	}
-
-	return cfg
-}
-
 // enqueueMissingBlocks enqueues jobs (block heights) for missed blocks starting
 // at the startHeight up until the latest known height.
-func enqueueMissingBlocks(exportQueue queue, rpc rpcClient) {
-	latestBlockHeight, err := rpc.latestHeight()
+func enqueueMissingBlocks(exportQueue queue, rpc client.RPCClient) {
+	latestBlockHeight, err := rpc.LatestHeight()
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "failed to get lastest block from RPC client"))
 	}
@@ -112,11 +93,10 @@ func enqueueMissingBlocks(exportQueue queue, rpc rpcClient) {
 // startBlockListener subscribes to new block events via the Tendermint RPC and
 // enqueues each new block height onto the provided queue. It blocks as new
 // blocks are incoming.
-func startBlockListener(exportQueue queue, rpc rpcClient) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+func startBlockListener(exportQueue queue, rpc client.RPCClient) {
+	eventCh, cancel, err := rpc.SubscribeNewBlocks("juno-client")
 	defer cancel()
 
-	eventCh, err := rpc.node.Subscribe(ctx, "juno-client", "tm.event = 'NewBlock'")
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "failed to subscribe to new blocks"))
 	}

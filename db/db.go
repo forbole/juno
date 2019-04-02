@@ -1,23 +1,27 @@
-package main
+package db
 
 import (
 	"database/sql"
 	"fmt"
 	"log"
 
+	"github.com/alexanderbez/juno/config"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	_ "github.com/lib/pq" // nolint
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
-// database defines a wrapper around a SQL database and implements functionality
+// Database defines a wrapper around a SQL database and implements functionality
 // for data aggregation and exporting.
-type database struct {
+type Database struct {
 	*sql.DB
 }
 
-func openDB(cfg config) (*database, error) {
+// OpenDB opens a database connection with the given database connection info
+// from config. It returns a database connection handle or an error if the
+// connection fails.
+func OpenDB(cfg config.Config) (*Database, error) {
 	connStr := fmt.Sprintf(
 		"host=%s port=%d dbname=%s user=%s password=%s sslmode=require",
 		cfg.DB.Host, cfg.DB.Port, cfg.DB.Name, cfg.DB.User, cfg.DB.Password,
@@ -28,19 +32,19 @@ func openDB(cfg config) (*database, error) {
 		return nil, err
 	}
 
-	return &database{db}, nil
+	return &Database{db}, nil
 }
 
-// lastBlockHeight returns the latest block stored.
-func (db *database) lastBlockHeight() (int64, error) {
+// LastBlockHeight returns the latest block stored.
+func (db *Database) LastBlockHeight() (int64, error) {
 	var height int64
 	err := db.QueryRow("SELECT coalesce(MAX(height),0) AS height FROM block;").Scan(&height)
 	return height, err
 }
 
-// hasBlock returns true if a block by height exists. An error should never be
+// HasBlock returns true if a block by height exists. An error should never be
 // returned.
-func (db *database) hasBlock(height int64) (bool, error) {
+func (db *Database) HasBlock(height int64) (bool, error) {
 	var res bool
 	err := db.QueryRow(
 		"SELECT EXISTS(SELECT 1 FROM block WHERE height = $1);",
@@ -50,9 +54,9 @@ func (db *database) hasBlock(height int64) (bool, error) {
 	return res, err
 }
 
-// hasValidator returns true if a given validator by HEX address exists. An
+// HasValidator returns true if a given validator by HEX address exists. An
 // error should never be returned.
-func (db *database) hasValidator(ah string) (bool, error) {
+func (db *Database) HasValidator(ah string) (bool, error) {
 	var res bool
 	err := db.QueryRow(
 		"SELECT EXISTS(SELECT 1 FROM validator WHERE address = $1);",
@@ -62,9 +66,9 @@ func (db *database) hasValidator(ah string) (bool, error) {
 	return res, err
 }
 
-// setValidator stores a validator and returns the resulting record ID. An error
+// SetValidator stores a validator and returns the resulting record ID. An error
 // is returned if the operation fails.
-func (db *database) setValidator(ah, pk string) (uint64, error) {
+func (db *Database) SetValidator(ah, pk string) (uint64, error) {
 	var id uint64
 
 	err := db.QueryRow(
@@ -75,9 +79,9 @@ func (db *database) setValidator(ah, pk string) (uint64, error) {
 	return id, err
 }
 
-// setPreCommit stores a validator's pre-commit and returns the resulting record
+// SetPreCommit stores a validator's pre-commit and returns the resulting record
 // ID. An error is returned if the operation fails.
-func (db *database) setPreCommit(pc *tmtypes.CommitSig, vp, pp int64) (uint64, error) {
+func (db *Database) SetPreCommit(pc *tmtypes.CommitSig, vp, pp int64) (uint64, error) {
 	var id uint64
 
 	sqlStatement := `
@@ -94,9 +98,9 @@ func (db *database) setPreCommit(pc *tmtypes.CommitSig, vp, pp int64) (uint64, e
 	return id, err
 }
 
-// setBlock stores a block and returns the resulting record ID. An error is
+// SetBlock stores a block and returns the resulting record ID. An error is
 // returned if the operation fails.
-func (db *database) setBlock(b *tmctypes.ResultBlock, tg, pc uint64) (uint64, error) {
+func (db *Database) SetBlock(b *tmctypes.ResultBlock, tg, pc uint64) (uint64, error) {
 	var id uint64
 
 	sqlStatement := `
@@ -114,11 +118,14 @@ func (db *database) setBlock(b *tmctypes.ResultBlock, tg, pc uint64) (uint64, er
 	return id, err
 }
 
-func (db *database) exportBlock(b *tmctypes.ResultBlock, txs []*tmctypes.ResultTx) error {
+// ExportBlock accepts a finalized block and a corresponding set of transactions
+// and persists them to the database along with attributable metadata. An error
+// is returned if the write fails.
+func (db *Database) ExportBlock(b *tmctypes.ResultBlock, txs []*tmctypes.ResultTx) error {
 	totalGas := sumGasTxs(txs)
 	preCommits := uint64(len(b.Block.LastCommit.Precommits))
 
-	if _, err := db.setBlock(b, totalGas, preCommits); err != nil {
+	if _, err := db.SetBlock(b, totalGas, preCommits); err != nil {
 		log.Printf("failed to persist block %d: %s\n", b.Block.Height, err)
 		return err
 	}
@@ -126,12 +133,15 @@ func (db *database) exportBlock(b *tmctypes.ResultBlock, txs []*tmctypes.ResultT
 	return nil
 }
 
-func (db *database) exportPreCommits(commit *tmtypes.Commit, vals *tmctypes.ResultValidators) error {
+// ExportPreCommits accepts a block commitment and a coressponding set of
+// validators for the commitment and persists them to the database. An error is
+// returned if any write fails or if there is any missing aggregated data.
+func (db *Database) ExportPreCommits(commit *tmtypes.Commit, vals *tmctypes.ResultValidators) error {
 	// persist all validators and pre-commits
 	for _, pc := range commit.Precommits {
 		if pc != nil {
 			valAddr := pc.ValidatorAddress.String()
-			ok, err := db.hasValidator(valAddr)
+			ok, err := db.HasValidator(valAddr)
 			if err != nil {
 				log.Printf("failed to query for validator %s: %s\n", valAddr, err)
 				return err
@@ -152,13 +162,13 @@ func (db *database) exportPreCommits(commit *tmtypes.Commit, vals *tmctypes.Resu
 					return err
 				}
 
-				if _, err := db.setValidator(valAddr, consPubKey); err != nil {
+				if _, err := db.SetValidator(valAddr, consPubKey); err != nil {
 					log.Printf("failed to persist validator %s: %s\n", valAddr, err)
 					continue
 				}
 			}
 
-			if _, err := db.setPreCommit(pc, val.VotingPower, val.ProposerPriority); err != nil {
+			if _, err := db.SetPreCommit(pc, val.VotingPower, val.ProposerPriority); err != nil {
 				log.Printf("failed to persist pre-commit for validator %s: %s\n", valAddr, err)
 				return err
 			}
