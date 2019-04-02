@@ -47,6 +47,10 @@ func main() {
 			continue
 		}
 
+		if i%10 == 0 {
+			log.Printf("migrated block %d\n", i)
+		}
+
 		var id uint64
 		err = db.QueryRow(
 			`UPDATE block SET timestamp = $2 WHERE height = $1 RETURNING id;`,
