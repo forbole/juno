@@ -1,0 +1,8 @@
+dist: trusty
+language: go
+go:
+  - 1.12.x
+  - 1.11.x
+install: true
+script:
+  - env GO111MODULE=on make
