@@ -10,6 +10,23 @@ mkfile_dir 	:= $(dir $(mkfile_path))
 all: ci-lint ci-test install
 
 ###############################################################################
+# Build / Install
+###############################################################################
+
+build: go.sum
+ifeq ($(OS),Windows_NT)
+	@echo "Building juno binary..."
+	@go build -mod=readonly $(BUILD_FLAGS) -o build/juno.exe .
+else
+	@echo "Building juno binary..."
+	@go build -mod=readonly $(BUILD_FLAGS) -o build/juno .
+endif
+
+install: go.sum
+	@echo "Installing juno binary..."
+	@go install -mod=readonly $(BUILD_FLAGS) .
+
+###############################################################################
 # Tools
 ###############################################################################
 
@@ -31,15 +48,20 @@ $(GOIMPORTS):
 # Tests / CI
 ###############################################################################
 
+coverage:
+	@echo "Viewing test coverage..."
+	@go tool cover --html=coverage.out
+
 ci-test:
+	@echo "Executing unit tests..."
 	@go test -mod=readonly -v -coverprofile coverage.out ./... 
 
 ci-lint: tools
-	@echo "Running GolangCI-Lint..." 
+	@echo "Running GolangCI-Lint..."
 	@golangci-lint run
-	@echo "Formatting..." 
+	@echo "Formatting..."
 	@find . -name '*.go' -type f -not -path "*.git*" | xargs gofmt -d -s
-	@echo "Verifying modules..." 
+	@echo "Verifying modules..."
 	@go mod verify
 
-.PHONY: ci-lint tools tools-stamp
+.PHONY: ci-lint tools tools-stamp coverage
