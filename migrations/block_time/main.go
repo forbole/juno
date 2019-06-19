@@ -17,12 +17,12 @@ func main() {
 	flag.Parse()
 
 	cfg := config.ParseConfig(configPath)
-	rpc, err := client.NewRPCClient(cfg.Node)
+	cl, err := client.New(cfg.RPCNode, cfg.RESTNode)
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "failed to start RPC client"))
 	}
 
-	defer rpc.Stop() // nolint: errcheck
+	defer cl.Stop() // nolint: errcheck
 
 	db, err := db.OpenDB(cfg)
 	if err != nil {
@@ -41,7 +41,7 @@ func main() {
 	}
 
 	for i := int64(2); i < lastHeight; i++ {
-		block, err := rpc.Block(i)
+		block, err := cl.Block(i)
 		if err != nil {
 			log.Printf("failed to get block %d: %s", i, err)
 			continue
