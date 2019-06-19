@@ -62,24 +62,6 @@ func (cp ClientProxy) TendermintTx(hash string) (*tmctypes.ResultTx, error) {
 	return cp.rpcClient.Tx(hashRaw, false)
 }
 
-// TxsFromBlock returns all the transactions for a given block height. An error
-// is returned if the query fails.
-func (cp ClientProxy) TxsFromBlock(block *tmctypes.ResultBlock) ([]*tmctypes.ResultTx, error) {
-	dataTxs := block.Block.Data.Txs
-	txs := make([]*tmctypes.ResultTx, len(dataTxs))
-
-	for i, d := range dataTxs {
-		tx, err := cp.TendermintTx(hex.EncodeToString(d.Hash()))
-		if err != nil {
-			return nil, err
-		}
-
-		txs[i] = tx
-	}
-
-	return txs, nil
-}
-
 // Validators returns all the known Tendermint validators for a given block
 // height. An error is returned if the query fails.
 func (cp ClientProxy) Validators(height int64) (*tmctypes.ResultValidators, error) {
@@ -124,4 +106,22 @@ func (cp ClientProxy) Tx(hash string) (sdk.TxResponse, error) {
 	}
 
 	return tx, nil
+}
+
+// Txs queries for all the transactions in a block. Transactions are returned
+// in the sdk.TxResponse format which internally contains an sdk.Tx. An error is
+// returned if any query fails.
+func (cp ClientProxy) Txs(block *tmctypes.ResultBlock) ([]sdk.TxResponse, error) {
+	txResponses := make([]sdk.TxResponse, len(block.Block.Txs), len(block.Block.Txs))
+
+	for i, tmTx := range block.Block.Txs {
+		txResponse, err := cp.Tx(fmt.Sprintf("%X", tmTx.Hash()))
+		if err != nil {
+			return nil, err
+		}
+
+		txResponses[i] = txResponse
+	}
+
+	return txResponses, nil
 }

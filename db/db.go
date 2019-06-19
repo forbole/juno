@@ -10,7 +10,9 @@ import (
 	"github.com/alexanderbez/juno/config"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+
 	_ "github.com/lib/pq" // nolint
+
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
@@ -190,13 +192,20 @@ func (db *Database) SetTx(tx sdk.TxResponse) (uint64, error) {
 // ExportBlock accepts a finalized block and a corresponding set of transactions
 // and persists them to the database along with attributable metadata. An error
 // is returned if the write fails.
-func (db *Database) ExportBlock(b *tmctypes.ResultBlock, txs []*tmctypes.ResultTx) error {
+func (db *Database) ExportBlock(b *tmctypes.ResultBlock, txs []sdk.TxResponse) error {
 	totalGas := sumGasTxs(txs)
 	preCommits := uint64(len(b.Block.LastCommit.Precommits))
 
 	if _, err := db.SetBlock(b, totalGas, preCommits); err != nil {
 		log.Printf("failed to persist block %d: %s\n", b.Block.Height, err)
 		return err
+	}
+
+	for _, tx := range txs {
+		if _, err := db.SetTx(tx); err != nil {
+			log.Printf("failed to persist transaction %s: %s\n", tx.TxHash, err)
+			return err
+		}
 	}
 
 	return nil

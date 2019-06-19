@@ -4,7 +4,9 @@ import (
 	"strings"
 
 	"github.com/alexanderbez/juno/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
@@ -42,11 +44,11 @@ func findValidatorByAddr(addrHex string, vals *tmctypes.ResultValidators) *tmtyp
 }
 
 // sumGasTxs returns the total gas consumed by a set of transactions.
-func sumGasTxs(txs []*tmctypes.ResultTx) uint64 {
+func sumGasTxs(txs []sdk.TxResponse) uint64 {
 	var totalGas uint64
 
 	for _, tx := range txs {
-		totalGas += uint64(tx.TxResult.GasUsed)
+		totalGas += uint64(tx.GasUsed)
 	}
 
 	return totalGas

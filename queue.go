@@ -59,7 +59,7 @@ func (w worker) process(height int64) error {
 		return err
 	}
 
-	txs, err := w.cp.TxsFromBlock(block)
+	txs, err := w.cp.Txs(block)
 	if err != nil {
 		log.Printf("failed to get transactions for block %d: %s\n", height, err)
 		return err
