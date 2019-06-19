@@ -2,11 +2,14 @@ package db
 
 import (
 	"database/sql"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"log"
 
 	"github.com/alexanderbez/juno/config"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth"
 	_ "github.com/lib/pq" // nolint
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -113,6 +116,72 @@ func (db *Database) SetBlock(b *tmctypes.ResultBlock, tg, pc uint64) (uint64, er
 		sqlStatement,
 		b.Block.Height, b.Block.Hash().String(), b.Block.NumTxs,
 		tg, b.Block.ProposerAddress.String(), pc, b.Block.Time,
+	).Scan(&id)
+
+	return id, err
+}
+
+type signature struct {
+	Address   string `json:"address,omitempty"`
+	Pubkey    string `json:"pubkey,omitempty"`
+	Signature string `json:"signature,omitempty"`
+}
+
+// SetTx stores a transaction and returns the resulting record ID. An error is
+// returned if the operation fails.
+func (db *Database) SetTx(tx sdk.TxResponse) (uint64, error) {
+	var id uint64
+
+	sqlStatement := `
+	INSERT INTO transaction (timestamp, gas_wanted, gas_used, height, txhash, tags, messages, fee, signatures, memo)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+	RETURNING id;
+	`
+
+	stdTx, ok := tx.Tx.(auth.StdTx)
+	if !ok {
+		return 0, fmt.Errorf("unsupported tx type: %T", tx.Tx)
+	}
+
+	tagsBz, err := json.Marshal(tx.Tags)
+	if err != nil {
+		return 0, fmt.Errorf("failed to JSON encode tx tags: %s", err)
+	}
+
+	msgsBz, err := json.Marshal(stdTx.GetMsgs())
+	if err != nil {
+		return 0, fmt.Errorf("failed to JSON encode tx messages: %s", err)
+	}
+
+	feeBz, err := json.Marshal(stdTx.Fee)
+	if err != nil {
+		return 0, fmt.Errorf("failed to JSON encode tx fee: %s", err)
+	}
+
+	// convert Tendermint signatures into a more human-readable format
+	sigs := make([]signature, len(stdTx.GetSignatures()), len(stdTx.GetSignatures()))
+	for i, sig := range stdTx.GetSignatures() {
+		consPubKey, err := sdk.Bech32ifyConsPub(sig.PubKey) // nolint: typecheck
+		if err != nil {
+			return 0, fmt.Errorf("failed to convert validator public key %s: %s\n", sig.PubKey, err)
+		}
+
+		sigs[i] = signature{
+			Address:   sig.Address().String(),
+			Signature: base64.StdEncoding.EncodeToString(sig.Signature),
+			Pubkey:    consPubKey,
+		}
+	}
+
+	sigsBz, err := json.Marshal(sigs)
+	if err != nil {
+		return 0, fmt.Errorf("failed to JSON encode tx signatures: %s", err)
+	}
+
+	err = db.QueryRow(
+		sqlStatement,
+		tx.Timestamp, tx.GasWanted, tx.GasUsed, tx.Height, tx.TxHash, string(tagsBz),
+		string(msgsBz), string(feeBz), string(sigsBz), stdTx.GetMemo(),
 	).Scan(&id)
 
 	return id, err
