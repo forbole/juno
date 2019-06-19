@@ -10,8 +10,9 @@ import (
 
 // Config defines all necessary juno configuration parameters.
 type Config struct {
-	Node string         `toml:"node"`
-	DB   DatabaseConfig `toml:"database"`
+	RPCNode    string         `toml:"rpc_node"`
+	ClientNode string         `toml:"client_node"`
+	DB         DatabaseConfig `toml:"database"`
 }
 
 // DatabaseConfig defines all database connection configuration parameters.

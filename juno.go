@@ -28,12 +28,12 @@ func main() {
 	flag.Parse()
 
 	cfg := config.ParseConfig(configPath)
-	rpc, err := client.NewRPCClient(cfg.Node)
+	cp, err := client.New(cfg.RPCNode, cfg.ClientNode)
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "failed to start RPC client"))
 	}
 
-	defer rpc.Stop() // nolint: errcheck
+	defer cp.Stop() // nolint: errcheck
 
 	db, err := db.OpenDB(cfg)
 	if err != nil {
@@ -48,7 +48,7 @@ func main() {
 
 	// create a queue that will collect, aggregate, and export blocks and metadata
 	exportQueue := newQueue(100)
-	worker := newWorker(db, rpc, exportQueue)
+	worker := newWorker(db, cp, exportQueue)
 
 	// Start a blocking worker in a go-routine where the worker consumes jobs off
 	// of the export queue.
@@ -59,8 +59,8 @@ func main() {
 	// listen for and trap any OS signal to gracefully shutdown and exit
 	trapSignal()
 
-	go startBlockListener(exportQueue, rpc)
-	go enqueueMissingBlocks(exportQueue, rpc)
+	go startNewBlockListener(exportQueue, cp)
+	go enqueueMissingBlocks(exportQueue, cp)
 
 	// block main process (signal capture will call WaitGroup's Done)
 	wg.Wait()
@@ -68,8 +68,8 @@ func main() {
 
 // enqueueMissingBlocks enqueues jobs (block heights) for missed blocks starting
 // at the startHeight up until the latest known height.
-func enqueueMissingBlocks(exportQueue queue, rpc client.RPCClient) {
-	latestBlockHeight, err := rpc.LatestHeight()
+func enqueueMissingBlocks(exportQueue queue, cp client.ClientProxy) {
+	latestBlockHeight, err := cp.LatestHeight()
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "failed to get lastest block from RPC client"))
 	}
@@ -90,11 +90,11 @@ func enqueueMissingBlocks(exportQueue queue, rpc client.RPCClient) {
 	}
 }
 
-// startBlockListener subscribes to new block events via the Tendermint RPC and
-// enqueues each new block height onto the provided queue. It blocks as new
+// startNewBlockListener subscribes to new block events via the Tendermint RPC
+// and enqueues each new block height onto the provided queue. It blocks as new
 // blocks are incoming.
-func startBlockListener(exportQueue queue, rpc client.RPCClient) {
-	eventCh, cancel, err := rpc.SubscribeNewBlocks("juno-client")
+func startNewBlockListener(exportQueue queue, cp client.ClientProxy) {
+	eventCh, cancel, err := cp.SubscribeNewBlocks("juno-client")
 	defer cancel()
 
 	if err != nil {

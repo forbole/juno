@@ -14,9 +14,9 @@ type (
 	// worker defines a job consumer that is responsible for getting and
 	// aggregating block and associated data and exporting it to a database.
 	worker struct {
-		client client.RPCClient
-		db     *db.Database
-		queue  queue
+		cp    client.ClientProxy
+		db    *db.Database
+		queue queue
 	}
 )
 
@@ -24,8 +24,8 @@ func newQueue(size int) queue {
 	return make(chan int64, size)
 }
 
-func newWorker(db *db.Database, rpc client.RPCClient, q queue) worker {
-	return worker{rpc, db, q}
+func newWorker(db *db.Database, cp client.ClientProxy, q queue) worker {
+	return worker{cp, db, q}
 }
 
 // start starts a worker by listening for new jobs (block heights) from the
@@ -34,6 +34,7 @@ func (w worker) start() {
 	for i := range w.queue {
 		if err := w.process(i); err != nil {
 			// re-enqueue any failed job
+			// TODO: Implement exponential backoff or max retries for a block height.
 			go func() {
 				log.Printf("re-enqueueing failed block %d\n", i)
 				w.queue <- i
@@ -52,19 +53,19 @@ func (w worker) process(height int64) error {
 		return nil
 	}
 
-	block, err := w.client.Block(height)
+	block, err := w.cp.Block(height)
 	if err != nil {
 		log.Printf("failed to get block %d: %s\n", height, err)
 		return err
 	}
 
-	txs, err := w.client.TxsFromBlock(block)
+	txs, err := w.cp.TxsFromBlock(block)
 	if err != nil {
 		log.Printf("failed to get transactions for block %d: %s\n", height, err)
 		return err
 	}
 
-	vals, err := w.client.Validators(block.Block.LastCommit.Height())
+	vals, err := w.cp.Validators(block.Block.LastCommit.Height())
 	if err != nil {
 		log.Printf("failed to get validators for block %d: %s\n", height, err)
 		return err
