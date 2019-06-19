@@ -77,6 +77,8 @@ will most likely require adjustments to the `database` wrapper.
 - Persist governance proposals and tallies
 - Improve the db migration process
 - Improve queue consumer/producer model to perhaps improve speed of syncing
+- Improve modularity and remove any assumptions about the origin chain so Juno
+can sync with any Tendermint-based chain
 
 ## Contributing
 
