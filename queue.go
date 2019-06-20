@@ -75,5 +75,5 @@ func (w worker) process(height int64) error {
 		return err
 	}
 
-	return w.db.ExportBlock(block, txs)
+	return w.db.ExportBlock(block, txs, vals)
 }

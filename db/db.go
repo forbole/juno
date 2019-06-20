@@ -61,11 +61,11 @@ func (db *Database) HasBlock(height int64) (bool, error) {
 
 // HasValidator returns true if a given validator by HEX address exists. An
 // error should never be returned.
-func (db *Database) HasValidator(ah string) (bool, error) {
+func (db *Database) HasValidator(addr string) (bool, error) {
 	var res bool
 	err := db.QueryRow(
 		"SELECT EXISTS(SELECT 1 FROM validator WHERE address = $1);",
-		ah,
+		addr,
 	).Scan(&res)
 
 	return res, err
@@ -73,12 +73,12 @@ func (db *Database) HasValidator(ah string) (bool, error) {
 
 // SetValidator stores a validator and returns the resulting record ID. An error
 // is returned if the operation fails.
-func (db *Database) SetValidator(ah, pk string) (uint64, error) {
+func (db *Database) SetValidator(addr, pk string) (uint64, error) {
 	var id uint64
 
 	err := db.QueryRow(
 		"INSERT INTO validator (address, consensus_pubkey) VALUES ($1, $2) RETURNING id;",
-		ah, pk,
+		addr, pk,
 	).Scan(&id)
 
 	return id, err
@@ -192,9 +192,31 @@ func (db *Database) SetTx(tx sdk.TxResponse) (uint64, error) {
 // ExportBlock accepts a finalized block and a corresponding set of transactions
 // and persists them to the database along with attributable metadata. An error
 // is returned if the write fails.
-func (db *Database) ExportBlock(b *tmctypes.ResultBlock, txs []sdk.TxResponse) error {
+func (db *Database) ExportBlock(b *tmctypes.ResultBlock, txs []sdk.TxResponse, vals *tmctypes.ResultValidators) error {
 	totalGas := sumGasTxs(txs)
 	preCommits := uint64(len(b.Block.LastCommit.Precommits))
+
+	// Set the block's proposer if it does not already exist. This may occur if
+	// the proposer has never signed before.
+	proposerAddr := b.Block.ProposerAddress.String()
+	ok, err := db.HasValidator(proposerAddr)
+	if err != nil {
+		log.Printf("failed to query for validator %s: %s\n", proposerAddr, err)
+		return err
+	}
+
+	if !ok {
+		val := findValidatorByAddr(proposerAddr, vals)
+		if val == nil {
+			err := fmt.Errorf("failed to find validator by address %s for block %d\n", proposerAddr, b.Block.Height)
+			log.Println(err)
+			return err
+		}
+
+		if err := db.ExportValidator(val); err != nil {
+			return err
+		}
+	}
 
 	if _, err := db.SetBlock(b, totalGas, preCommits); err != nil {
 		log.Printf("failed to persist block %d: %s\n", b.Block.Height, err)
@@ -206,6 +228,26 @@ func (db *Database) ExportBlock(b *tmctypes.ResultBlock, txs []sdk.TxResponse) e
 			log.Printf("failed to persist transaction %s: %s\n", tx.TxHash, err)
 			return err
 		}
+	}
+
+	return nil
+}
+
+// ExportValidator persists a Tendermint validator with an address and a
+// consensus public key. An error is returned if the public key cannot be Bech32
+// encoded or if the DB write fails.
+func (db *Database) ExportValidator(val *tmtypes.Validator) error {
+	valAddr := val.Address.String()
+
+	consPubKey, err := sdk.Bech32ifyConsPub(val.PubKey) // nolint: typecheck
+	if err != nil {
+		log.Printf("failed to convert validator public key %s: %s\n", valAddr, err)
+		return err
+	}
+
+	if _, err := db.SetValidator(valAddr, consPubKey); err != nil {
+		log.Printf("failed to persist validator %s: %s\n", valAddr, err)
+		return err
 	}
 
 	return nil
@@ -234,15 +276,8 @@ func (db *Database) ExportPreCommits(commit *tmtypes.Commit, vals *tmctypes.Resu
 
 			// persist the validator if we have not seen them before
 			if !ok {
-				consPubKey, err := sdk.Bech32ifyConsPub(val.PubKey) // nolint: typecheck
-				if err != nil {
-					log.Printf("failed to convert validator public key %s: %s\n", valAddr, err)
+				if err := db.ExportValidator(val); err != nil {
 					return err
-				}
-
-				if _, err := db.SetValidator(valAddr, consPubKey); err != nil {
-					log.Printf("failed to persist validator %s: %s\n", valAddr, err)
-					continue
 				}
 			}
 
