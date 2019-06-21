@@ -3,16 +3,14 @@ package db
 import (
 	"database/sql"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"log"
 
+	junocdc "github.com/alexanderbez/juno/codec"
 	"github.com/alexanderbez/juno/config"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
-
 	_ "github.com/lib/pq" // nolint
-
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
@@ -145,17 +143,17 @@ func (db *Database) SetTx(tx sdk.TxResponse) (uint64, error) {
 		return 0, fmt.Errorf("unsupported tx type: %T", tx.Tx)
 	}
 
-	tagsBz, err := json.Marshal(tx.Tags)
+	tagsBz, err := junocdc.Codec.MarshalJSON(tx.Tags)
 	if err != nil {
 		return 0, fmt.Errorf("failed to JSON encode tx tags: %s", err)
 	}
 
-	msgsBz, err := json.Marshal(stdTx.GetMsgs())
+	msgsBz, err := junocdc.Codec.MarshalJSON(stdTx.GetMsgs())
 	if err != nil {
 		return 0, fmt.Errorf("failed to JSON encode tx messages: %s", err)
 	}
 
-	feeBz, err := json.Marshal(stdTx.Fee)
+	feeBz, err := junocdc.Codec.MarshalJSON(stdTx.Fee)
 	if err != nil {
 		return 0, fmt.Errorf("failed to JSON encode tx fee: %s", err)
 	}
@@ -175,7 +173,7 @@ func (db *Database) SetTx(tx sdk.TxResponse) (uint64, error) {
 		}
 	}
 
-	sigsBz, err := json.Marshal(sigs)
+	sigsBz, err := junocdc.Codec.MarshalJSON(sigs)
 	if err != nil {
 		return 0, fmt.Errorf("failed to JSON encode tx signatures: %s", err)
 	}
