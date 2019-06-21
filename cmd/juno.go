@@ -28,9 +28,13 @@ var rootCmd = &cobra.Command{
 	Use:   "juno [config-file]",
 	Args:  cobra.ExactArgs(1),
 	Short: "Juno is a Cosmos Hub data aggregator and exporter",
-	// Long: `A Fast and Flexible Static Site Generator built with
-	//               love by spf13 and friends in Go.
-	//               Complete documentation is available at http://hugo.spf13.com`,
+	Long: `A cosmos Hub data aggregator. It improves the Hub's data accessibility
+by providing an indexed PostgreSQL database exposing aggregated resources and
+models such as blocks, validators, pre-commits, transactions, and various aspects
+of the governance module. Juno is meant to run with a GraphQL layer on top so that
+it even further eases the ability for developers and downstream clients to answer
+queries such as "what is the average gas cost of a block?" while also allowing
+them to compose more aggregate and complex queries.`,
 	RunE: junoCmdHandler,
 }
 
