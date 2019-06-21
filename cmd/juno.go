@@ -19,6 +19,7 @@ import (
 
 var (
 	startHeight int64
+	workerCount int16
 
 	wg sync.WaitGroup
 )
@@ -35,6 +36,7 @@ var rootCmd = &cobra.Command{
 
 func init() {
 	rootCmd.PersistentFlags().Int64Var(&startHeight, "start-height", 2, "sync missing or failed blocks starting from a given height")
+	rootCmd.PersistentFlags().Int16Var(&workerCount, "workers", 1, "number of workers to run concurrently")
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -71,17 +73,18 @@ func junoCmdHandler(cmd *cobra.Command, args []string) error {
 	// create a queue that will collect, aggregate, and export blocks and metadata
 	exportQueue := processor.NewQueue(100)
 
-	workers := make([]processor.Worker, 5, 5)
+	workers := make([]processor.Worker, workerCount, workerCount)
 	for i := range workers {
 		workers[i] = processor.NewWorker(db, cp, exportQueue)
 	}
 
-	// Start a blocking worker in a go-routine where the worker consumes jobs off
-	// of the export queue.
-	log.Println("starting worker pool...")
 	wg.Add(1)
 
-	for _, w := range workers {
+	// Start each blocking worker in a go-routine where the worker consumes jobs
+	// off of the export queue.
+	for i, w := range workers {
+		log.Printf("starting worker %d...\n", i+1)
+
 		go w.Start()
 	}
 
