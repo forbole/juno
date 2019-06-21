@@ -1,4 +1,4 @@
-package main
+package processor
 
 import (
 	"log"
@@ -8,29 +8,29 @@ import (
 )
 
 type (
-	// queue is a simple type alias for a (buffered) channel of block heights.
-	queue chan int64
+	// Queue is a simple type alias for a (buffered) channel of block heights.
+	Queue chan int64
 
-	// worker defines a job consumer that is responsible for getting and
+	// Worker defines a job consumer that is responsible for getting and
 	// aggregating block and associated data and exporting it to a database.
-	worker struct {
+	Worker struct {
 		cp    client.ClientProxy
 		db    *db.Database
-		queue queue
+		queue Queue
 	}
 )
 
-func newQueue(size int) queue {
+func NewQueue(size int) Queue {
 	return make(chan int64, size)
 }
 
-func newWorker(db *db.Database, cp client.ClientProxy, q queue) worker {
-	return worker{cp, db, q}
+func NewWorker(db *db.Database, cp client.ClientProxy, q Queue) Worker {
+	return Worker{cp, db, q}
 }
 
-// start starts a worker by listening for new jobs (block heights) from the
+// Start starts a worker by listening for new jobs (block heights) from the
 // given worker queue. Any failed job is logged and re-enqueued.
-func (w worker) start() {
+func (w Worker) Start() {
 	for i := range w.queue {
 		if err := w.process(i); err != nil {
 			// re-enqueue any failed job
@@ -46,7 +46,7 @@ func (w worker) start() {
 // process defines the job consumer workflow. It will fetch a block for a given
 // height and associated metadata and export it to a database. It returns an
 // error if any export process fails.
-func (w worker) process(height int64) error {
+func (w Worker) process(height int64) error {
 	ok, err := w.db.HasBlock(height)
 	if ok && err == nil {
 		log.Printf("skipping already exported block %d\n", height)

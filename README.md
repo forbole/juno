@@ -62,7 +62,7 @@ In addition, it will also sync missing blocks from `--start-height` to the lates
 known height.
 
 ```shell
-$ juno --config=/path/to/config.toml [flags]
+$ juno /path/to/config.toml [flags]
 ```
 
 ## Schemas
@@ -79,7 +79,6 @@ will most likely require adjustments to the `database` wrapper.
 - Improve the db migration process
 - Implement better retry logic on failed queries
 - Implement a docker-compose setup that allows for complete bootstrapping
-- Improve queue consumer/producer model to perhaps improve speed of syncing
 - Improve modularity and remove any assumptions about the origin chain so Juno
 can sync with any Tendermint-based chain
 

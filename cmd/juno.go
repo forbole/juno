@@ -1,7 +1,7 @@
-package main
+package cmd
 
 import (
-	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -11,50 +11,86 @@ import (
 	"github.com/alexanderbez/juno/client"
 	"github.com/alexanderbez/juno/config"
 	"github.com/alexanderbez/juno/db"
+	"github.com/alexanderbez/juno/processor"
 	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
 var (
-	configPath  string
 	startHeight int64
+	workerCount int16
 
 	wg sync.WaitGroup
 )
 
-func main() {
-	flag.StringVar(&configPath, "config", "", "Configuration file")
-	flag.Int64Var(&startHeight, "start-height", 2, "Sync missing or failed blocks starting from a given height")
-	flag.Parse()
+var rootCmd = &cobra.Command{
+	Use:   "juno [config-file]",
+	Args:  cobra.ExactArgs(1),
+	Short: "Juno is a Cosmos Hub data aggregator and exporter",
+	Long: `A cosmos Hub data aggregator. It improves the Hub's data accessibility
+by providing an indexed PostgreSQL database exposing aggregated resources and
+models such as blocks, validators, pre-commits, transactions, and various aspects
+of the governance module. Juno is meant to run with a GraphQL layer on top so that
+it even further eases the ability for developers and downstream clients to answer
+queries such as "what is the average gas cost of a block?" while also allowing
+them to compose more aggregate and complex queries.`,
+	RunE: junoCmdHandler,
+}
 
-	cfg := config.ParseConfig(configPath)
+func init() {
+	rootCmd.PersistentFlags().Int64Var(&startHeight, "start-height", 2, "sync missing or failed blocks starting from a given height")
+	rootCmd.PersistentFlags().Int16Var(&workerCount, "workers", 1, "number of workers to run concurrently")
+}
+
+// Execute adds all child commands to the root command and sets flags appropriately.
+// This is called by main.main(). It only needs to happen once to the rootCmd.
+func Execute() {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+}
+
+func junoCmdHandler(cmd *cobra.Command, args []string) error {
+	cfgFile := args[0]
+	cfg := config.ParseConfig(cfgFile)
+
 	cp, err := client.New(cfg.RPCNode, cfg.ClientNode)
 	if err != nil {
-		log.Fatal(errors.Wrap(err, "failed to start RPC client"))
+		return errors.Wrap(err, "failed to start RPC client")
 	}
 
 	defer cp.Stop() // nolint: errcheck
 
 	db, err := db.OpenDB(cfg)
 	if err != nil {
-		log.Fatal(errors.Wrap(err, "failed to open database connection"))
+		return errors.Wrap(err, "failed to open database connection")
 	}
 
 	defer db.Close()
 
 	if err := db.Ping(); err != nil {
-		log.Fatal(errors.Wrap(err, "failed to ping database"))
+		return errors.Wrap(err, "failed to ping database")
 	}
 
 	// create a queue that will collect, aggregate, and export blocks and metadata
-	exportQueue := newQueue(100)
-	worker := newWorker(db, cp, exportQueue)
+	exportQueue := processor.NewQueue(100)
 
-	// Start a blocking worker in a go-routine where the worker consumes jobs off
-	// of the export queue.
-	log.Println("starting worker pool...")
+	workers := make([]processor.Worker, workerCount, workerCount)
+	for i := range workers {
+		workers[i] = processor.NewWorker(db, cp, exportQueue)
+	}
+
 	wg.Add(1)
-	go worker.start()
+
+	// Start each blocking worker in a go-routine where the worker consumes jobs
+	// off of the export queue.
+	for i, w := range workers {
+		log.Printf("starting worker %d...\n", i+1)
+
+		go w.Start()
+	}
 
 	// listen for and trap any OS signal to gracefully shutdown and exit
 	trapSignal()
@@ -64,11 +100,12 @@ func main() {
 
 	// block main process (signal capture will call WaitGroup's Done)
 	wg.Wait()
+	return nil
 }
 
 // enqueueMissingBlocks enqueues jobs (block heights) for missed blocks starting
 // at the startHeight up until the latest known height.
-func enqueueMissingBlocks(exportQueue queue, cp client.ClientProxy) {
+func enqueueMissingBlocks(exportQueue processor.Queue, cp client.ClientProxy) {
 	latestBlockHeight, err := cp.LatestHeight()
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "failed to get lastest block from RPC client"))
@@ -93,7 +130,7 @@ func enqueueMissingBlocks(exportQueue queue, cp client.ClientProxy) {
 // startNewBlockListener subscribes to new block events via the Tendermint RPC
 // and enqueues each new block height onto the provided queue. It blocks as new
 // blocks are incoming.
-func startNewBlockListener(exportQueue queue, cp client.ClientProxy) {
+func startNewBlockListener(exportQueue processor.Queue, cp client.ClientProxy) {
 	eventCh, cancel, err := cp.SubscribeNewBlocks("juno-client")
 	defer cancel()
 
