@@ -25,7 +25,8 @@ stdlib `log` package.
 
 - Initial release
 
-[Unreleased]: https://github.com/alexanderbez/juno/compare/v0.0.1...HEAD
+[Unreleased]: https://github.com/alexanderbez/juno/compare/v0.0.2...HEAD
+[0.0.2]: https://github.com/alexanderbez/juno/releases/tag/v0.0.2
 [0.0.1]: https://github.com/alexanderbez/juno/releases/tag/v0.0.1
 
 <!--
