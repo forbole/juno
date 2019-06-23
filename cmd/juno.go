@@ -71,6 +71,9 @@ func junoCmdHandler(cmd *cobra.Command, args []string) error {
 	zerolog.SetGlobalLevel(logLvl)
 
 	switch logFormat {
+	case logLevelJSON:
+		// JSON is the default logging format
+
 	case logLevelText:
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 
