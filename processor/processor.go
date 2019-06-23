@@ -1,10 +1,9 @@
 package processor
 
 import (
-	"log"
-
 	"github.com/alexanderbez/juno/client"
 	"github.com/alexanderbez/juno/db"
+	"github.com/rs/zerolog/log"
 )
 
 type (
@@ -33,10 +32,12 @@ func NewWorker(db *db.Database, cp client.ClientProxy, q Queue) Worker {
 func (w Worker) Start() {
 	for i := range w.queue {
 		if err := w.process(i); err != nil {
+			log.Info().Int64("height", i).Msg("processing block")
+
 			// re-enqueue any failed job
 			// TODO: Implement exponential backoff or max retries for a block height.
 			go func() {
-				log.Printf("re-enqueueing failed block %d\n", i)
+				log.Info().Int64("height", i).Msg("re-enqueueing failed block")
 				w.queue <- i
 			}()
 		}
@@ -49,25 +50,25 @@ func (w Worker) Start() {
 func (w Worker) process(height int64) error {
 	ok, err := w.db.HasBlock(height)
 	if ok && err == nil {
-		log.Printf("skipping already exported block %d\n", height)
+		log.Debug().Int64("height", height).Msg("skipping already exported block")
 		return nil
 	}
 
 	block, err := w.cp.Block(height)
 	if err != nil {
-		log.Printf("failed to get block %d: %s\n", height, err)
+		log.Info().Err(err).Int64("height", height).Msg("failed to get block")
 		return err
 	}
 
 	txs, err := w.cp.Txs(block)
 	if err != nil {
-		log.Printf("failed to get transactions for block %d: %s\n", height, err)
+		log.Info().Err(err).Int64("height", height).Msg("failed to get transactions for block")
 		return err
 	}
 
 	vals, err := w.cp.Validators(block.Block.LastCommit.Height())
 	if err != nil {
-		log.Printf("failed to get validators for block %d: %s\n", height, err)
+		log.Info().Err(err).Int64("height", height).Msg("failed to get validators for block")
 		return err
 	}
 

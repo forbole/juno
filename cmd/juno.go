@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"sync"
@@ -13,13 +12,22 @@ import (
 	"github.com/alexanderbez/juno/db"
 	"github.com/alexanderbez/juno/processor"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	tmtypes "github.com/tendermint/tendermint/types"
+)
+
+const (
+	logLevelJSON = "json"
+	logLevelText = "text"
 )
 
 var (
 	startHeight int64
 	workerCount int16
+	logLevel    string
+	logFormat   string
 
 	wg sync.WaitGroup
 )
@@ -41,6 +49,8 @@ them to compose more aggregate and complex queries.`,
 func init() {
 	rootCmd.PersistentFlags().Int64Var(&startHeight, "start-height", 2, "sync missing or failed blocks starting from a given height")
 	rootCmd.PersistentFlags().Int16Var(&workerCount, "workers", 1, "number of workers to run concurrently")
+	rootCmd.PersistentFlags().StringVar(&logLevel, "log-level", zerolog.InfoLevel.String(), "logging level")
+	rootCmd.PersistentFlags().StringVar(&logFormat, "log-format", logLevelJSON, "logging format; must be either json or text")
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -53,6 +63,24 @@ func Execute() {
 }
 
 func junoCmdHandler(cmd *cobra.Command, args []string) error {
+	logLvl, err := zerolog.ParseLevel(logLevel)
+	if err != nil {
+		return err
+	}
+
+	zerolog.SetGlobalLevel(logLvl)
+
+	switch logFormat {
+	case logLevelJSON:
+		// JSON is the default logging format
+
+	case logLevelText:
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+
+	default:
+		return fmt.Errorf("invalid logging format: %s", logFormat)
+	}
+
 	cfgFile := args[0]
 	cfg := config.ParseConfig(cfgFile)
 
@@ -87,7 +115,7 @@ func junoCmdHandler(cmd *cobra.Command, args []string) error {
 	// Start each blocking worker in a go-routine where the worker consumes jobs
 	// off of the export queue.
 	for i, w := range workers {
-		log.Printf("starting worker %d...\n", i+1)
+		log.Info().Int("number", i+1).Msg("starting worker...")
 
 		go w.Start()
 	}
@@ -108,10 +136,10 @@ func junoCmdHandler(cmd *cobra.Command, args []string) error {
 func enqueueMissingBlocks(exportQueue processor.Queue, cp client.ClientProxy) {
 	latestBlockHeight, err := cp.LatestHeight()
 	if err != nil {
-		log.Fatal(errors.Wrap(err, "failed to get lastest block from RPC client"))
+		log.Fatal().Err(errors.Wrap(err, "failed to get lastest block from RPC client"))
 	}
 
-	log.Println("syncing missing blocks...")
+	log.Info().Msg("syncing missing blocks...")
 
 	for i := startHeight; i <= latestBlockHeight; i++ {
 		if i == 1 {
@@ -119,10 +147,7 @@ func enqueueMissingBlocks(exportQueue processor.Queue, cp client.ClientProxy) {
 			continue
 		}
 
-		if i%10 == 0 {
-			log.Printf("enqueueing missing block %d\n", i)
-		}
-
+		log.Info().Int64("height", i).Msg("enqueueing missing block")
 		exportQueue <- i
 	}
 }
@@ -135,19 +160,16 @@ func startNewBlockListener(exportQueue processor.Queue, cp client.ClientProxy) {
 	defer cancel()
 
 	if err != nil {
-		log.Fatal(errors.Wrap(err, "failed to subscribe to new blocks"))
+		log.Fatal().Err(errors.Wrap(err, "failed to subscribe to new blocks"))
 	}
 
-	log.Println("listening for new block events...")
+	log.Info().Msg("listening for new block events...")
 
 	for e := range eventCh {
 		newBlock := e.Data.(tmtypes.EventDataNewBlock).Block
 		height := newBlock.Header.Height
 
-		if height%10 == 0 {
-			log.Printf("enqueueing new block %d\n", height)
-		}
-
+		log.Info().Int64("height", height).Msg("enqueueing new block")
 		exportQueue <- height
 	}
 }
@@ -162,7 +184,7 @@ func trapSignal() {
 
 	go func() {
 		sig := <-sigCh
-		log.Printf("caught signal: %+v; shutting down...\n", sig)
+		log.Info().Str("signal", sig.String()).Msg("caught signal; shutting down...")
 		defer wg.Done()
 	}()
 }
