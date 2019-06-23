@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- Added additional indexes to the `pre_commit` table.
+
+### Changed
+
+- Updated `Database` to not check if a validator exists; use `ON CONFLICT DO NOTHING`
+instead.
+- Use `zerolog` logger with `--log-level` and `--log-format` CLI options over the
+stdlib `log` package.
+
 ## [0.0.1] - 2019-06-21
 
 ### Added

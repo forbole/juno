@@ -4,13 +4,13 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"fmt"
-	"log"
 
 	junocdc "github.com/alexanderbez/juno/codec"
 	"github.com/alexanderbez/juno/config"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	_ "github.com/lib/pq" // nolint
+	"github.com/rs/zerolog/log"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
@@ -69,17 +69,15 @@ func (db *Database) HasValidator(addr string) (bool, error) {
 	return res, err
 }
 
-// SetValidator stores a validator and returns the resulting record ID. An error
-// is returned if the operation fails.
-func (db *Database) SetValidator(addr, pk string) (uint64, error) {
-	var id uint64
-
-	err := db.QueryRow(
-		"INSERT INTO validator (address, consensus_pubkey) VALUES ($1, $2) RETURNING id;",
+// SetValidator stores a validator if it does not already exist. An error is
+// returned if the operation fails.
+func (db *Database) SetValidator(addr, pk string) error {
+	_, err := db.Exec(
+		"INSERT INTO validator (address, consensus_pubkey) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING id;",
 		addr, pk,
-	).Scan(&id)
+	)
 
-	return id, err
+	return err
 }
 
 // SetPreCommit stores a validator's pre-commit and returns the resulting record
@@ -197,33 +195,28 @@ func (db *Database) ExportBlock(b *tmctypes.ResultBlock, txs []sdk.TxResponse, v
 	// Set the block's proposer if it does not already exist. This may occur if
 	// the proposer has never signed before.
 	proposerAddr := b.Block.ProposerAddress.String()
-	ok, err := db.HasValidator(proposerAddr)
-	if err != nil {
-		log.Printf("failed to query for validator %s: %s\n", proposerAddr, err)
+
+	val := findValidatorByAddr(proposerAddr, vals)
+	if val == nil {
+		err := fmt.Errorf("failed to find validator by address %s for block %d", proposerAddr, b.Block.Height)
+		log.Info().Err(err)
 		return err
 	}
 
-	if !ok {
-		val := findValidatorByAddr(proposerAddr, vals)
-		if val == nil {
-			err := fmt.Errorf("failed to find validator by address %s for block %d\n", proposerAddr, b.Block.Height)
-			log.Println(err)
-			return err
-		}
-
-		if err := db.ExportValidator(val); err != nil {
-			return err
-		}
+	if err := db.ExportValidator(val); err != nil {
+		return err
 	}
 
 	if _, err := db.SetBlock(b, totalGas, preCommits); err != nil {
-		log.Printf("failed to persist block %d: %s\n", b.Block.Height, err)
+		err = fmt.Errorf("failed to persist block %d: %s", b.Block.Height, err)
+		log.Info().Err(err)
 		return err
 	}
 
 	for _, tx := range txs {
 		if _, err := db.SetTx(tx); err != nil {
-			log.Printf("failed to persist transaction %s: %s\n", tx.TxHash, err)
+			err = fmt.Errorf("failed to persist transaction %s: %s", tx.TxHash, err)
+			log.Info().Err(err)
 			return err
 		}
 	}
@@ -239,12 +232,14 @@ func (db *Database) ExportValidator(val *tmtypes.Validator) error {
 
 	consPubKey, err := sdk.Bech32ifyConsPub(val.PubKey) // nolint: typecheck
 	if err != nil {
-		log.Printf("failed to convert validator public key %s: %s\n", valAddr, err)
+		err = fmt.Errorf("failed to convert validator public key %s: %s", valAddr, err)
+		log.Info().Err(err)
 		return err
 	}
 
-	if _, err := db.SetValidator(valAddr, consPubKey); err != nil {
-		log.Printf("failed to persist validator %s: %s\n", valAddr, err)
+	if err := db.SetValidator(valAddr, consPubKey); err != nil {
+		err = fmt.Errorf("failed to persist validator %s: %s", valAddr, err)
+		log.Info().Err(err)
 		return err
 	}
 
@@ -259,28 +254,21 @@ func (db *Database) ExportPreCommits(commit *tmtypes.Commit, vals *tmctypes.Resu
 	for _, pc := range commit.Precommits {
 		if pc != nil {
 			valAddr := pc.ValidatorAddress.String()
-			ok, err := db.HasValidator(valAddr)
-			if err != nil {
-				log.Printf("failed to query for validator %s: %s\n", valAddr, err)
-				return err
-			}
 
 			val := findValidatorByAddr(valAddr, vals)
 			if val == nil {
-				err := fmt.Errorf("failed to find validator by address %s for block %d\n", valAddr, commit.Height())
-				log.Println(err)
+				err := fmt.Errorf("failed to find validator by address %s for block %d", valAddr, commit.Height())
+				log.Info().Err(err)
 				return err
 			}
 
-			// persist the validator if we have not seen them before
-			if !ok {
-				if err := db.ExportValidator(val); err != nil {
-					return err
-				}
+			if err := db.ExportValidator(val); err != nil {
+				return err
 			}
 
 			if _, err := db.SetPreCommit(pc, val.VotingPower, val.ProposerPriority); err != nil {
-				log.Printf("failed to persist pre-commit for validator %s: %s\n", valAddr, err)
+				err = fmt.Errorf("failed to persist pre-commit for validator %s: %s", valAddr, err)
+				log.Info().Err(err)
 				return err
 			}
 		}

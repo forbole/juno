@@ -11,6 +11,7 @@ require (
 	github.com/lib/pq v1.0.0
 	github.com/pkg/errors v0.8.1
 	github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a // indirect
+	github.com/rs/zerolog v1.14.3
 	github.com/spf13/cobra v0.0.5
 	github.com/syndtr/goleveldb v1.0.0 // indirect
 	github.com/tendermint/iavl v0.12.2 // indirect
