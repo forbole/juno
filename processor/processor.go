@@ -31,9 +31,9 @@ func NewWorker(db *db.Database, cp client.ClientProxy, q Queue) Worker {
 // given worker queue. Any failed job is logged and re-enqueued.
 func (w Worker) Start() {
 	for i := range w.queue {
-		if err := w.process(i); err != nil {
-			log.Info().Int64("height", i).Msg("processing block")
+		log.Info().Int64("height", i).Msg("processing block")
 
+		if err := w.process(i); err != nil {
 			// re-enqueue any failed job
 			// TODO: Implement exponential backoff or max retries for a block height.
 			go func() {
