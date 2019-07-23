@@ -35,7 +35,7 @@ database instance and a Tendermint RPC node.
 Example:
 
 ```toml
-node = "<rpc-ip/host>:<rpc-port>"
+rpc_node = "<rpc-ip/host>:<rpc-port>"
 client_node = "http://<client-ip/host>:<client-port>"
 
 [database]
