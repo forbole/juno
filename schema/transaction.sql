@@ -10,7 +10,7 @@ CREATE TABLE transaction (
     gas_used integer DEFAULT 0,
     height integer NOT NULL REFERENCES block(height),
     txhash character varying(64) NOT NULL UNIQUE,
-    tags jsonb DEFAULT '[]'::jsonb,
+    events jsonb DEFAULT '[]'::jsonb,
     messages jsonb NOT NULL DEFAULT '[]'::jsonb,
     fee jsonb NOT NULL DEFAULT '{}'::jsonb,
     signatures jsonb NOT NULL DEFAULT '[]'::jsonb,

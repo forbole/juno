@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Update SDK version to v0.36.0
+  - The `transaction` schema now uses `events` instead of `tags`
+- Improved error messages and logs
+
+### Added
+
+- Add support for manual PostgreSQL SSL mode configuration
+
+### Fixed
+
+- Fixed `db.OpenDB` to handle no password correctly
+
 ## [0.0.3] - 2019-06-23
 
 ### Fixed

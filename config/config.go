@@ -22,6 +22,7 @@ type DatabaseConfig struct {
 	Name     string `toml:"name"`
 	User     string `toml:"user"`
 	Password string `toml:"password"`
+	SSLMode  string `toml:"ssl_mode"`
 }
 
 // ParseConfig attempts to read and parse a Juno config from the given file path.

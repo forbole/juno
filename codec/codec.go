@@ -1,8 +1,8 @@
 package codec
 
 import (
-	"github.com/cosmos/cosmos-sdk/cmd/gaia/app"
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/simapp"
 )
 
 // Codec is the application-wide Amino codec and is initialized upon package
@@ -10,6 +10,6 @@ import (
 var Codec *codec.Codec
 
 func init() {
-	Codec = app.MakeCodec()
+	Codec = simapp.MakeCodec()
 	Codec.Seal()
 }

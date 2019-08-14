@@ -7,12 +7,13 @@ import (
 
 	junocdc "github.com/alexanderbez/juno/codec"
 	"github.com/alexanderbez/juno/config"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
 	_ "github.com/lib/pq" // nolint
 	"github.com/rs/zerolog/log"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth"
 )
 
 // Database defines a wrapper around a SQL database and implements functionality
@@ -25,10 +26,19 @@ type Database struct {
 // from config. It returns a database connection handle or an error if the
 // connection fails.
 func OpenDB(cfg config.Config) (*Database, error) {
+	sslMode := "disable"
+	if cfg.DB.SSLMode != "" {
+		sslMode = cfg.DB.SSLMode
+	}
+
 	connStr := fmt.Sprintf(
-		"host=%s port=%d dbname=%s user=%s password=%s sslmode=require",
-		cfg.DB.Host, cfg.DB.Port, cfg.DB.Name, cfg.DB.User, cfg.DB.Password,
+		"host=%s port=%d dbname=%s user=%s sslmode=%s",
+		cfg.DB.Host, cfg.DB.Port, cfg.DB.Name, cfg.DB.User, sslMode,
 	)
+
+	if cfg.DB.Password != "" {
+		connStr += fmt.Sprintf(" password=%s", cfg.DB.Password)
+	}
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -131,7 +141,7 @@ func (db *Database) SetTx(tx sdk.TxResponse) (uint64, error) {
 	var id uint64
 
 	sqlStatement := `
-	INSERT INTO transaction (timestamp, gas_wanted, gas_used, height, txhash, tags, messages, fee, signatures, memo)
+	INSERT INTO transaction (timestamp, gas_wanted, gas_used, height, txhash, events, messages, fee, signatures, memo)
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 	RETURNING id;
 	`
@@ -141,9 +151,9 @@ func (db *Database) SetTx(tx sdk.TxResponse) (uint64, error) {
 		return 0, fmt.Errorf("unsupported tx type: %T", tx.Tx)
 	}
 
-	tagsBz, err := junocdc.Codec.MarshalJSON(tx.Tags)
+	eventsBz, err := junocdc.Codec.MarshalJSON(tx.Events)
 	if err != nil {
-		return 0, fmt.Errorf("failed to JSON encode tx tags: %s", err)
+		return 0, fmt.Errorf("failed to JSON encode tx events: %s", err)
 	}
 
 	msgsBz, err := junocdc.Codec.MarshalJSON(stdTx.GetMsgs())
@@ -178,7 +188,7 @@ func (db *Database) SetTx(tx sdk.TxResponse) (uint64, error) {
 
 	err = db.QueryRow(
 		sqlStatement,
-		tx.Timestamp, tx.GasWanted, tx.GasUsed, tx.Height, tx.TxHash, string(tagsBz),
+		tx.Timestamp, tx.GasWanted, tx.GasUsed, tx.Height, tx.TxHash, string(eventsBz),
 		string(msgsBz), string(feeBz), string(sigsBz), stdTx.GetMemo(),
 	).Scan(&id)
 
@@ -199,7 +209,7 @@ func (db *Database) ExportBlock(b *tmctypes.ResultBlock, txs []sdk.TxResponse, v
 	val := findValidatorByAddr(proposerAddr, vals)
 	if val == nil {
 		err := fmt.Errorf("failed to find validator by address %s for block %d", proposerAddr, b.Block.Height)
-		log.Info().Err(err)
+		log.Error().Str("validator", proposerAddr).Int64("height", b.Block.Height).Msg("failed to find validator by address")
 		return err
 	}
 
@@ -208,15 +218,13 @@ func (db *Database) ExportBlock(b *tmctypes.ResultBlock, txs []sdk.TxResponse, v
 	}
 
 	if _, err := db.SetBlock(b, totalGas, preCommits); err != nil {
-		err = fmt.Errorf("failed to persist block %d: %s", b.Block.Height, err)
-		log.Info().Err(err)
+		log.Error().Err(err).Int64("height", b.Block.Height).Msg("failed to persist block")
 		return err
 	}
 
 	for _, tx := range txs {
 		if _, err := db.SetTx(tx); err != nil {
-			err = fmt.Errorf("failed to persist transaction %s: %s", tx.TxHash, err)
-			log.Info().Err(err)
+			log.Error().Err(err).Str("hash", tx.TxHash).Msg("failed to persist transaction")
 			return err
 		}
 	}
@@ -232,14 +240,12 @@ func (db *Database) ExportValidator(val *tmtypes.Validator) error {
 
 	consPubKey, err := sdk.Bech32ifyConsPub(val.PubKey) // nolint: typecheck
 	if err != nil {
-		err = fmt.Errorf("failed to convert validator public key %s: %s", valAddr, err)
-		log.Info().Err(err)
+		log.Error().Err(err).Str("validator", valAddr).Msg("failed to convert validator public key")
 		return err
 	}
 
 	if err := db.SetValidator(valAddr, consPubKey); err != nil {
-		err = fmt.Errorf("failed to persist validator %s: %s", valAddr, err)
-		log.Info().Err(err)
+		log.Error().Err(err).Str("validator", valAddr).Msg("failed to persist validator")
 		return err
 	}
 
@@ -258,7 +264,7 @@ func (db *Database) ExportPreCommits(commit *tmtypes.Commit, vals *tmctypes.Resu
 			val := findValidatorByAddr(valAddr, vals)
 			if val == nil {
 				err := fmt.Errorf("failed to find validator by address %s for block %d", valAddr, commit.Height())
-				log.Info().Err(err)
+				log.Error().Msg(err.Error())
 				return err
 			}
 
@@ -267,8 +273,7 @@ func (db *Database) ExportPreCommits(commit *tmtypes.Commit, vals *tmctypes.Resu
 			}
 
 			if _, err := db.SetPreCommit(pc, val.VotingPower, val.ProposerPriority); err != nil {
-				err = fmt.Errorf("failed to persist pre-commit for validator %s: %s", valAddr, err)
-				log.Info().Err(err)
+				log.Error().Err(err).Str("validator", valAddr).Msg("failed to persist validator pre-commit")
 				return err
 			}
 		}

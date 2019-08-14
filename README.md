@@ -36,7 +36,7 @@ Example:
 
 ```toml
 rpc_node = "<rpc-ip/host>:<rpc-port>"
-client_node = "http://<client-ip/host>:<client-port>"
+client_node = "<client-ip/host>:<client-port>"
 
 [database]
 host = "<db-host>"
@@ -44,6 +44,7 @@ port = <db-port>
 name = "<db-name>"
 user = "<db-user>"
 password = "<db-password>"
+ssl_mode = "<ssl-mode>"
 ```
 
 To install the binary run `make install`.
