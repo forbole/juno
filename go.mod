@@ -11,7 +11,9 @@ require (
 	github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a // indirect
 	github.com/rs/zerolog v1.14.3
 	github.com/spf13/cobra v0.0.5
+	github.com/spf13/viper v1.3.2
 	github.com/tendermint/tendermint v0.32.2
 	golang.org/x/crypto v0.0.0-20190325154230-a5d413f7728c // indirect
 	golang.org/x/sys v0.0.0-20190322080309-f49334f85ddc // indirect
+	gopkg.in/yaml.v2 v2.2.2
 )

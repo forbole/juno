@@ -51,6 +51,8 @@ func init() {
 	rootCmd.PersistentFlags().Int16Var(&workerCount, "workers", 1, "number of workers to run concurrently")
 	rootCmd.PersistentFlags().StringVar(&logLevel, "log-level", zerolog.InfoLevel.String(), "logging level")
 	rootCmd.PersistentFlags().StringVar(&logFormat, "log-format", logLevelJSON, "logging format; must be either json or text")
+
+	rootCmd.AddCommand(getVersionCmd())
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

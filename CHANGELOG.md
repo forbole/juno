@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 
 - Add support for manual PostgreSQL SSL mode configuration
+- Add `version` command to display Juno version
 
 ### Fixed
 

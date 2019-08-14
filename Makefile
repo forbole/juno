@@ -1,6 +1,8 @@
-TOOLS_DESTDIR  				?= $(GOPATH)/bin
-GOLANGCI_LINT  				= $(TOOLS_DESTDIR)/golangci-lint
-GOIMPORTS      				= $(TOOLS_DESTDIR)/goimports
+VERSION               := $(shell echo $(shell git describe --tags) | sed 's/^v//')
+COMMIT                := $(shell git log -1 --format='%H')
+TOOLS_DESTDIR         ?= $(GOPATH)/bin
+GOLANGCI_LINT         = $(TOOLS_DESTDIR)/golangci-lint
+GOIMPORTS             = $(TOOLS_DESTDIR)/goimports
 GOLANGCI_LINT_VERSION := v1.16.0
 GOLANGCI_LINT_HASHSUM := ac897cadc180bf0c1a4bf27776c410debad27205b22856b861d41d39d06509cf
 
@@ -12,6 +14,11 @@ all: ci-lint ci-test install
 ###############################################################################
 # Build / Install
 ###############################################################################
+
+LD_FLAGS = -X github.com/alexanderbez/juno/cmd.Version=$(VERSION) \
+	-X github.com/alexanderbez/juno/cmd.Commit=$(COMMIT)
+
+BUILD_FLAGS := -ldflags '$(LD_FLAGS)'
 
 build: go.sum
 ifeq ($(OS),Windows_NT)
