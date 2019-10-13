@@ -1,8 +1,8 @@
 package processor
 
 import (
-	"github.com/alexanderbez/juno/client"
-	"github.com/alexanderbez/juno/db"
+	"github.com/fissionlabsio/juno/client"
+	"github.com/fissionlabsio/juno/db"
 	"github.com/rs/zerolog/log"
 )
 

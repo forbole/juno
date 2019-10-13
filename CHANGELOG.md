@@ -71,8 +71,8 @@ stdlib `log` package.
 
 <!-- Release links -->
 
-[Unreleased]: https://github.com/alexanderbez/juno/compare/v0.0.4...HEAD
-[0.0.4]: https://github.com/alexanderbez/juno/releases/tag/v0.0.4
-[0.0.3]: https://github.com/alexanderbez/juno/releases/tag/v0.0.3
-[0.0.2]: https://github.com/alexanderbez/juno/releases/tag/v0.0.2
-[0.0.1]: https://github.com/alexanderbez/juno/releases/tag/v0.0.1
+[Unreleased]: https://github.com/fissionlabsio/juno/compare/v0.0.4...HEAD
+[0.0.4]: https://github.com/fissionlabsio/juno/releases/tag/v0.0.4
+[0.0.3]: https://github.com/fissionlabsio/juno/releases/tag/v0.0.3
+[0.0.2]: https://github.com/fissionlabsio/juno/releases/tag/v0.0.2
+[0.0.1]: https://github.com/fissionlabsio/juno/releases/tag/v0.0.1

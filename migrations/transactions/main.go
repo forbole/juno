@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/alexanderbez/juno/client"
-	"github.com/alexanderbez/juno/config"
-	"github.com/alexanderbez/juno/db"
+	"github.com/fissionlabsio/juno/client"
+	"github.com/fissionlabsio/juno/config"
+	"github.com/fissionlabsio/juno/db"
 	"github.com/pkg/errors"
 )
 

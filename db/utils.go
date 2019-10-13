@@ -3,10 +3,9 @@ package db
 import (
 	"strings"
 
-	"github.com/alexanderbez/juno/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
-
+	"github.com/fissionlabsio/juno/codec"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 )

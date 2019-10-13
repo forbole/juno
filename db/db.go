@@ -5,8 +5,8 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	junocdc "github.com/alexanderbez/juno/codec"
-	"github.com/alexanderbez/juno/config"
+	junocdc "github.com/fissionlabsio/juno/codec"
+	"github.com/fissionlabsio/juno/config"
 	_ "github.com/lib/pq" // nolint
 	"github.com/rs/zerolog/log"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"

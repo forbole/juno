@@ -49,6 +49,8 @@ ssl_mode = "<ssl-mode>"
 
 To install the binary run `make install`.
 
+**Note**: Requires [Go 1.13+](https://golang.org/dl/)
+
 ## Usage
 
 Juno internally runs a single worker that consumes from a single queue. The
