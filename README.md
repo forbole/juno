@@ -1,7 +1,7 @@
 # Juno
 
-[![Build Status](https://travis-ci.org/alexanderbez/juno.svg?branch=master)](https://travis-ci.org/alexanderbez/juno)
-[![Go Report Card](https://goreportcard.com/badge/github.com/alexanderbez/juno)](https://goreportcard.com/report/github.com/alexanderbez/juno)
+[![Build Status](https://travis-ci.org/fissionlabsio/juno.svg?branch=master)](https://travis-ci.org/fissionlabsio/juno)
+[![Go Report Card](https://goreportcard.com/badge/github.com/fissionlabsio/juno)](https://goreportcard.com/report/github.com/fissionlabsio/juno)
 
 > Juno is a Cosmos Hub blockchain data aggregator and exporter that provides the
 > ability for developers and clients to query for indexed chain data.
