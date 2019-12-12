@@ -20,15 +20,15 @@ BUILD_FLAGS := -ldflags '$(LD_FLAGS)'
 
 build: go.sum
 ifeq ($(OS),Windows_NT)
-	@echo "Building juno binary..."
+	@echo "building juno binary..."
 	@go build -mod=readonly $(BUILD_FLAGS) -o build/juno.exe .
 else
-	@echo "Building juno binary..."
+	@echo "building juno binary..."
 	@go build -mod=readonly $(BUILD_FLAGS) -o build/juno .
 endif
 
 install: go.sum
-	@echo "Installing juno binary..."
+	@echo "installing juno binary..."
 	@go install -mod=readonly $(BUILD_FLAGS) .
 
 ###############################################################################
@@ -42,7 +42,7 @@ tools: tools-stamp
 
 golangci-lint: $(GOLANGCI_LINT)
 $(GOLANGCI_LINT): $(mkfile_dir)/contrib/install-golangci-lint.sh
-	@echo "Installing golangci-lint..."
+	@echo "installing golangci-lint..."
 	@bash $(mkfile_dir)/contrib/install-golangci-lint.sh $(TOOLS_DESTDIR) $(GOLANGCI_LINT_HASHSUM)
 
 ###############################################################################
@@ -50,22 +50,22 @@ $(GOLANGCI_LINT): $(mkfile_dir)/contrib/install-golangci-lint.sh
 ###############################################################################
 
 coverage:
-	@echo "Viewing test coverage..."
+	@echo "viewing test coverage..."
 	@go tool cover --html=coverage.out
 
 ci-test:
-	@echo "Executing unit tests..."
+	@echo "executing unit tests..."
 	@go test -mod=readonly -v -coverprofile coverage.out ./... 
 
-ci-lint: tools
-	@echo "Running GolangCI-Lint..."
+ci-lint:
+	@echo "running GolangCI-Lint..."
 	@GO111MODULE=on golangci-lint run
-	@echo "Formatting..."
+	@echo "formatting..."
 	@find . -name '*.go' -type f -not -path "*.git*" | xargs gofmt -d -s
-	@echo "Verifying modules..."
+	@echo "verifying modules..."
 	@go mod verify
 
 clean:
 	rm -f tools-stamp ./build/**
 
-.PHONY: ci-lint tools tools-stamp coverage clean
+.PHONY: install build ci-test ci-lint tools tools-stamp coverage clean
