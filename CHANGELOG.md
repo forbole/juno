@@ -27,6 +27,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.0.5] - 2019-12-12
+
+- Update SDK version to v0.37.4
+- Update Tendermint version to v0.32.7
+- Cleanup Makefile and TravisCI config
+
 ## [0.0.4] - 2019-08-14
 
 ### Changed
@@ -71,7 +77,8 @@ stdlib `log` package.
 
 <!-- Release links -->
 
-[Unreleased]: https://github.com/fissionlabsio/juno/compare/v0.0.4...HEAD
+[Unreleased]: https://github.com/fissionlabsio/juno/compare/v0.0.5...HEAD
+[0.0.5]: https://github.com/fissionlabsio/juno/releases/tag/v0.0.5
 [0.0.4]: https://github.com/fissionlabsio/juno/releases/tag/v0.0.4
 [0.0.3]: https://github.com/fissionlabsio/juno/releases/tag/v0.0.3
 [0.0.2]: https://github.com/fissionlabsio/juno/releases/tag/v0.0.2
