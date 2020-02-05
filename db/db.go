@@ -169,15 +169,20 @@ func (db *Database) SetTx(tx sdk.TxResponse) (uint64, error) {
 	// convert Tendermint signatures into a more human-readable format
 	sigs := make([]signature, len(stdTx.GetSignatures()), len(stdTx.GetSignatures()))
 	for i, sig := range stdTx.GetSignatures() {
-		consPubKey, err := sdk.Bech32ifyConsPub(sig.PubKey) // nolint: typecheck
+		addr, err := sdk.AccAddressFromHex(sig.Address().String())
 		if err != nil {
-			return 0, fmt.Errorf("failed to convert validator public key %s: %s\n", sig.PubKey, err)
+			return 0, fmt.Errorf("failed to convert account address %s: %s\n", sig.Address(), err)
+		}
+
+		pubkey, err := sdk.Bech32ifyAccPub(sig.PubKey) // nolint: typecheck
+		if err != nil {
+			return 0, fmt.Errorf("failed to convert account public key %X: %s\n", sig.PubKey.Bytes(), err)
 		}
 
 		sigs[i] = signature{
-			Address:   sig.Address().String(),
+			Address:   addr.String(),
 			Signature: base64.StdEncoding.EncodeToString(sig.Signature),
-			Pubkey:    consPubKey,
+			Pubkey:    pubkey,
 		}
 	}
 
@@ -224,7 +229,7 @@ func (db *Database) ExportBlock(b *tmctypes.ResultBlock, txs []sdk.TxResponse, v
 
 	for _, tx := range txs {
 		if _, err := db.SetTx(tx); err != nil {
-			log.Error().Err(err).Str("hash", tx.TxHash).Msg("failed to persist transaction")
+			log.Error().Err(err).Int64("height", b.Block.Height).Str("hash", tx.TxHash).Msg("failed to persist transaction")
 			return err
 		}
 	}

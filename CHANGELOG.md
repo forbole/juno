@@ -27,6 +27,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Update SDK version to v0.37.6
+
+### Fixed
+
+- Fixed Tendermint RPC connection by providing a manual HTTP read timeout.
+- Fixed `Pubkey` in the `signature` type to use the correct account Bech32 prefix.
+- Fixed `Address` in the `signature` type to use the correct account Bech32 prefix.
+
 ## [0.0.5] - 2019-12-12
 
 - Update SDK version to v0.37.4
