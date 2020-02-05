@@ -27,6 +27,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.0.6] - 2020-02-05
+
 ### Changed
 
 - Update SDK version to v0.37.6
@@ -87,7 +89,8 @@ stdlib `log` package.
 
 <!-- Release links -->
 
-[Unreleased]: https://github.com/fissionlabsio/juno/compare/v0.0.5...HEAD
+[Unreleased]: https://github.com/fissionlabsio/juno/compare/v0.0.6...HEAD
+[0.0.6]: https://github.com/fissionlabsio/juno/releases/tag/v0.0.6
 [0.0.5]: https://github.com/fissionlabsio/juno/releases/tag/v0.0.5
 [0.0.4]: https://github.com/fissionlabsio/juno/releases/tag/v0.0.4
 [0.0.3]: https://github.com/fissionlabsio/juno/releases/tag/v0.0.3
