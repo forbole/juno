@@ -3,6 +3,11 @@ COMMIT  := $(shell git log -1 --format='%H')
 
 all: install
 
+LD_FLAGS = -X github.com/angelorc/desmos-parser/cmd.Version=$(VERSION) \
+	-X github.com/angelorc/desmos-parser/cmd.Commit=$(COMMIT)
+
+BUILD_FLAGS := -ldflags '$(LD_FLAGS)'
+
 build: go.sum
 ifeq ($(OS),Windows_NT)
 	@echo "building desmosp binary..."
