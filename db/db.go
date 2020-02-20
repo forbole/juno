@@ -2,14 +2,10 @@ package db
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"github.com/angelorc/desmos-parser/config"
 	"github.com/angelorc/desmos-parser/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"strconv"
 
 	"github.com/desmos-labs/desmos/x/posts"
@@ -20,8 +16,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"time"
-
-	desmoscdc "github.com/angelorc/desmos-parser/codec"
 )
 
 type Database struct {
@@ -106,77 +100,10 @@ func (db *Database) SetBlock(b *tmctypes.ResultBlock) error {
 	return nil
 }
 
-type signature struct {
-	Address   string `json:"address,omitempty"`
-	Pubkey    string `json:"pubkey,omitempty"`
-	Signature string `json:"signature,omitempty"`
-}
-
 func (db *Database) SetTx(tx sdk.TxResponse) error {
-	stdTx, ok := tx.Tx.(auth.StdTx)
-	if !ok {
-		return fmt.Errorf("unsupported tx type: %T", tx.Tx)
-	}
-
-	logsBz, err := desmoscdc.Codec.MarshalJSON(tx.Logs)
-	var logsData []interface{}
-
+	txData, err := types.NewTx(tx)
 	if err != nil {
-		return fmt.Errorf("failed to JSON encode tx logs: %s", err)
-	}
-	if err := json.Unmarshal(logsBz, &logsData); err != nil {
-		return fmt.Errorf("failed to JSON unmarshal tx logs: %s", err)
-	}
-
-	eventsBz, err := desmoscdc.Codec.MarshalJSON(tx.Events)
-	var eventsData []interface{}
-	if err != nil {
-		return fmt.Errorf("failed to JSON encode tx events: %s", err)
-	}
-	if err := json.Unmarshal(eventsBz, &eventsData); err != nil {
-		panic(fmt.Sprintf("error"))
-	}
-
-	msgsBz, err := desmoscdc.Codec.MarshalJSON(stdTx.GetMsgs())
-	if err != nil {
-		return fmt.Errorf("failed to JSON encode tx messages: %s", err)
-	}
-	var msgsData []interface{}
-	if err := json.Unmarshal(msgsBz, &msgsData); err != nil {
-		panic(fmt.Sprintf("error"))
-	}
-
-	feeBz, err := desmoscdc.Codec.MarshalJSON(stdTx.Fee)
-	var feesData interface{}
-	if err != nil {
-		return fmt.Errorf("failed to JSON encode tx fee: %s", err)
-	}
-	if err := json.Unmarshal(feeBz, &feesData); err != nil {
-		panic(err)
-	}
-
-	// convert Tendermint signatures into a more human-readable format
-	sigs := make([]signature, len(stdTx.GetSignatures()), len(stdTx.GetSignatures()))
-	for i, sig := range stdTx.GetSignatures() {
-		consPubKey, err := sdk.Bech32ifyConsPub(sig.PubKey) // nolint: typecheck
-		if err != nil {
-			return fmt.Errorf("failed to convert validator public key %s: %s\n", sig.PubKey, err)
-		}
-
-		sigs[i] = signature{
-			Address:   sig.Address().String(),
-			Signature: base64.StdEncoding.EncodeToString(sig.Signature),
-			Pubkey:    consPubKey,
-		}
-	}
-
-	sigsBz, err := desmoscdc.Codec.MarshalJSON(sigs)
-	var sigsData []interface{}
-	if err != nil {
-		return fmt.Errorf("failed to JSON encode tx signatures: %s", err)
-	}
-	if err := json.Unmarshal(sigsBz, &sigsData); err != nil {
-		panic(fmt.Sprintf("error"))
+		return fmt.Errorf("error SetTx")
 	}
 
 	filter := bson.D{
@@ -184,28 +111,20 @@ func (db *Database) SetTx(tx sdk.TxResponse) error {
 		{"tx_hash", tx.TxHash},
 	}
 
-	update := bson.D{
-		{"$set", bson.D{
-			{"timestamp", tx.Timestamp},
-			{"gas_wanted", tx.GasWanted},
-			{"gas_used", tx.GasUsed},
-			{"height", tx.Height},
-			{"tx_hash", tx.TxHash},
-			{"events", eventsData},
-			{"logs", logsData},
-			{"messages", msgsData},
-			{"fee", feesData},
-			{"signatures", sigsData},
-		}},
-	}
-
 	collection := db.Collection("transactions")
-	if _, err := collection.UpdateOne(context.TODO(), filter, update, options.Update().SetUpsert(true)); err != nil {
+	if _, err := collection.UpdateOne(context.TODO(), filter, txData.ToBSON(), options.Update().SetUpsert(true)); err != nil {
 		return err
 	}
 
-	// messages
-	msgs := stdTx.GetMsgs()
+	if err := db.SetMsgs(tx, txData.Messages); err != nil {
+		log.Error().Err(err).Str("hash", tx.TxHash).Msg("failed to persist messages")
+		return err
+	}
+
+	return nil
+}
+
+func (db *Database) SetMsgs(tx sdk.TxResponse, msgs []sdk.Msg) error {
 	for i, msg := range msgs {
 		if len(tx.Logs) != len(msgs) {
 			log.Error().Msg("msg len is different from logs len")
@@ -216,6 +135,7 @@ func (db *Database) SetTx(tx sdk.TxResponse) error {
 			return nil
 		}
 
+		// MsgCreatePost
 		if msg.Type() == "create_post" {
 			if _, ok := msg.(posts.MsgCreatePost); !ok {
 				err := fmt.Errorf("failed to get msg create post")
@@ -224,13 +144,11 @@ func (db *Database) SetTx(tx sdk.TxResponse) error {
 
 			var postID uint64
 
+			// TODO: test with multiple MsgCreatePost
 			for _, ev := range tx.Events {
 				for _, attr := range ev.Attributes {
 					if attr.Key == "post_id" {
-						postID, err = strconv.ParseUint(attr.Value, 10, 64)
-						if err != nil {
-							return err
-						}
+						postID, _ = strconv.ParseUint(attr.Value, 10, 64)
 					}
 				}
 			}
@@ -245,38 +163,20 @@ func (db *Database) SetTx(tx sdk.TxResponse) error {
 }
 
 func (db *Database) ExportMsgCreatePost(postID uint64, msg posts.MsgCreatePost, timestamp string) error {
-	parentId, err := strconv.ParseUint(msg.ParentID.String(), 10, 64)
+	post, err := types.NewPost(postID, msg, timestamp)
 	if err != nil {
-		return fmt.Errorf("error parsing parent id")
-	}
-
-	t, err := time.Parse("2006-01-02T15:04:05Z07:00", timestamp)
-	if err != nil {
-		return fmt.Errorf("error parsing date")
+		return fmt.Errorf("error on ExportMsgCreatePost")
 	}
 
 	filter := bson.D{
 		{"post_id", postID},
 	}
 
-	post := bson.D{
-		{"$set", types.Post{
-			ID:                primitive.NewObjectID(),
-			PostID:            postID,
-			ParentID:          parentId,
-			Message:           msg.Message,
-			AllowsComments:    msg.AllowsComments,
-			ExternalReference: msg.ExternalReference,
-			Owner:             msg.Creator.String(),
-			Created:           t,
-		}},
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	collection := db.Collection("posts")
-	if _, err := collection.UpdateOne(ctx, filter, post, options.Update().SetUpsert(true)); err != nil {
+	if _, err := collection.UpdateOne(ctx, filter, post.ToBSON(), options.Update().SetUpsert(true)); err != nil {
 		return err
 	}
 
