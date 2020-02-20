@@ -110,7 +110,7 @@ func desmospCmdHandler(cmd *cobra.Command, args []string) error {
 	defer cp.Stop() // nolint: errcheck
 
 	// Init MongoDB
-	db, err := db.OpenDB()
+	db, err := db.OpenDB(cfg)
 	if err != nil {
 		return errors.Wrap(err, "failed to open mongodb connection")
 	}

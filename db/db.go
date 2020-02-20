@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/angelorc/desmos-parser/config"
 	"github.com/angelorc/desmos-parser/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -27,11 +28,11 @@ type Database struct {
 	*mongo.Database
 }
 
-func OpenDB() (*Database, error) {
+func OpenDB(cfg config.Config) (*Database, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	options := options.Client().ApplyURI("mongodb://localhost:27017/desmos?replicaSet=replica01")
+	options := options.Client().ApplyURI(cfg.DB.Uri)
 	client, err := mongo.NewClient(options)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to mongodb connections")
@@ -45,7 +46,7 @@ func OpenDB() (*Database, error) {
 		return nil, errors.Wrap(err, "failed to ping mongodb")
 	}
 
-	mdb := client.Database("desmos")
+	mdb := client.Database(cfg.DB.Name)
 
 	return &Database{mdb}, nil
 }

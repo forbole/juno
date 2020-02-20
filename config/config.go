@@ -17,12 +17,8 @@ type Config struct {
 
 // DatabaseConfig defines all database connection configuration parameters.
 type DatabaseConfig struct {
-	Host     string `toml:"host"`
-	Port     uint64 `toml:"port"`
-	Name     string `toml:"name"`
-	User     string `toml:"user"`
-	Password string `toml:"password"`
-	SSLMode  string `toml:"ssl_mode"`
+	Uri  string `toml:"uri"`
+	Name string `toml:"name"`
 }
 
 // ParseConfig attempts to read and parse a Juno config from the given file path.
