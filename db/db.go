@@ -222,7 +222,20 @@ func (db *Database) SetTx(tx sdk.TxResponse) error {
 				return err
 			}
 
-			if err := db.ExportMsgCreatePost(msg.(posts.MsgCreatePost), tx.Timestamp); err != nil {
+			var postID uint64
+
+			for _, ev := range tx.Events {
+				for _, attr := range ev.Attributes {
+					if attr.Key == "post_id" {
+						postID, err = strconv.ParseUint(attr.Value, 10, 64)
+						if err != nil {
+							return err
+						}
+					}
+				}
+			}
+
+			if err := db.ExportMsgCreatePost(postID, msg.(posts.MsgCreatePost), tx.Timestamp); err != nil {
 				return err
 			}
 		}
@@ -231,9 +244,7 @@ func (db *Database) SetTx(tx sdk.TxResponse) error {
 	return nil
 }
 
-func (db *Database) ExportMsgCreatePost(msg posts.MsgCreatePost, timestamp string) error {
-	// TODO: add post id
-
+func (db *Database) ExportMsgCreatePost(postID uint64, msg posts.MsgCreatePost, timestamp string) error {
 	parentId, err := strconv.ParseUint(msg.ParentID.String(), 10, 64)
 	if err != nil {
 		return fmt.Errorf("error parsing parent id")
@@ -244,21 +255,28 @@ func (db *Database) ExportMsgCreatePost(msg posts.MsgCreatePost, timestamp strin
 		return fmt.Errorf("error parsing date")
 	}
 
-	post := types.Post{
-		ID:                primitive.NewObjectID(),
-		ParentID:          parentId,
-		Message:           msg.Message,
-		AllowsComments:    msg.AllowsComments,
-		ExternalReference: msg.ExternalReference,
-		Owner:             msg.Creator.String(),
-		Created:           t,
+	filter := bson.D{
+		{"post_id", postID},
+	}
+
+	post := bson.D{
+		{"$set", types.Post{
+			ID:                primitive.NewObjectID(),
+			PostID:            postID,
+			ParentID:          parentId,
+			Message:           msg.Message,
+			AllowsComments:    msg.AllowsComments,
+			ExternalReference: msg.ExternalReference,
+			Owner:             msg.Creator.String(),
+			Created:           t,
+		}},
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	collection := db.Collection("posts")
-	if _, err := collection.InsertOne(ctx, post); err != nil {
+	if _, err := collection.UpdateOne(ctx, filter, post, options.Update().SetUpsert(true)); err != nil {
 		return err
 	}
 
