@@ -1,0 +1,2 @@
+rpc_node = "http://lcd.morpheus.desmos.network:26657"
+client_node = "http://rpc.morpheus.desmos.network:1317"
