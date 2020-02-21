@@ -50,6 +50,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/desmos-labs/desmos v0.1.1 h1:MeVGUgoJVC/qT3FdftICXmfyJOBzT6WJy6VUErp8Wiw=
 github.com/desmos-labs/desmos v0.1.1/go.mod h1:DzS7AY9KpZUwuxKMlK/o9wm9Lk0wVlINMtpRGFrTszY=
+github.com/desmos-labs/desmos v0.2.0 h1:28VET2oQmLtaC7Odw4hr8w9F0v/jgoWMo5l+b7TU8gg=
+github.com/desmos-labs/desmos v0.2.0/go.mod h1:DzS7AY9KpZUwuxKMlK/o9wm9Lk0wVlINMtpRGFrTszY=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
 github.com/dgryski/go-sip13 v0.0.0-20181026042036-e10d5fee7954/go.mod h1:vAd38F8PWV+bWy6jNmig1y/TA+kYO4g3RSRF0IAv0no=
 github.com/etcd-io/bbolt v1.3.2/go.mod h1:ZF2nL25h33cCyBtcyWeZ2/I3HQOfTP+0PIEvHjkjCrw=

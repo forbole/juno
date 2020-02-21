@@ -4,33 +4,34 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"io/ioutil"
 	"net/http"
 	"time"
 
-	desmospcdc "github.com/angelorc/desmos-parser/codec"
+	"github.com/angelorc/desmos-parser/config"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
 // ClientProxy implements a wrapper around both a Tendermint RPC client and a
-// Cosmos SDK REST client that allows for essential data queries.
+// Cosmos Sdk REST client that allows for essential data queries.
 type ClientProxy struct {
 	rpcClient  rpcclient.Client // Tendermint RPC node
 	clientNode string           // Full node
 	cdc        *codec.Codec
 }
 
-func New(rpcNode, clientNode string) (ClientProxy, error) {
-	rpcClient := rpcclient.NewHTTP(rpcNode, "/websocket")
+func New(cfg config.Config, codec *codec.Codec) (ClientProxy, error) {
+	rpcClient := rpcclient.NewHTTP(cfg.RPCNode, "/websocket")
 
 	if err := rpcClient.Start(); err != nil {
 		return ClientProxy{}, err
 	}
 
-	return ClientProxy{rpcClient, clientNode, desmospcdc.Codec}, nil
+	return ClientProxy{rpcClient: rpcClient, clientNode: cfg.ClientNode, cdc: codec}, nil
 }
 
 // LatestHeight returns the latest block height on the active chain. An error
@@ -71,7 +72,7 @@ func (cp ClientProxy) Validators(height int64) (*tmctypes.ResultValidators, erro
 	return cp.rpcClient.Validators(&height)
 }
 
-// Genesis
+// Genesis returns the genesis state
 func (cp ClientProxy) Genesis() (*tmctypes.ResultGenesis, error) {
 	return cp.rpcClient.Genesis()
 }

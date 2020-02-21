@@ -1,8 +1,8 @@
 package processor
 
 import (
-	"github.com/angelorc/desmos-parser/client"
 	"github.com/angelorc/desmos-parser/db"
+	"github.com/angelorc/desmos-parser/parse/client"
 	"github.com/rs/zerolog/log"
 )
 
@@ -15,7 +15,7 @@ type (
 	Worker struct {
 		cp    client.ClientProxy
 		queue Queue
-		db    *db.Database
+		db    db.Database
 	}
 )
 
@@ -23,7 +23,7 @@ func NewQueue(size int) Queue {
 	return make(chan int64, size)
 }
 
-func NewWorker(cp client.ClientProxy, q Queue, db *db.Database) Worker {
+func NewWorker(cp client.ClientProxy, q Queue, db db.Database) Worker {
 	return Worker{cp, q, db}
 }
 
@@ -48,8 +48,7 @@ func (w Worker) Start() {
 // height and associated metadata and export it to a database. It returns an
 // error if any export process fails.
 func (w Worker) process(height int64) error {
-	ok, err := w.db.HasBlock(height)
-	if ok && err == nil {
+	if exists := w.db.HasBlock(height); exists {
 		log.Debug().Int64("height", height).Msg("skipping already exported block with mongodb")
 		return nil
 	}
@@ -93,5 +92,5 @@ func (w Worker) process(height int64) error {
 		return err
 	}*/
 
-	return w.db.ExportBlock(block, txs)
+	return db.HandleBlock(w.db, block, txs)
 }

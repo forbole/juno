@@ -1,5 +1,5 @@
-rpc_node = "http://lcd.morpheus.desmos.network:26657"
-client_node = "http://rpc.morpheus.desmos.network:1317"
+rpc_node = "http://rpc.morpheus.desmos.network:26657"
+client_node = "http://lcd.morpheus.desmos.network:1317"
 
 [database]
 uri = "mongodb://localhost:27017/desmos?replicaSet=replica01"

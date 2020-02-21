@@ -1,12 +1,16 @@
-package cmd
+package parse
 
 import (
 	"fmt"
-	"github.com/angelorc/desmos-parser/client"
+
 	"github.com/angelorc/desmos-parser/config"
-	"github.com/angelorc/desmos-parser/db"
-	"github.com/angelorc/desmos-parser/processor"
+	"github.com/angelorc/desmos-parser/db/mongo"
+	"github.com/angelorc/desmos-parser/parse/client"
+	"github.com/angelorc/desmos-parser/parse/processor"
+	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/pkg/errors"
+	"github.com/spf13/viper"
+
 	"os"
 	"os/signal"
 	"sync"
@@ -16,7 +20,6 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
@@ -26,102 +29,83 @@ const (
 )
 
 var (
-	startHeight int64
-	workerCount int16
-	logLevel    string
-	logFormat   string
-
 	wg sync.WaitGroup
 )
 
-var rootCmd = &cobra.Command{
-	Use:   "desmos-parser [config-file]",
-	Args:  cobra.ExactArgs(1),
-	Short: "Desmos Parser",
-	RunE:  desmospCmdHandler,
-}
-
-func init() {
-	rootCmd.PersistentFlags().Int64Var(&startHeight, "start-height", 1, "sync missing or failed blocks starting from a given height")
-	rootCmd.PersistentFlags().Int16Var(&workerCount, "workers", 1, "number of workers to run concurrently")
-	rootCmd.PersistentFlags().StringVar(&logLevel, "log-level", zerolog.InfoLevel.String(), "logging level")
-	rootCmd.PersistentFlags().StringVar(&logFormat, "log-format", logLevelJSON, "logging format; must be either json or text")
-
-	rootCmd.AddCommand(getVersionCmd())
-}
-
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+// GetParseCmd returns the command that should be run when we want to start parsing a chain state
+func GetParseCmd(cdc *codec.Codec) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "parse [config-file]",
+		Short: "Start parsing a blockchain using the provided config file",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return parseCmdHandler(cdc, args)
+		},
 	}
+
+	cmd.Flags().Int64(config.FlagStartHeight, 1, "sync missing or failed blocks starting from a given height")
+	cmd.Flags().Int64(config.FlagWorkerCount, 1, "number of workers to run concurrently")
+	cmd.Flags().String(config.FlagLogLevel, zerolog.InfoLevel.String(), "logging level")
+	cmd.Flags().String(config.FlagLogFormat, logLevelJSON, "logging format; must be either json or text")
+
+	return cmd
 }
 
-const (
-	// Bech32PrefixAccAddr defines the Bech32 prefix of an account's address
-	Bech32PrefixAccAddr = "desmos"
-	// Bech32PrefixAccPub defines the Bech32 prefix of an account's public key
-	Bech32PrefixAccPub = Bech32PrefixAccAddr + "pub"
-	// Bech32PrefixValAddr defines the Bech32 prefix of a validator's operator address
-	Bech32PrefixValAddr = Bech32PrefixAccAddr + "valoper"
-	// Bech32PrefixValPub defines the Bech32 prefix of a validator's operator public key
-	Bech32PrefixValPub = Bech32PrefixAccAddr + "valoperpub"
-	// Bech32PrefixConsAddr defines the Bech32 prefix of a consensus node address
-	Bech32PrefixConsAddr = Bech32PrefixAccAddr + "valcons"
-	// Bech32PrefixConsPub defines the Bech32 prefix of a consensus node public key
-	Bech32PrefixConsPub = Bech32PrefixAccAddr + "valconspub"
-)
+// parseCmdHandler represents the function that should be called when the parse command is executed
+func parseCmdHandler(codec *codec.Codec, args []string) error {
 
-func desmospCmdHandler(cmd *cobra.Command, args []string) error {
-	logLvl, err := zerolog.ParseLevel(logLevel)
+	// Init logging level
+	logLvl, err := zerolog.ParseLevel(viper.GetString(config.FlagLogLevel))
 	if err != nil {
 		return err
 	}
-
 	zerolog.SetGlobalLevel(logLvl)
 
+	// Init logging format
+	logFormat := viper.GetString(config.FlagLogFormat)
 	switch logFormat {
 	case logLevelJSON:
 		// JSON is the default logging format
+		break
 
 	case logLevelText:
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+		break
 
 	default:
 		return fmt.Errorf("invalid logging format: %s", logFormat)
 	}
 
-	sdkConfig := sdk.GetConfig()
-	sdkConfig.SetBech32PrefixForAccount(Bech32PrefixAccAddr, Bech32PrefixAccPub)
-	sdkConfig.SetBech32PrefixForValidator(Bech32PrefixValAddr, Bech32PrefixValPub)
-	sdkConfig.SetBech32PrefixForConsensusNode(Bech32PrefixConsAddr, Bech32PrefixConsPub)
-	sdkConfig.Seal()
-
+	// Init config
+	log.Info().Msg("Reading config file")
 	cfgFile := args[0]
-	cfg := config.ParseConfig(cfgFile)
-
-	cp, err := client.New(cfg.RPCNode, cfg.ClientNode)
+	cfg, err := config.ParseConfig(cfgFile)
 	if err != nil {
-		return errors.Wrap(err, "failed to start RPC client")
+		return err
 	}
 
-	defer cp.Stop() // nolint: errcheck
-
-	// Init MongoDB
-	db, err := db.OpenDB(cfg)
+	// Init database
+	log.Info().Msg("Opening database connection")
+	database, err := mongo.Open(*cfg, codec)
 	if err != nil {
 		return errors.Wrap(err, "failed to open mongodb connection")
 	}
-	// End MongoDB
 
-	// create a queue that will collect, aggregate, and export blocks and metadata
+	// Init the client
+	cp, err := client.New(*cfg, codec)
+	if err != nil {
+		return errors.Wrap(err, "failed to start RPC client")
+	}
+	defer cp.Stop() // nolint: errcheck
+
+	// Create a queue that will collect, aggregate, and export blocks and metadata
 	exportQueue := processor.NewQueue(25)
 
+	// Create workers
+	workerCount := viper.GetInt64(config.FlagWorkerCount)
 	workers := make([]processor.Worker, workerCount, workerCount)
 	for i := range workers {
-		workers[i] = processor.NewWorker(cp, exportQueue, db)
+		workers[i] = processor.NewWorker(cp, exportQueue, database)
 	}
 
 	wg.Add(1)
@@ -134,13 +118,13 @@ func desmospCmdHandler(cmd *cobra.Command, args []string) error {
 		go w.Start()
 	}
 
-	// listen for and trap any OS signal to gracefully shutdown and exit
+	// Listen for and trap any OS signal to gracefully shutdown and exit
 	trapSignal()
 
 	go startNewBlockListener(exportQueue, cp)
 	go enqueueMissingBlocks(exportQueue, cp)
 
-	// block main process (signal capture will call WaitGroup's Done)
+	// Block main process (signal capture will call WaitGroup's Done)
 	wg.Wait()
 	return nil
 }
@@ -155,6 +139,7 @@ func enqueueMissingBlocks(exportQueue processor.Queue, cp client.ClientProxy) {
 
 	log.Info().Int64("latestBlockHeight", latestBlockHeight).Msg("syncing missing blocks...")
 
+	startHeight := viper.GetInt64(config.FlagStartHeight)
 	for i := startHeight; i <= latestBlockHeight; i++ {
 		log.Info().Int64("height", i).Msg("enqueueing missing block")
 		exportQueue <- i
