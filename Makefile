@@ -16,10 +16,10 @@ BUILD_FLAGS := -ldflags '$(LD_FLAGS)'
 build: go.sum
 ifeq ($(OS),Windows_NT)
 	@echo "--> Building the parser binaries..."
-	@go build -mod=readonly $(BUILD_FLAGS) -o build/desmosp.exe ./cmd
+	@go build -mod=readonly $(BUILD_FLAGS) -o build/desmosp.exe ./cmd/desmosp
 else
 	@echo "--> Building the parser binaries..."
-	@go build -mod=readonly $(BUILD_FLAGS) -o build/desmosp ./cmd
+	@go build -mod=readonly $(BUILD_FLAGS) -o build/desmosp ./cmd/desmosp
 endif
 
 ########################################
@@ -27,7 +27,7 @@ endif
 
 install: go.sum
 	@echo "--> Installing the parser binaries..."
-	@go install -mod=readonly $(BUILD_FLAGS) ./cmd
+	@go install -mod=readonly $(BUILD_FLAGS) ./cmd/desmosp
 
 ########################################
 ### Tools & dependencies
