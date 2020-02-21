@@ -70,3 +70,6 @@ To run the parser simply execute the following command:
 ```bash
 desmosp parse config.toml
 ```
+
+## Browse data
+If you want to browse the parsed data you can do so by installing a local version of [admingMongo](https://github.com/mrvautin/adminMongo), a nice UI for any Mongo instance. 
