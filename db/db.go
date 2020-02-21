@@ -111,8 +111,13 @@ func (db *Database) SetTx(tx sdk.TxResponse) error {
 		{"tx_hash", tx.TxHash},
 	}
 
+	txBSON, err := txData.ToBSON()
+	if err != nil {
+		return fmt.Errorf("Error TX BSON")
+	}
+
 	collection := db.Collection("transactions")
-	if _, err := collection.UpdateOne(context.TODO(), filter, txData.ToBSON(), options.Update().SetUpsert(true)); err != nil {
+	if _, err := collection.UpdateOne(context.TODO(), filter, txBSON, options.Update().SetUpsert(true)); err != nil {
 		return err
 	}
 

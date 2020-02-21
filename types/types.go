@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -10,6 +11,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"strconv"
 	"time"
+
+	desmoscdc "github.com/angelorc/desmos-parser/codec"
 )
 
 type Tx struct {
@@ -62,10 +65,32 @@ func NewTx(tx sdk.TxResponse) (*Tx, error) {
 	}, nil
 }
 
-func (tx *Tx) ToBSON() bson.D {
-	return bson.D{
-		{"$set", tx},
+func (tx *Tx) ToBSON() (bson.D, error) {
+	msgsBz, err := desmoscdc.Codec.MarshalJSON(tx.Messages)
+	if err != nil {
+		return nil, fmt.Errorf("failed to JSON encode tx messages: %s", err)
 	}
+	var msgsData []interface{}
+	if err := json.Unmarshal(msgsBz, &msgsData); err != nil {
+		panic(fmt.Sprintf("error"))
+	}
+
+	txb := bson.D{
+		{"timestamp", tx.Timestamp},
+		{"gas_wanted", tx.GasWanted},
+		{"gas_used", tx.GasUsed},
+		{"height", tx.Height},
+		{"tx_hash", tx.TxHash},
+		{"event", tx.Events},
+		{"logs", tx.Logs},
+		{"messages", msgsData},
+		{"fee", tx.Fee},
+		{"signatures", tx.Signatures},
+	}
+
+	return bson.D{
+		{"$set", txb},
+	}, nil
 }
 
 type Signature struct {
