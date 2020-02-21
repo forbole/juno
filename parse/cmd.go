@@ -4,9 +4,10 @@ import (
 	"fmt"
 
 	"github.com/angelorc/desmos-parser/config"
-	"github.com/angelorc/desmos-parser/db/mongo"
+	"github.com/angelorc/desmos-parser/db"
 	"github.com/angelorc/desmos-parser/parse/client"
-	"github.com/angelorc/desmos-parser/parse/processor"
+	"github.com/angelorc/desmos-parser/parse/worker"
+	"github.com/angelorc/desmos-parser/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
@@ -33,13 +34,13 @@ var (
 )
 
 // GetParseCmd returns the command that should be run when we want to start parsing a chain state
-func GetParseCmd(cdc *codec.Codec) *cobra.Command {
+func GetParseCmd(cdc *codec.Codec, builder db.Builder) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "parse [config-file]",
 		Short: "Start parsing a blockchain using the provided config file",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return parseCmdHandler(cdc, args)
+			return parseCmdHandler(cdc, builder, args)
 		},
 	}
 
@@ -52,7 +53,7 @@ func GetParseCmd(cdc *codec.Codec) *cobra.Command {
 }
 
 // parseCmdHandler represents the function that should be called when the parse command is executed
-func parseCmdHandler(codec *codec.Codec, args []string) error {
+func parseCmdHandler(codec *codec.Codec, dbBuilder db.Builder, args []string) error {
 
 	// Init logging level
 	logLvl, err := zerolog.ParseLevel(viper.GetString(config.FlagLogLevel))
@@ -84,13 +85,6 @@ func parseCmdHandler(codec *codec.Codec, args []string) error {
 		return err
 	}
 
-	// Init database
-	log.Info().Msg("Opening database connection")
-	database, err := mongo.Open(*cfg, codec)
-	if err != nil {
-		return errors.Wrap(err, "failed to open mongodb connection")
-	}
-
 	// Init the client
 	cp, err := client.New(*cfg, codec)
 	if err != nil {
@@ -99,13 +93,18 @@ func parseCmdHandler(codec *codec.Codec, args []string) error {
 	defer cp.Stop() // nolint: errcheck
 
 	// Create a queue that will collect, aggregate, and export blocks and metadata
-	exportQueue := processor.NewQueue(25)
+	exportQueue := types.NewQueue(25)
+
+	database, err := dbBuilder(*cfg, codec)
+	if err != nil {
+		return errors.Wrap(err, "failed to open mongodb connection")
+	}
 
 	// Create workers
 	workerCount := viper.GetInt64(config.FlagWorkerCount)
-	workers := make([]processor.Worker, workerCount, workerCount)
+	workers := make([]worker.Worker, workerCount, workerCount)
 	for i := range workers {
-		workers[i] = processor.NewWorker(cp, exportQueue, database)
+		workers[i] = worker.NewWorker(cp, exportQueue, *database)
 	}
 
 	wg.Add(1)
@@ -131,7 +130,7 @@ func parseCmdHandler(codec *codec.Codec, args []string) error {
 
 // enqueueMissingBlocks enqueues jobs (block heights) for missed blocks starting
 // at the startHeight up until the latest known height.
-func enqueueMissingBlocks(exportQueue processor.Queue, cp client.ClientProxy) {
+func enqueueMissingBlocks(exportQueue types.Queue, cp client.ClientProxy) {
 	latestBlockHeight, err := cp.LatestHeight()
 	if err != nil {
 		log.Fatal().Err(errors.Wrap(err, "failed to get lastest block from RPC client"))
@@ -149,7 +148,7 @@ func enqueueMissingBlocks(exportQueue processor.Queue, cp client.ClientProxy) {
 // startNewBlockListener subscribes to new block events via the Tendermint RPC
 // and enqueues each new block height onto the provided queue. It blocks as new
 // blocks are incoming.
-func startNewBlockListener(exportQueue processor.Queue, cp client.ClientProxy) {
+func startNewBlockListener(exportQueue types.Queue, cp client.ClientProxy) {
 	eventCh, cancel, err := cp.SubscribeNewBlocks("juno-client")
 	defer cancel()
 

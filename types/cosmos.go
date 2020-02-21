@@ -27,7 +27,7 @@ func NewTx(txResponse sdk.TxResponse) (*Tx, error) {
 	for i, sig := range stdTx.GetSignatures() {
 		sigs[i] = Signature{
 			StdSignature: sig,
-			Address:      sig.Address().String(),
+			Address:      sdk.AccAddress(sig.Address()).String(),
 		}
 	}
 

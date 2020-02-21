@@ -2,14 +2,15 @@ package mongo
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/angelorc/desmos-parser/config"
+	"github.com/angelorc/desmos-parser/db"
 	"github.com/angelorc/desmos-parser/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/desmos-labs/desmos/x/posts"
@@ -21,17 +22,24 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// Database represents a Database instance that relies on a MongoDB instance
-type Database struct {
+// type check to ensure interface is properly implemented
+var _ db.Database = Db{}
+
+// MongoDb represents a MongoDb instance that relies on a MongoDB instance
+type Db struct {
 	mongo *mongo.Database
 	codec *codec.Codec
+	ctx   context.Context
 }
 
-// Open allows to open a new Database instance connection using the specified config
-func Open(cfg config.Config, codec *codec.Codec) (*Database, error) {
+func Builder(cfg config.Config, codec *codec.Codec) (*db.Database, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+	return Open(cfg, codec, ctx)
+}
 
+// Open allows to open a new MongoDb instance connection using the specified config
+func Open(cfg config.Config, codec *codec.Codec, ctx context.Context) (*db.Database, error) {
 	opts := options.Client().ApplyURI(cfg.DB.Uri)
 	client, err := mongo.NewClient(opts)
 	if err != nil {
@@ -46,54 +54,48 @@ func Open(cfg config.Config, codec *codec.Codec) (*Database, error) {
 		return nil, errors.Wrap(err, "failed to ping mongodb")
 	}
 
-	mdb := client.Database(cfg.DB.Name)
-
-	return &Database{mongo: mdb, codec: codec}, nil
+	var mdb db.Database = Db{mongo: client.Database(cfg.DB.Name), codec: codec, ctx: ctx}
+	return &mdb, nil
 }
 
-// HasBlock implements Database
-func (db *Database) HasBlock(height int64) bool {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
+// HasBlock implements MongoDb
+func (db Db) HasBlock(height int64) bool {
 	collection := db.mongo.Collection("blocks")
-	if err := collection.FindOne(ctx, bson.D{{"height", height}}).Err(); err != nil {
+
+	if err := collection.FindOne(db.ctx, bson.D{{"height", height}}).Err(); err != nil {
 		return false
 	}
-
 	return true
 }
 
-// HandleBlock implements Database
-func (db *Database) HandleBlock(b *tmctypes.ResultBlock) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+// SaveBlock implements MongoDb
+func (db Db) SaveBlock(b *tmctypes.ResultBlock) error {
+	var bsonBlock bson.M
+	bytes := db.codec.MustMarshalJSON(b.Block)
+	if err := json.Unmarshal(bytes, &bsonBlock); err != nil {
+		return err
+	}
 
+	// NOTE: Why only this data?
 	filter := bson.D{
 		{"height", b.Block.Height},
 		{"hash", b.Block.Hash().String()},
 	}
 
 	update := bson.D{
-		{"$set", bson.D{
-			{"height", b.Block.Height},
-			{"hash", b.Block.Hash().String()},
-			{"num_txs", b.Block.NumTxs},
-			{"proposer_address", b.Block.ProposerAddress.String()},
-			{"timestamp", b.Block.Time},
-		}},
+		{"$set", bsonBlock},
 	}
 
 	collection := db.mongo.Collection("blocks")
-	if _, err := collection.UpdateOne(ctx, filter, update, options.Update().SetUpsert(true)); err != nil {
+	if _, err := collection.UpdateOne(db.ctx, filter, update, options.Update().SetUpsert(true)); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// HandleTx implements Database
-func (db *Database) HandleTx(tx types.Tx) error {
+// SaveTx implements MongoDb
+func (db Db) SaveTx(tx types.Tx) error {
 	filter := bson.D{
 		{"height", tx.Height},
 		{"tx_hash", tx.TxHash},
@@ -101,7 +103,7 @@ func (db *Database) HandleTx(tx types.Tx) error {
 
 	txBSON, err := ConvertTxToBSONSetDocument(db.codec, tx)
 	if err != nil {
-		return fmt.Errorf("Error TX BSON")
+		return fmt.Errorf("error converting the transaction to a BSON document")
 	}
 
 	collection := db.mongo.Collection("transactions")
@@ -112,8 +114,8 @@ func (db *Database) HandleTx(tx types.Tx) error {
 	return nil
 }
 
-// HandleMsg implements Database
-func (db *Database) HandleMsg(tx types.Tx, index int, msg sdk.Msg) error {
+// SaveMsg implements MongoDb
+func (db Db) SaveMsg(tx types.Tx, index int, msg sdk.Msg) error {
 	if len(tx.Logs) != len(tx.Messages) {
 		log.Error().Msg("msg len is different from logs len")
 		return nil
@@ -146,16 +148,14 @@ func (db *Database) HandleMsg(tx types.Tx, index int, msg sdk.Msg) error {
 	return nil
 }
 
-func (db *Database) handleMsgCreatePost(postID uint64, msg posts.MsgCreatePost) error {
+func (db *Db) handleMsgCreatePost(postID uint64, msg posts.MsgCreatePost) error {
 	// Convert the post to a BSON document
 	post := ConvertPostToBSONSetDocument(types.NewPostFromMsg(postID, msg))
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
 	collection := db.mongo.Collection("posts")
 	filter := bson.D{{"post_id", postID}}
-	_, err := collection.UpdateOne(ctx, filter, post, options.Update().SetUpsert(true))
+
+	_, err := collection.UpdateOne(db.ctx, filter, post, options.Update().SetUpsert(true))
 	if err != nil {
 		return err
 	}

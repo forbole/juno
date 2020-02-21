@@ -1,29 +1,23 @@
-package processor
+package worker
 
 import (
+	"fmt"
+
 	"github.com/angelorc/desmos-parser/db"
 	"github.com/angelorc/desmos-parser/parse/client"
+	"github.com/angelorc/desmos-parser/types"
 	"github.com/rs/zerolog/log"
 )
 
-type (
-	// Queue is a simple type alias for a (buffered) channel of block heights.
-	Queue chan int64
-
-	// Worker defines a job consumer that is responsible for getting and
-	// aggregating block and associated data and exporting it to a database.
-	Worker struct {
-		cp    client.ClientProxy
-		queue Queue
-		db    db.Database
-	}
-)
-
-func NewQueue(size int) Queue {
-	return make(chan int64, size)
+// Worker defines a job consumer that is responsible for getting and
+// aggregating block and associated data and exporting it to a database.
+type Worker struct {
+	cp    client.ClientProxy
+	queue types.Queue
+	db    db.Database
 }
 
-func NewWorker(cp client.ClientProxy, q Queue, db db.Database) Worker {
+func NewWorker(cp client.ClientProxy, q types.Queue, db db.Database) Worker {
 	return Worker{cp, q, db}
 }
 
@@ -92,5 +86,31 @@ func (w Worker) process(height int64) error {
 		return err
 	}*/
 
-	return db.HandleBlock(w.db, block, txs)
+	// Save the block
+	if err := db.SaveBlock(w.db, block, txs); err != nil {
+		return err
+	}
+
+	// Handle all the transactions inside the block
+	for _, tx := range txs {
+		// Convert the transaction to a more easy-to-handle type
+		txData, err := types.NewTx(tx)
+		if err != nil {
+			return fmt.Errorf("error handleTx")
+		}
+
+		// Save the transaction itself
+		if err := db.SaveTx(w.db, *txData); err != nil {
+			return err
+		}
+
+		// Handle all the messages contained inside the transaction
+		for i, msg := range txData.Messages {
+			if err := w.db.SaveMsg(*txData, i, msg); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
