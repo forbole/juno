@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/angelorc/desmos-parser/config"
@@ -13,7 +12,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/desmos-labs/desmos/x/posts"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -27,9 +25,12 @@ var _ db.Database = Db{}
 
 // MongoDb represents a MongoDb instance that relies on a MongoDB instance
 type Db struct {
-	mongo *mongo.Database
-	codec *codec.Codec
-	ctx   context.Context
+	Mongo *mongo.Database
+	Codec *codec.Codec
+}
+
+func BuildCtx() (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.Background(), 5*time.Second)
 }
 
 func Builder(cfg config.Config, codec *codec.Codec) (*db.Database, error) {
@@ -54,24 +55,30 @@ func Open(cfg config.Config, codec *codec.Codec, ctx context.Context) (*db.Datab
 		return nil, errors.Wrap(err, "failed to ping mongodb")
 	}
 
-	var mdb db.Database = Db{mongo: client.Database(cfg.DB.Name), codec: codec, ctx: ctx}
+	var mdb db.Database = Db{Mongo: client.Database(cfg.DB.Name), Codec: codec}
 	return &mdb, nil
 }
 
-// HasBlock implements MongoDb
+// HasBlock implements Database
 func (db Db) HasBlock(height int64) bool {
-	collection := db.mongo.Collection("blocks")
+	ctx, cancel := BuildCtx()
+	defer cancel()
 
-	if err := collection.FindOne(db.ctx, bson.D{{"height", height}}).Err(); err != nil {
+	collection := db.Mongo.Collection("blocks")
+
+	if err := collection.FindOne(ctx, bson.D{{"height", height}}).Err(); err != nil {
 		return false
 	}
 	return true
 }
 
-// SaveBlock implements MongoDb
-func (db Db) SaveBlock(b *tmctypes.ResultBlock) error {
+// SaveBlock implements Database
+func (db Db) SaveBlock(b *tmctypes.ResultBlock, _ []types.Tx) error {
+	ctx, cancel := BuildCtx()
+	defer cancel()
+
 	var bsonBlock bson.M
-	bytes := db.codec.MustMarshalJSON(b.Block)
+	bytes := db.Codec.MustMarshalJSON(b.Block)
 	if err := json.Unmarshal(bytes, &bsonBlock); err != nil {
 		return err
 	}
@@ -86,78 +93,42 @@ func (db Db) SaveBlock(b *tmctypes.ResultBlock) error {
 		{"$set", bsonBlock},
 	}
 
-	collection := db.mongo.Collection("blocks")
-	if _, err := collection.UpdateOne(db.ctx, filter, update, options.Update().SetUpsert(true)); err != nil {
+	collection := db.Mongo.Collection("blocks")
+	if _, err := collection.UpdateOne(ctx, filter, update, options.Update().SetUpsert(true)); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// SaveTx implements MongoDb
+// SaveTx implements Database
 func (db Db) SaveTx(tx types.Tx) error {
+	ctx, cancel := BuildCtx()
+	defer cancel()
+
 	filter := bson.D{
 		{"height", tx.Height},
 		{"tx_hash", tx.TxHash},
 	}
 
-	txBSON, err := ConvertTxToBSONSetDocument(db.codec, tx)
+	txBSON, err := ConvertTxToBSONSetDocument(db.Codec, tx)
 	if err != nil {
 		return fmt.Errorf("error converting the transaction to a BSON document")
 	}
 
-	collection := db.mongo.Collection("transactions")
-	if _, err := collection.UpdateOne(context.TODO(), filter, txBSON, options.Update().SetUpsert(true)); err != nil {
+	collection := db.Mongo.Collection("transactions")
+	if _, err := collection.UpdateOne(ctx, filter, txBSON, options.Update().SetUpsert(true)); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// SaveMsg implements MongoDb
+// SaveMsg implements Database
 func (db Db) SaveMsg(tx types.Tx, index int, msg sdk.Msg) error {
 	if len(tx.Logs) != len(tx.Messages) {
 		log.Error().Msg("msg len is different from logs len")
 		return nil
-	}
-
-	if !tx.Logs[index].Success {
-		log.Info().Msg(fmt.Sprintf("Skipping message at index %d of tx hash %s as it was not successull",
-			index, tx.TxHash))
-		return nil
-	}
-
-	// MsgCreatePost
-	if createPostMsg, ok := msg.(posts.MsgCreatePost); ok {
-		var postID uint64
-
-		// TODO: test with multiple MsgCreatePost
-		for _, ev := range tx.Events {
-			for _, attr := range ev.Attributes {
-				if attr.Key == "post_id" {
-					postID, _ = strconv.ParseUint(attr.Value, 10, 64)
-				}
-			}
-		}
-
-		if err := db.handleMsgCreatePost(postID, createPostMsg); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (db *Db) handleMsgCreatePost(postID uint64, msg posts.MsgCreatePost) error {
-	// Convert the post to a BSON document
-	post := ConvertPostToBSONSetDocument(types.NewPostFromMsg(postID, msg))
-
-	collection := db.mongo.Collection("posts")
-	filter := bson.D{{"post_id", postID}}
-
-	_, err := collection.UpdateOne(db.ctx, filter, post, options.Update().SetUpsert(true))
-	if err != nil {
-		return err
 	}
 
 	return nil

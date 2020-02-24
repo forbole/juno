@@ -6,7 +6,6 @@ import (
 
 	"github.com/angelorc/desmos-parser/types"
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/desmos-labs/desmos/x/posts"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -39,12 +38,4 @@ func ConvertTxToBSONSetDocument(codec *codec.Codec, tx types.Tx) (bson.D, error)
 	return bson.D{
 		{"$set", txb},
 	}, nil
-}
-
-// ConvertPostToBSONSetDocument converts the given post to a BSON document allowing
-// it to be saved inside a Mongo collection
-func ConvertPostToBSONSetDocument(post posts.Post) bson.D {
-	return bson.D{
-		{"$set", post},
-	}
 }

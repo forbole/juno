@@ -2,8 +2,10 @@ package main
 
 import (
 	"github.com/angelorc/desmos-parser/config"
+	"github.com/angelorc/desmos-parser/db"
 	"github.com/angelorc/desmos-parser/db/mongo"
 	"github.com/angelorc/desmos-parser/parse"
+	"github.com/angelorc/desmos-parser/parse/worker"
 	"github.com/angelorc/desmos-parser/types"
 	"github.com/angelorc/desmos-parser/version"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -13,8 +15,14 @@ import (
 )
 
 func main() {
-	executor := BuildExecutor("desmosp", "Desmos Parser Command Line Interface", setupConfig, app.MakeCodec)
+	// Register custom handlers
+	worker.RegisterMsgHandler(msgHandler)
 
+	// Build the executor
+	executor := BuildExecutor("desmosp", "Desmos Parser Command Line Interface",
+		setupConfig, app.MakeCodec, mongo.Builder)
+
+	// Run the commands and panic on any error
 	err := executor.Execute()
 	if err != nil {
 		panic(err)
@@ -29,7 +37,11 @@ func main() {
 //
 // The provided cdcBuilder is used to provide a codec that will later be used to deserialize the
 // transaction messages. Make sure you register all the types you need properly.
-func BuildExecutor(name, description string, setupCfg types.SdkConfigSetup, cdcBuilder types.CodecBuilder) cli.Executor {
+//
+// The provided dbBuilder is used to provide the database that will be used to save the data.
+func BuildExecutor(name, description string,
+	setupCfg types.SdkConfigSetup, cdcBuilder types.CodecBuilder, dbBuilder db.Builder) cli.Executor {
+
 	sdkConfig := sdk.GetConfig()
 	setupCfg(sdkConfig)
 	sdkConfig.Seal()
@@ -41,7 +53,7 @@ func BuildExecutor(name, description string, setupCfg types.SdkConfigSetup, cdcB
 
 	rootCmd.AddCommand(
 		version.GetVersionCmd(),
-		parse.GetParseCmd(cdcBuilder(), mongo.Builder),
+		parse.GetParseCmd(cdcBuilder(), dbBuilder),
 	)
 
 	return config.PrepareMainCmd(rootCmd)
