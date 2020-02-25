@@ -1,75 +1,97 @@
-# Desmos Parser
-My first contribute to Desmos <3 (alpha, alpha, alpha version)
+# Juno
 
-## Requirements
-### 1. Having Mongo installed.  
-If you don't have Mongo, you can get it by following the official [download guide](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/).  
+[![Build Status](https://travis-ci.org/fissionlabsio/juno.svg?branch=master)](https://travis-ci.org/fissionlabsio/juno)
+[![Go Report Card](https://goreportcard.com/badge/github.com/fissionlabsio/juno)](https://goreportcard.com/report/github.com/fissionlabsio/juno)
 
-### 2. Having a replica set created locally
-If you don't know how to create one, just execute the following commands.
+> Juno is a Cosmos Hub blockchain data aggregator and exporter that provides the
+> ability for developers and clients to query for indexed chain data.
 
-1. Stop the `mongod` service: 
-   ```bash
-   sudo systemctl stop mongod
-   ```
+## Table of Contents
 
-2. Open the `mongod` service config file:  
-   ```bash
-   sudo nano /etc/mongod.conf
-   ``` 
-   
-3. Uncomment the `#replication` line and paste the followings:  
-   ```yaml 
-   replication:
-     replSetName: replica01 
-   ```
-   
-4. Start `mongod` again:  
-   ```bash
-   sudo systemctl mongod start
-   ```
+  - [Background](#background)
+  - [Install](#install)
+  - [Usage](#usage)
+  - [Schemas](#schemas)
+  - [Future Improvements](#future-improvements)
+  - [Contributing](#contributing)
+  - [License](#license)
 
+## Background
 
-## Installation
-1. Clone this repository  
-   ```bash
-   git clone git@github.com:angelorc/desmos-parser.git
-   cd desmos-parser
-   make install
-   ```
-   
-2. Install the binaries
-   ```bash
-   make install
-   ```
+Juno is a Cosmos Hub data aggregator and exporter. In other words, it can be seen
+as an ETL layer atop of the Cosmos Hub. It improves the Hub's data accessibility
+by providing an indexed PostgreSQL database exposing aggregated resources and
+models such as blocks, validators, pre-commits, transactions, and various aspects
+of the governance module. Juno is meant to run with a GraphQL layer on top so that
+it even further eases the ability for developers and downstream clients to answer
+queries such as "what is the average gas cost of a block?" while also allowing
+them to compose more aggregate and complex queries.
 
-## Configuration
-The whole program configuration is done inside the `config.toml` file. 
+Juno currently supports the Cosmos SDK [v0.37.4](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.37.4). In addition, Fission Labs publishs a public GraphQL API for `cosmoshub-3` that
+can be found [here](https://gaiaql.fissionlabs.io/).
+
+## Install
+
+Juno takes a simple configuration. It needs to only know about a PostgreSQL
+database instance and a Tendermint RPC node.
+
+Example:
 
 ```toml
-rpc_node = "http://lcd.morpheus.desmos.network:26657"
-client_node = "http://rpc.morpheus.desmos.network:1317"
+rpc_node = "<rpc-ip/host>:<rpc-port>"
+client_node = "<client-ip/host>:<client-port>"
 
 [database]
-uri = "mongodb://localhost:27017/desmos?replicaSet=replica01"
-name = "desmos"
+host = "<db-host>"
+port = <db-port>
+name = "<db-name>"
+user = "<db-user>"
+password = "<db-password>"
+ssl_mode = "<ssl-mode>"
 ```
 
-#### rpc_node
-This variable identifies the RPC URL to which to connect to download the chain data. 
+To install the binary run `make install`.
 
-#### lcd_node
-This variable tells which URL should be used to connect to the Cosmos Light Client Deamon. 
+**Note**: Requires [Go 1.13+](https://golang.org/dl/)
 
-#### database
-Contains the database configurations such as the uri and database name
+## Usage
 
-## Running the parser
-To run the parser simply execute the following command: 
+Juno internally runs a single worker that consumes from a single queue. The
+queue contains block heights to aggregate and export to a PostgreSQL database.
+Juno will start a new block even listener where for each new block, it will
+enqueue the height. A worker listens for new heights and queries for various data
+related to the block height to persist. For each block height, juno will persist
+the block, the validators that committed/signed the block, all the pre-commits
+for the block and the transactions in the block.
 
-```bash
-desmosp parse config.toml
+In addition, it will also sync missing blocks from `--start-height` to the latest
+known height.
+
+```shell
+$ juno /path/to/config.toml [flags]
 ```
 
-## Browse data
-If you want to browse the parsed data you can do so by installing a local version of [admingMongo](https://github.com/mrvautin/adminMongo), a nice UI for any Mongo instance. 
+## Schemas
+
+The schema definitions are contained in the `schema/` directory. Note, these
+schemas are not necessarily optimal and are subject to change! However, feel
+free to fork this tool and expand upon the schemas as you see fit. Any tweaks
+will most likely require adjustments to the `database` wrapper.
+
+## Future Improvements
+
+- Unit and integration tests
+- Persist governance proposals and tallies
+- Improve the db migration process
+- Implement better retry logic on failed queries
+- Implement a docker-compose setup that allows for complete bootstrapping
+- Improve modularity and remove any assumptions about the origin chain so Juno
+can sync with any Tendermint-based chain
+
+## Contributing
+
+Contributions are welcome! Please open an Issues or Pull Request for any changes.
+
+## License
+
+[CCC0 1.0 Universal](https://creativecommons.org/share-your-work/public-domain/cc0/)

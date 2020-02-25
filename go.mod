@@ -1,5 +1,7 @@
 module github.com/angelorc/desmos-parser
 
+// module github.com/fissionlabsio/juno
+
 go 1.13
 
 require (

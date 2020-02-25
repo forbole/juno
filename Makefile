@@ -3,37 +3,51 @@ COMMIT  := $(shell git log -1 --format='%H')
 
 export GO111MODULE = on
 
-all: install
+all: ci-lint ci-test install
 
-LD_FLAGS = -X github.com/angelorc/desmos-parser/version.Version=$(VERSION) \
-	-X github.com/angelorc/desmos-parser/version.Commit=$(COMMIT)
+###############################################################################
+# Build / Install
+###############################################################################
+
+LD_FLAGS = -X github.com/fissionlabsio/juno/cmd.Version=$(VERSION) \
+	-X github.com/fissionlabsio/juno/cmd.Commit=$(COMMIT)
 
 BUILD_FLAGS := -ldflags '$(LD_FLAGS)'
 
-########################################
-### Build
-
 build: go.sum
 ifeq ($(OS),Windows_NT)
-	@echo "--> Building the parser binaries..."
-	@go build -mod=readonly $(BUILD_FLAGS) -o build/desmosp.exe ./cmd/desmosp
+	@echo "building juno binary..."
+	@go build -mod=readonly $(BUILD_FLAGS) -o build/juno.exe .
 else
-	@echo "--> Building the parser binaries..."
-	@go build -mod=readonly $(BUILD_FLAGS) -o build/desmosp ./cmd/desmosp
+	@echo "building juno binary..."
+	@go build -mod=readonly $(BUILD_FLAGS) -o build/juno .
 endif
 
-########################################
-### Install
-
 install: go.sum
-	@echo "--> Installing the parser binaries..."
-	@go install -mod=readonly $(BUILD_FLAGS) ./cmd/desmosp
+	@echo "installing juno binary..."
+	@go install -mod=readonly $(BUILD_FLAGS) .
 
-########################################
-### Tools & dependencies
+###############################################################################
+# Tests / CI
+###############################################################################
 
-go.sum: go.mod
-	@echo "--> Ensuring the dependencies have not been modified"
+coverage:
+	@echo "viewing test coverage..."
+	@go tool cover --html=coverage.out
+
+ci-test:
+	@echo "executing unit tests..."
+	@go test -mod=readonly -v -coverprofile coverage.out ./...
+
+ci-lint:
+	@echo "running GolangCI-Lint..."
+	@GO111MODULE=on golangci-lint run
+	@echo "formatting..."
+	@find . -name '*.go' -type f -not -path "*.git*" | xargs gofmt -d -s
+	@echo "verifying modules..."
 	@go mod verify
 
-.PHONY: install build go.sum
+clean:
+	rm -f tools-stamp ./build/**
+
+.PHONY: install build ci-test ci-lint coverage clean

@@ -6,13 +6,14 @@ build/
 *.dll
 *.so
 *.dylib
+juno
 
-# Test binary, built with `go test -c`
+# Test binary, build with `go test -c`
+tools-stamp
 *.test
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
-# Dependency directories (remove the comment below to include it)
-# vendor/
-tmp/
+# configuration
+*.toml
