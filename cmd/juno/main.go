@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/angelorc/desmos-parser/config"
 	"github.com/angelorc/desmos-parser/db"
 	"github.com/angelorc/desmos-parser/db/mongo"
@@ -19,8 +21,7 @@ func main() {
 	worker.RegisterMsgHandler(msgHandler)
 
 	// Build the executor
-	executor := BuildExecutor("desmosp", "Desmos Parser Command Line Interface",
-		setupConfig, app.MakeCodec, mongo.Builder)
+	executor := BuildExecutor("juno", setupConfig, app.MakeCodec, mongo.Builder)
 
 	// Run the commands and panic on any error
 	err := executor.Execute()
@@ -39,8 +40,7 @@ func main() {
 // transaction messages. Make sure you register all the types you need properly.
 //
 // The provided dbBuilder is used to provide the database that will be used to save the data.
-func BuildExecutor(name, description string,
-	setupCfg types.SdkConfigSetup, cdcBuilder types.CodecBuilder, dbBuilder db.Builder) cli.Executor {
+func BuildExecutor(name string, setupCfg types.SdkConfigSetup, cdcBuilder types.CodecBuilder, dbBuilder db.Builder) cli.Executor {
 
 	sdkConfig := sdk.GetConfig()
 	setupCfg(sdkConfig)
@@ -48,7 +48,14 @@ func BuildExecutor(name, description string,
 
 	rootCmd := &cobra.Command{
 		Use:   name,
-		Short: description,
+		Short: fmt.Sprintf("%s is a Cosmos Hub data aggregator and exporter", name),
+		Long: fmt.Sprintf(`A cosmos Hub data aggregator. It improves the Hub's data accessibility
+by providing an indexed database exposing aggregated resources and
+models such as blocks, validators, pre-commits, transactions, and various aspects
+of the governance module. %s is meant to run with a GraphQL layer on top so that
+it even further eases the ability for developers and downstream clients to answer
+queries such as "what is the average gas cost of a block?" while also allowing
+them to compose more aggregate and complex queries.`, name),
 	}
 
 	rootCmd.AddCommand(

@@ -9,6 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/rs/zerolog/log"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 )
 
 var (
@@ -87,7 +88,12 @@ func (w Worker) Start() {
 // height and associated metadata and export it to a database. It returns an
 // error if any export process fails.
 func (w Worker) process(height int64) error {
-	if exists := w.db.HasBlock(height); exists {
+	exists, err := w.db.HasBlock(height)
+	if err != nil {
+		return err
+	}
+
+	if !exists {
 		log.Debug().Int64("height", height).Msg("skipping already exported block with mongodb")
 		return nil
 	}
@@ -129,34 +135,114 @@ func (w Worker) process(height int64) error {
 		txData[index] = *convTx
 	}
 
-	/*blockResults, err := w.cp.BlockResults(height)
-	if err != nil {
-		log.Info().Err(err).Int64("height", height).Msg("failed to get block results")
-		return err
-	}
-
 	vals, err := w.cp.Validators(block.Block.LastCommit.Height())
 	if err != nil {
 		log.Info().Err(err).Int64("height", height).Msg("failed to get validators for block")
 		return err
-	}*/
+	}
+
+	if err := w.ExportPreCommits(block.Block.LastCommit, vals); err != nil {
+		return err
+	}
+
+	return w.ExportBlock(block, txData, vals)
+}
+
+// ExportPreCommits accepts a block commitment and a coressponding set of
+// validators for the commitment and persists them to the database. An error is
+// returned if any write fails or if there is any missing aggregated data.
+func (w Worker) ExportPreCommits(commit *tmtypes.Commit, vals *tmctypes.ResultValidators) error {
+	// persist all validators and pre-commits
+	for _, pc := range commit.Precommits {
+		if pc != nil {
+			valAddr := pc.ValidatorAddress.String()
+
+			val := findValidatorByAddr(valAddr, vals)
+			if val == nil {
+				err := fmt.Errorf("failed to find validator by address %s for block %d", valAddr, commit.Height())
+				log.Error().Msg(err.Error())
+				return err
+			}
+
+			if err := w.ExportValidator(val); err != nil {
+				return err
+			}
+
+			if err := w.db.SavePreCommit(pc, val.VotingPower, val.ProposerPriority); err != nil {
+				log.Error().Err(err).Str("validator", valAddr).Msg("failed to persist validator pre-commit")
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+// ExportValidator persists a Tendermint validator with an address and a
+// consensus public key. An error is returned if the public key cannot be Bech32
+// encoded or if the DB write fails.
+func (w Worker) ExportValidator(val *tmtypes.Validator) error {
+	valAddr := val.Address.String()
+
+	consPubKey, err := sdk.Bech32ifyConsPub(val.PubKey) // nolint: typecheck
+	if err != nil {
+		log.Error().Err(err).Str("validator", valAddr).Msg("failed to convert validator public key")
+		return err
+	}
+
+	if err := w.db.SaveValidator(valAddr, consPubKey); err != nil {
+		log.Error().Err(err).Str("validator", valAddr).Msg("failed to persist validator")
+		return err
+	}
+
+	return nil
+}
+
+// ExportBlock accepts a finalized block and a corresponding set of transactions
+// and persists them to the database along with attributable metadata. An error
+// is returned if the write fails.
+func (w Worker) ExportBlock(b *tmctypes.ResultBlock, txs []types.Tx, vals *tmctypes.ResultValidators) error {
+	totalGas := sumGasTxs(txs)
+	preCommits := uint64(len(b.Block.LastCommit.Precommits))
+
+	// Set the block's proposer if it does not already exist. This may occur if
+	// the proposer has never signed before.
+	proposerAddr := b.Block.ProposerAddress.String()
+
+	val := findValidatorByAddr(proposerAddr, vals)
+	if val == nil {
+		err := fmt.Errorf("failed to find validator by address %s for block %d", proposerAddr, b.Block.Height)
+		log.Error().Str("validator", proposerAddr).Int64("height", b.Block.Height).Msg("failed to find validator by address")
+		return err
+	}
+
+	if err := w.ExportValidator(val); err != nil {
+		return err
+	}
 
 	// Save the block
-	if err := db.SaveBlock(w.db, block, txData); err != nil {
+	if err := w.db.SaveBlock(b, totalGas, preCommits); err != nil {
+		log.Error().Err(err).Int64("height", b.Block.Height).Msg("failed to persist block")
 		return err
 	}
 
 	// Call the block handlers
 	for _, handler := range blockHandlers {
-		if err := handler(block, txData, w.db); err != nil {
+		if err := handler(b, txs, w.db); err != nil {
 			return err
 		}
 	}
 
+	// Export the transactions
+	return w.ExportTxs(txs)
+}
+
+func (w Worker) ExportTxs(txs []types.Tx) error {
 	// Handle all the transactions inside the block
-	for _, tx := range txData {
+	for _, tx := range txs {
 		// Save the transaction itself
-		if err := db.SaveTx(w.db, tx); err != nil {
+		if err := w.db.SaveTx(tx); err != nil {
+			log.Error().Err(err).Str("hash", tx.TxHash).Msg("failed to handle transaction")
 			return err
 		}
 
@@ -169,11 +255,6 @@ func (w Worker) process(height int64) error {
 
 		// Handle all the messages contained inside the transaction
 		for i, msg := range tx.Messages {
-			// Save the message
-			if err := w.db.SaveMsg(tx, i, msg); err != nil {
-				return err
-			}
-
 			// Call the handlers
 			for _, handler := range msgHandlers {
 				if err := handler(tx, i, msg, w.db); err != nil {

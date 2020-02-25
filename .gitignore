@@ -6,7 +6,6 @@ build/
 *.dll
 *.so
 *.dylib
-juno
 
 # Test binary, build with `go test -c`
 tools-stamp

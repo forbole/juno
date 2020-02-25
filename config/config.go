@@ -1,5 +1,13 @@
 package config
 
+import (
+	"fmt"
+	"io/ioutil"
+
+	"github.com/BurntSushi/toml"
+	"github.com/pkg/errors"
+)
+
 // Config defines all necessary juno configuration parameters.
 type Config struct {
 	RPCNode    string         `toml:"rpc_node"`

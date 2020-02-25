@@ -1,33 +1,12 @@
-package db
+package worker
 
 import (
 	"strings"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/fissionlabsio/juno/codec"
+	"github.com/angelorc/desmos-parser/types"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
-
-// parseTxs parses a set of transactions returned by Tendermint into StdTx
-// transactions. It returns an error if any unmarshalling fails.
-func parseTxs(txs []*tmctypes.ResultTx) ([]auth.StdTx, error) {
-	stdTxs := make([]auth.StdTx, len(txs))
-
-	for i, tx := range txs {
-		var stdTx auth.StdTx
-
-		err := codec.Codec.UnmarshalBinaryLengthPrefixed(tx.Tx, &stdTx)
-		if err != nil {
-			return nil, err
-		}
-
-		stdTxs[i] = stdTx
-	}
-
-	return stdTxs, nil
-}
 
 // findValidatorByAddr finds a validator by a HEX address given a set of
 // Tendermint validators for a particular block. If no validator is found, nil
@@ -43,7 +22,7 @@ func findValidatorByAddr(addrHex string, vals *tmctypes.ResultValidators) *tmtyp
 }
 
 // sumGasTxs returns the total gas consumed by a set of transactions.
-func sumGasTxs(txs []sdk.TxResponse) uint64 {
+func sumGasTxs(txs []types.Tx) uint64 {
 	var totalGas uint64
 
 	for _, tx := range txs {

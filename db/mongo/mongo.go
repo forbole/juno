@@ -9,11 +9,10 @@ import (
 	"github.com/angelorc/desmos-parser/config"
 	"github.com/angelorc/desmos-parser/db"
 	"github.com/angelorc/desmos-parser/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/pkg/errors"
-	"github.com/rs/zerolog/log"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -29,10 +28,7 @@ type Db struct {
 	Codec *codec.Codec
 }
 
-func BuildCtx() (context.Context, context.CancelFunc) {
-	return context.WithTimeout(context.Background(), 5*time.Second)
-}
-
+// Builder allows to create a new MongoDB connection from the given config and codec
 func Builder(cfg config.Config, codec *codec.Codec) (*db.Database, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -59,21 +55,26 @@ func Open(cfg config.Config, codec *codec.Codec, ctx context.Context) (*db.Datab
 	return &mdb, nil
 }
 
+// BuildCtx returns a new Mongo context
+func BuildCtx() (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.Background(), 5*time.Second)
+}
+
 // HasBlock implements Database
-func (db Db) HasBlock(height int64) bool {
+func (db Db) HasBlock(height int64) (bool, error) {
 	ctx, cancel := BuildCtx()
 	defer cancel()
 
 	collection := db.Mongo.Collection("blocks")
-
 	if err := collection.FindOne(ctx, bson.D{{"height", height}}).Err(); err != nil {
-		return false
+		return false, err
 	}
-	return true
+
+	return true, nil
 }
 
 // SaveBlock implements Database
-func (db Db) SaveBlock(b *tmctypes.ResultBlock, _ []types.Tx) error {
+func (db Db) SaveBlock(b *tmctypes.ResultBlock, totalGas, preCommits uint64) error {
 	ctx, cancel := BuildCtx()
 	defer cancel()
 
@@ -83,15 +84,11 @@ func (db Db) SaveBlock(b *tmctypes.ResultBlock, _ []types.Tx) error {
 		return err
 	}
 
-	// NOTE: Why only this data?
 	filter := bson.D{
 		{"height", b.Block.Height},
 		{"hash", b.Block.Hash().String()},
 	}
-
-	update := bson.D{
-		{"$set", bsonBlock},
-	}
+	update := ConvertBlockToBSONSetDocument(b, totalGas, preCommits)
 
 	collection := db.Mongo.Collection("blocks")
 	if _, err := collection.UpdateOne(ctx, filter, update, options.Update().SetUpsert(true)); err != nil {
@@ -124,11 +121,55 @@ func (db Db) SaveTx(tx types.Tx) error {
 	return nil
 }
 
-// SaveMsg implements Database
-func (db Db) SaveMsg(tx types.Tx, index int, msg sdk.Msg) error {
-	if len(tx.Logs) != len(tx.Messages) {
-		log.Error().Msg("msg len is different from logs len")
-		return nil
+// HasValidator returns true if a given validator by HEX address exists. An
+// error should never be returned.
+func (db Db) HasValidator(addr string) (bool, error) {
+	ctx, cancel := BuildCtx()
+	defer cancel()
+
+	collection := db.Mongo.Collection("validators")
+	if err := collection.FindOne(ctx, bson.D{{"address", addr}}).Err(); err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+// SetValidator stores a validator if it does not already exist. An error is
+// returned if the operation fails.
+func (db Db) SaveValidator(addr, pk string) error {
+	ctx, cancel := BuildCtx()
+	defer cancel()
+
+	filter := bson.D{
+		{"address", addr},
+	}
+	update := ConvertValidatorToBSONSetDocument(addr, pk)
+
+	collection := db.Mongo.Collection("validators")
+	if _, err := collection.UpdateOne(ctx, filter, update, options.Update().SetUpsert(true)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// SetPreCommit stores a validator's pre-commit and returns the resulting record
+// ID. An error is returned if the operation fails.
+func (db Db) SavePreCommit(pc *tmtypes.CommitSig, votingPower, proposerPriority int64) error {
+	ctx, cancel := BuildCtx()
+	defer cancel()
+
+	filter := bson.D{
+		{"height", pc.Height},
+		{"round", pc.Round},
+		{"validator_address", pc.ValidatorAddress.String()},
+	}
+	update := ConvertPrecommitToBSONSetDocument(pc, votingPower, proposerPriority)
+
+	collection := db.Mongo.Collection("pre_commits")
+	if _, err := collection.UpdateOne(ctx, filter, update, options.Update().SetUpsert(true)); err != nil {
+		return err
 	}
 
 	return nil

@@ -6,8 +6,24 @@ import (
 
 	"github.com/angelorc/desmos-parser/types"
 	"github.com/cosmos/cosmos-sdk/codec"
+	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 	"go.mongodb.org/mongo-driver/bson"
 )
+
+func ConvertBlockToBSONSetDocument(block *tmctypes.ResultBlock, totalGas, preCommits uint64) bson.D {
+	return bson.D{
+		{"$set", bson.D{
+			{"height", block.Block.Height},
+			{"hash", block.Block.Hash().String()},
+			{"num_txs", block.Block.NumTxs},
+			{"total_gas", totalGas},
+			{"proposer_address", block.Block.ProposerAddress.String()},
+			{"pre_commits", preCommits},
+			{"timestamp", block.Block.Time},
+		}},
+	}
+}
 
 // ConvertTxToBSONSetDocument converts the given tx into a BSON document
 // that allows it to be saved inside a collection
@@ -22,20 +38,41 @@ func ConvertTxToBSONSetDocument(codec *codec.Codec, tx types.Tx) (bson.D, error)
 		panic(fmt.Sprintf("error"))
 	}
 
-	txb := bson.D{
-		{"timestamp", tx.Timestamp},
-		{"gas_wanted", tx.GasWanted},
-		{"gas_used", tx.GasUsed},
-		{"height", tx.Height},
-		{"tx_hash", tx.TxHash},
-		{"event", tx.Events},
-		{"logs", tx.Logs},
-		{"messages", msgsData},
-		{"fee", tx.Fee},
-		{"signatures", tx.Signatures},
-	}
-
 	return bson.D{
-		{"$set", txb},
+		{"$set", bson.D{
+			{"timestamp", tx.Timestamp},
+			{"gas_wanted", tx.GasWanted},
+			{"gas_used", tx.GasUsed},
+			{"height", tx.Height},
+			{"tx_hash", tx.TxHash},
+			{"event", tx.Events},
+			{"logs", tx.Logs},
+			{"messages", msgsData},
+			{"fee", tx.Fee},
+			{"signatures", tx.Signatures},
+			{"memo", tx.Memo},
+		}},
 	}, nil
+}
+
+func ConvertValidatorToBSONSetDocument(address, publicKey string) bson.D {
+	return bson.D{
+		{"$set", bson.D{
+			{"address", address},
+			{"public_key", publicKey},
+		}},
+	}
+}
+
+func ConvertPrecommitToBSONSetDocument(precommit *tmtypes.CommitSig, votingPower, proposerPriority int64) bson.D {
+	return bson.D{{
+		"$set", bson.D{
+			{"height", precommit.Height},
+			{"round", precommit.Round},
+			{"validator_address", precommit.ValidatorAddress.String()},
+			{"timestamp", precommit.Timestamp},
+			{"voting_power", votingPower},
+			{"proposer_priority", proposerPriority},
+		}},
+	}
 }

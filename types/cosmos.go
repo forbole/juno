@@ -13,6 +13,7 @@ type Tx struct {
 	Messages   []sdk.Msg   `json:"messages"`
 	Fee        auth.StdFee `json:"fee"`
 	Signatures []Signature `json:"signatures"`
+	Memo       string      `json:"memo"`
 }
 
 // NewTx allows to create a new Tx instance from the given txResponse
@@ -36,6 +37,7 @@ func NewTx(txResponse sdk.TxResponse) (*Tx, error) {
 		Fee:        stdTx.Fee,
 		Messages:   stdTx.GetMsgs(),
 		Signatures: sigs,
+		Memo:       stdTx.Memo,
 	}, nil
 }
 

@@ -9,23 +9,23 @@ all: ci-lint ci-test install
 # Build / Install
 ###############################################################################
 
-LD_FLAGS = -X github.com/fissionlabsio/juno/cmd.Version=$(VERSION) \
-	-X github.com/fissionlabsio/juno/cmd.Commit=$(COMMIT)
+LD_FLAGS = -X github.com/angelorc/desmos-parser/version.Version=$(VERSION) \
+	-X github.com/angelorc/desmos-parser/version.Commit=$(COMMIT)
 
 BUILD_FLAGS := -ldflags '$(LD_FLAGS)'
 
 build: go.sum
 ifeq ($(OS),Windows_NT)
 	@echo "building juno binary..."
-	@go build -mod=readonly $(BUILD_FLAGS) -o build/juno.exe .
+	@go build -mod=readonly $(BUILD_FLAGS) -o build/juno.exe ./cmd/juno
 else
 	@echo "building juno binary..."
-	@go build -mod=readonly $(BUILD_FLAGS) -o build/juno .
+	@go build -mod=readonly $(BUILD_FLAGS) -o build/juno ./cmd/juno
 endif
 
 install: go.sum
 	@echo "installing juno binary..."
-	@go install -mod=readonly $(BUILD_FLAGS) .
+	@go install -mod=readonly $(BUILD_FLAGS) ./cmd/juno
 
 ###############################################################################
 # Tests / CI

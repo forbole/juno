@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/fissionlabsio/juno/client"
-	"github.com/fissionlabsio/juno/config"
-	"github.com/fissionlabsio/juno/db"
+	"github.com/angelorc/desmos-parser/client"
+	"github.com/angelorc/desmos-parser/config"
+	"github.com/angelorc/desmos-parser/db/postgresql"
+	"github.com/angelorc/desmos-parser/types"
+	"github.com/cosmos/cosmos-sdk/simapp"
 	"github.com/pkg/errors"
 )
 
@@ -17,7 +19,11 @@ func main() {
 	flag.StringVar(&configPath, "config", "", "Configuration file")
 	flag.Parse()
 
-	cfg := config.ParseConfig(configPath)
+	cfg, err := config.ParseConfig(configPath)
+	if err != nil {
+		panic(err)
+	}
+
 	cp, err := client.New(cfg.RPCNode, cfg.ClientNode)
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "failed to start RPC client"))
@@ -25,14 +31,15 @@ func main() {
 
 	defer cp.Stop() // nolint: errcheck
 
-	db, err := db.OpenDB(cfg)
+	codec := simapp.MakeCodec()
+	db, err := postgresql.Builder(*cfg, codec)
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "failed to open database connection"))
 	}
 
-	defer db.Close()
+	defer db.Sql.Close()
 
-	if err := db.Ping(); err != nil {
+	if err := db.Sql.Ping(); err != nil {
 		log.Fatal(errors.Wrap(err, "failed to ping database"))
 	}
 
@@ -61,7 +68,12 @@ func main() {
 				log.Printf("migrated transaction %s\n", txHash)
 			}
 
-			if _, err := db.SetTx(tx); err != nil {
+			convTx, err := types.NewTx(tx)
+			if err != nil {
+				panic(err)
+			}
+
+			if err := db.SaveTx(*convTx); err != nil {
 				log.Printf("failed to persist transaction %s: %s", txHash, err)
 			}
 		}
