@@ -5,7 +5,6 @@ go 1.13
 require (
 	github.com/BurntSushi/toml v0.3.1
 	github.com/cosmos/cosmos-sdk v0.37.3
-	github.com/desmos-labs/desmos v0.2.0
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.18.0
 	github.com/sirkon/goproxy v1.4.8

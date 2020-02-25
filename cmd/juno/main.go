@@ -3,13 +3,12 @@ package main
 import (
 	"fmt"
 
+	"github.com/cosmos/cosmos-sdk/simapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/desmos-labs/desmos/app"
 	"github.com/desmos-labs/juno/config"
 	"github.com/desmos-labs/juno/db"
 	"github.com/desmos-labs/juno/db/mongo"
 	"github.com/desmos-labs/juno/parse"
-	"github.com/desmos-labs/juno/parse/worker"
 	"github.com/desmos-labs/juno/types"
 	"github.com/desmos-labs/juno/version"
 	"github.com/spf13/cobra"
@@ -17,11 +16,8 @@ import (
 )
 
 func main() {
-	// Register custom handlers
-	worker.RegisterMsgHandler(msgHandler)
-
 	// Build the executor
-	executor := BuildExecutor("juno", setupConfig, app.MakeCodec, mongo.Builder)
+	executor := BuildExecutor("juno", types.EmptySetup, simapp.MakeCodec, mongo.Builder)
 
 	// Run the commands and panic on any error
 	err := executor.Execute()
@@ -64,20 +60,4 @@ them to compose more aggregate and complex queries.`, name),
 	)
 
 	return config.PrepareMainCmd(rootCmd)
-}
-
-// TODO: Move this inside the Desmos implementation
-func setupConfig(cfg *sdk.Config) {
-	cfg.SetBech32PrefixForAccount(
-		app.Bech32MainPrefix,
-		app.Bech32MainPrefix+sdk.PrefixPublic,
-	)
-	cfg.SetBech32PrefixForValidator(
-		app.Bech32MainPrefix+sdk.PrefixValidator+sdk.PrefixOperator,
-		app.Bech32MainPrefix+sdk.PrefixValidator+sdk.PrefixOperator+sdk.PrefixPublic,
-	)
-	cfg.SetBech32PrefixForConsensusNode(
-		app.Bech32MainPrefix+sdk.PrefixValidator+sdk.PrefixConsensus,
-		app.Bech32MainPrefix+sdk.PrefixValidator+sdk.PrefixConsensus+sdk.PrefixPublic,
-	)
 }
