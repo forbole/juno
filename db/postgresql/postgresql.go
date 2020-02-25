@@ -5,10 +5,10 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"github.com/angelorc/desmos-parser/config"
-	"github.com/angelorc/desmos-parser/db"
-	"github.com/angelorc/desmos-parser/types"
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/desmos-labs/juno/config"
+	"github.com/desmos-labs/juno/db"
+	"github.com/desmos-labs/juno/types"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 

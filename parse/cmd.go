@@ -3,12 +3,12 @@ package parse
 import (
 	"fmt"
 
-	"github.com/angelorc/desmos-parser/config"
-	"github.com/angelorc/desmos-parser/db"
-	"github.com/angelorc/desmos-parser/parse/client"
-	"github.com/angelorc/desmos-parser/parse/worker"
-	"github.com/angelorc/desmos-parser/types"
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/desmos-labs/juno/config"
+	"github.com/desmos-labs/juno/db"
+	"github.com/desmos-labs/juno/parse/client"
+	"github.com/desmos-labs/juno/parse/worker"
+	"github.com/desmos-labs/juno/types"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 

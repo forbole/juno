@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/angelorc/desmos-parser/config"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/desmos-labs/juno/config"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"

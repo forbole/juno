@@ -3,10 +3,10 @@ package worker
 import (
 	"fmt"
 
-	"github.com/angelorc/desmos-parser/db"
-	"github.com/angelorc/desmos-parser/parse/client"
-	"github.com/angelorc/desmos-parser/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/desmos-labs/juno/db"
+	"github.com/desmos-labs/juno/parse/client"
+	"github.com/desmos-labs/juno/types"
 	"github.com/rs/zerolog/log"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"

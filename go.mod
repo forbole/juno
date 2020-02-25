@@ -1,4 +1,4 @@
-module github.com/angelorc/desmos-parser
+module github.com/desmos-labs/juno
 
 go 1.13
 

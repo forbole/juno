@@ -4,10 +4,10 @@ import (
 	"flag"
 	"log"
 
-	"github.com/angelorc/desmos-parser/client"
-	"github.com/angelorc/desmos-parser/config"
-	"github.com/angelorc/desmos-parser/db/postgresql"
 	"github.com/cosmos/cosmos-sdk/simapp"
+	"github.com/desmos-labs/juno/client"
+	"github.com/desmos-labs/juno/config"
+	"github.com/desmos-labs/juno/db/postgresql"
 	"github.com/pkg/errors"
 )
 

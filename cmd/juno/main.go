@@ -3,15 +3,15 @@ package main
 import (
 	"fmt"
 
-	"github.com/angelorc/desmos-parser/config"
-	"github.com/angelorc/desmos-parser/db"
-	"github.com/angelorc/desmos-parser/db/mongo"
-	"github.com/angelorc/desmos-parser/parse"
-	"github.com/angelorc/desmos-parser/parse/worker"
-	"github.com/angelorc/desmos-parser/types"
-	"github.com/angelorc/desmos-parser/version"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/desmos-labs/desmos/app"
+	"github.com/desmos-labs/juno/config"
+	"github.com/desmos-labs/juno/db"
+	"github.com/desmos-labs/juno/db/mongo"
+	"github.com/desmos-labs/juno/parse"
+	"github.com/desmos-labs/juno/parse/worker"
+	"github.com/desmos-labs/juno/types"
+	"github.com/desmos-labs/juno/version"
 	"github.com/spf13/cobra"
 	"github.com/tendermint/tendermint/libs/cli"
 )

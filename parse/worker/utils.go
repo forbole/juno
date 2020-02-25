@@ -3,7 +3,7 @@ package worker
 import (
 	"strings"
 
-	"github.com/angelorc/desmos-parser/types"
+	"github.com/desmos-labs/juno/types"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
