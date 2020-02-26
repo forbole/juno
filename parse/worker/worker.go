@@ -93,8 +93,8 @@ func (w Worker) process(height int64) error {
 		return err
 	}
 
-	if !exists {
-		log.Debug().Int64("height", height).Msg("skipping already exported block with mongodb")
+	if exists {
+		log.Debug().Int64("height", height).Msg("skipping already exported block")
 		return nil
 	}
 

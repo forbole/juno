@@ -9,6 +9,7 @@ import (
 	"github.com/desmos-labs/juno/config"
 	"github.com/desmos-labs/juno/db"
 	"github.com/desmos-labs/juno/types"
+	_ "github.com/lib/pq" // nolint
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 
@@ -29,7 +30,7 @@ type Database struct {
 // OpenDB opens a database connection with the given database connection info
 // from config. It returns a database connection handle or an error if the
 // connection fails.
-func Builder(cfg config.Config, codec *codec.Codec) (*Database, error) {
+func Builder(cfg config.Config, codec *codec.Codec) (*db.Database, error) {
 	sslMode := "disable"
 	if cfg.DB.SSLMode != "" {
 		sslMode = cfg.DB.SSLMode
@@ -44,12 +45,13 @@ func Builder(cfg config.Config, codec *codec.Codec) (*Database, error) {
 		connStr += fmt.Sprintf(" password=%s", cfg.DB.Password)
 	}
 
-	db, err := sql.Open("postgres", connStr)
+	postgresDb, err := sql.Open("postgres", connStr)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Database{Sql: db, Codec: codec}, nil
+	var database db.Database = Database{Sql: postgresDb, Codec: codec}
+	return &database, nil
 }
 
 // LastBlockHeight returns the latest block stored.

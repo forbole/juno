@@ -7,7 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/desmos-labs/juno/config"
 	"github.com/desmos-labs/juno/db"
-	"github.com/desmos-labs/juno/db/mongo"
+	"github.com/desmos-labs/juno/db/postgresql"
 	"github.com/desmos-labs/juno/parse"
 	"github.com/desmos-labs/juno/types"
 	"github.com/desmos-labs/juno/version"
@@ -17,7 +17,7 @@ import (
 
 func main() {
 	// Build the executor
-	executor := BuildExecutor("juno", types.EmptySetup, simapp.MakeCodec, mongo.Builder)
+	executor := BuildExecutor("juno", types.EmptySetup, simapp.MakeCodec, postgresql.Builder)
 
 	// Run the commands and panic on any error
 	err := executor.Execute()

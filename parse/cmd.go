@@ -97,7 +97,7 @@ func parseCmdHandler(codec *codec.Codec, dbBuilder db.Builder, args []string) er
 
 	database, err := dbBuilder(*cfg, codec)
 	if err != nil {
-		return errors.Wrap(err, "failed to open mongodb connection")
+		return errors.Wrap(err, "failed to open database connection")
 	}
 
 	// Create workers
