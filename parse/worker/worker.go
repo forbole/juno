@@ -77,7 +77,7 @@ func (w Worker) Start() {
 			// re-enqueue any failed job
 			// TODO: Implement exponential backoff or max retries for a block height.
 			go func() {
-				log.Info().Int64("height", i).Msg("re-enqueueing failed block")
+				log.Info().Int64("height", i).Err(err).Msg("re-enqueueing failed block")
 				w.queue <- i
 			}()
 		}

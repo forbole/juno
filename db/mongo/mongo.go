@@ -67,7 +67,7 @@ func (db Db) HasBlock(height int64) (bool, error) {
 
 	collection := db.Mongo.Collection("blocks")
 	if err := collection.FindOne(ctx, bson.D{{"height", height}}).Err(); err != nil {
-		return false, err
+		return false, nil
 	}
 
 	return true, nil
@@ -129,7 +129,7 @@ func (db Db) HasValidator(addr string) (bool, error) {
 
 	collection := db.Mongo.Collection("validators")
 	if err := collection.FindOne(ctx, bson.D{{"address", addr}}).Err(); err != nil {
-		return false, err
+		return false, nil
 	}
 
 	return true, nil
