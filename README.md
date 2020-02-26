@@ -4,29 +4,37 @@
 
 > Juno is a Cosmos Hub blockchain data aggregator and exporter that provides the ability for developers and clients to query for indexed chain data.
 
-Forked from [FissionLabs's Juno](https://github.com/fissionlabsio/juno)
-
 ## Table of Contents
   - [Background](#background)
   - [Install](#install)
   - [Usage](#usage)
   - [Schemas](#schemas)
-  - [Future Improvements](#future-improvements)
+  - [GraphQL integration](#graphql-integration)
   - [Contributing](#contributing)
   - [License](#license)
 
 ## Background
-Juno is a Cosmos Hub data aggregator and exporter. In other words, it can be seen as an ETL layer atop of the Cosmos Hub. It improves the Hub's data accessibility by providing an indexed database exposing aggregated resources and models such as blocks, validators, pre-commits, transactions, and various aspects of the governance module. Juno is meant to run with a GraphQL layer on top so that it even further eases the ability for developers and downstream clients to answer queries such as "what is the average gas cost of a block?" while also allowing them to compose more aggregate and complex queries.
+This version of Juno is a fork of [FissionLabs's Juno](https://github.com/fissionlabsio/juno). 
 
-The currently supported databases are:
-- PostgreSQL
-- MongoDB
+The main reason behind the fork what to improve the original project by: 
+
+1. allowing different databases types as data storage spaces;
+2. creating a highly modular code that allows for easy customization.
+
+We achieved the first objective by supporting both PostgreSQL and MongoDB. We also reviewed the code design by using a database interface so that you can implement whatever database backend you prefer most. 
+
+On the other hand, to achieve a highly modular code, we implemented extension points through the `worker.RegisterBlockHandler`, `worker.RegisterTxHandler` and `worker.RegisterMsgHandler` methods. You can use those to extend the default working of the code (which simply parses and saves the data on the database) with whatever operation you want.    
+
 
 ## Install
 Juno takes a simple configuration. It needs to only know about a database instance and a Tendermint RPC node.
 
-Example:
+To install the binary run `make install`.
 
+**Note**: Requires [Go 1.13+](https://golang.org/dl/)
+
+### Working with PostgreSQL
+#### Config
 ```toml
 rpc_node = "<rpc-ip/host>:<rpc-port>"
 client_node = "<client-ip/host>:<client-port>"
@@ -40,9 +48,16 @@ password = "<db-password>"
 ssl_mode = "<ssl-mode>"
 ```
 
-To install the binary run `make install`.
+### Working with MongoDB
+#### Config
+```toml
+rpc_node = "<rpc-ip/host>:<rpc-port>"
+client_node = "<client-ip/host>:<client-port>"
 
-**Note**: Requires [Go 1.13+](https://golang.org/dl/)
+[database]
+name = "<db-name>"
+uri = "<mongodb-uri>"
+```
 
 ## Usage
 Juno internally runs a single worker that consumes from a single queue. The queue contains block heights to aggregate and export to a database. Juno will start a new block even listener where for each new block, it will enqueue the height. A worker listens for new heights and queries for various data related to the block height to persist. For each block height, Juno will persist the block, the validators that committed/signed the block, all the pre-commits for the block and the transactions in the block.
@@ -56,13 +71,10 @@ $ juno parse /path/to/config.toml [flags]
 ## Schemas
 The schema definitions are contained in the `schema/` directory. Note, these schemas are not necessarily optimal and are subject to change! However, feel free to fork this tool and expand upon the schemas as you see fit. Any tweaks will most likely require adjustments to the `database` wrapper.
 
-## Future Improvements
-- Unit and integration tests
-- Persist governance proposals and tallies
-- Improve the db migration process
-- Implement better retry logic on failed queries
-- Implement a docker-compose setup that allows for complete bootstrapping
-- Improve modularity and remove any assumptions about the origin chain so Juno can sync with any Tendermint-based chain
+## GraphQL integration
+If you want to know how to run a GraphQL server that allows to expose the parsed data, please refer to the following guides: 
+
+- [PostgreSQL setup with GraphQL](.docs/postgres-graphql-setup.md)
 
 ## Contributing
 Contributions are welcome! Please open an Issues or Pull Request for any changes.
