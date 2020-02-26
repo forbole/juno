@@ -6,9 +6,9 @@ import (
 	"log"
 
 	"github.com/cosmos/cosmos-sdk/simapp"
-	"github.com/desmos-labs/juno/client"
 	"github.com/desmos-labs/juno/config"
 	"github.com/desmos-labs/juno/db/postgresql"
+	"github.com/desmos-labs/juno/parse/client"
 	"github.com/desmos-labs/juno/types"
 	"github.com/pkg/errors"
 )
@@ -24,7 +24,7 @@ func main() {
 		panic(err)
 	}
 
-	cp, err := client.New(cfg.RPCNode, cfg.ClientNode)
+	cp, err := client.New(*cfg, simapp.MakeCodec())
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "failed to start RPC client"))
 	}
@@ -37,13 +37,14 @@ func main() {
 		log.Fatal(errors.Wrap(err, "failed to open database connection"))
 	}
 
-	defer db.Sql.Close()
+	postgresqlDb, _ := (*db).(postgresql.Database)
+	defer postgresqlDb.Sql.Close()
 
-	if err := db.Sql.Ping(); err != nil {
+	if err := postgresqlDb.Sql.Ping(); err != nil {
 		log.Fatal(errors.Wrap(err, "failed to ping database"))
 	}
 
-	lastHeight, err := db.LastBlockHeight()
+	lastHeight, err := postgresqlDb.LastBlockHeight()
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "failed to get latest block height"))
 	}
@@ -73,7 +74,7 @@ func main() {
 				panic(err)
 			}
 
-			if err := db.SaveTx(*convTx); err != nil {
+			if err := postgresqlDb.SaveTx(*convTx); err != nil {
 				log.Printf("failed to persist transaction %s: %s", txHash, err)
 			}
 		}

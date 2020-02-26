@@ -5,9 +5,9 @@ import (
 	"log"
 
 	"github.com/cosmos/cosmos-sdk/simapp"
-	"github.com/desmos-labs/juno/client"
 	"github.com/desmos-labs/juno/config"
 	"github.com/desmos-labs/juno/db/postgresql"
+	"github.com/desmos-labs/juno/parse/client"
 	"github.com/pkg/errors"
 )
 
@@ -22,7 +22,7 @@ func main() {
 		panic(err)
 	}
 
-	cp, err := client.New(cfg.RPCNode, cfg.ClientNode)
+	cp, err := client.New(*cfg, simapp.MakeCodec())
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "failed to start RPC client"))
 	}
@@ -35,13 +35,14 @@ func main() {
 		log.Fatal(errors.Wrap(err, "failed to open database connection"))
 	}
 
-	defer db.Sql.Close()
+	postgresqlDb, _ := (*db).(postgresql.Database)
+	defer postgresqlDb.Sql.Close()
 
-	if err := db.Sql.Ping(); err != nil {
+	if err := postgresqlDb.Sql.Ping(); err != nil {
 		log.Fatal(errors.Wrap(err, "failed to ping database"))
 	}
 
-	lastHeight, err := db.LastBlockHeight()
+	lastHeight, err := postgresqlDb.LastBlockHeight()
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "failed to get latest block height"))
 	}
@@ -58,7 +59,7 @@ func main() {
 		}
 
 		var id uint64
-		err = db.Sql.QueryRow(
+		err = postgresqlDb.Sql.QueryRow(
 			`UPDATE block SET timestamp = $2 WHERE height = $1 RETURNING id;`,
 			block.Block.Height, block.Block.Time,
 		).Scan(&id)
