@@ -16,7 +16,7 @@ func ConvertBlockToBSONSetDocument(block *tmctypes.ResultBlock, totalGas, preCom
 		{"$set", bson.D{
 			{"height", block.Block.Height},
 			{"hash", block.Block.Hash().String()},
-			{"num_txs", block.Block.NumTxs},
+			{"num_txs", len(block.Block.Txs)},
 			{"total_gas", totalGas},
 			{"proposer_address", block.Block.ProposerAddress.String()},
 			{"pre_commits", preCommits},
@@ -45,7 +45,6 @@ func ConvertTxToBSONSetDocument(codec *codec.Codec, tx types.Tx) (bson.D, error)
 			{"gas_used", tx.GasUsed},
 			{"height", tx.Height},
 			{"tx_hash", tx.TxHash},
-			{"event", tx.Events},
 			{"logs", tx.Logs},
 			{"messages", msgsData},
 			{"fee", tx.Fee},
@@ -64,13 +63,11 @@ func ConvertValidatorToBSONSetDocument(address, publicKey string) bson.D {
 	}
 }
 
-func ConvertPrecommitToBSONSetDocument(precommit *tmtypes.CommitSig, votingPower, proposerPriority int64) bson.D {
+func ConvertPrecommitToBSONSetDocument(commitSig tmtypes.CommitSig, votingPower, proposerPriority int64) bson.D {
 	return bson.D{{
 		"$set", bson.D{
-			{"height", precommit.Height},
-			{"round", precommit.Round},
-			{"validator_address", precommit.ValidatorAddress.String()},
-			{"timestamp", precommit.Timestamp},
+			{"validator_address", commitSig.ValidatorAddress.String()},
+			{"timestamp", commitSig.Timestamp},
 			{"voting_power", votingPower},
 			{"proposer_priority", proposerPriority},
 		}},

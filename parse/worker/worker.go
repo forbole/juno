@@ -135,7 +135,7 @@ func (w Worker) process(height int64) error {
 		txData[index] = *convTx
 	}
 
-	vals, err := w.cp.Validators(block.Block.LastCommit.Height())
+	vals, err := w.cp.Validators(block.Block.LastCommit.Height)
 	if err != nil {
 		log.Info().Err(err).Int64("height", height).Msg("failed to get validators for block")
 		return err
@@ -153,25 +153,23 @@ func (w Worker) process(height int64) error {
 // returned if any write fails or if there is any missing aggregated data.
 func (w Worker) ExportPreCommits(commit *tmtypes.Commit, vals *tmctypes.ResultValidators) error {
 	// persist all validators and pre-commits
-	for _, pc := range commit.Precommits {
-		if pc != nil {
-			valAddr := pc.ValidatorAddress.String()
+	for _, commitSig := range commit.Signatures {
+		valAddr := commitSig.ValidatorAddress.String()
 
-			val := findValidatorByAddr(valAddr, vals)
-			if val == nil {
-				err := fmt.Errorf("failed to find validator by address %s for block %d", valAddr, commit.Height())
-				log.Error().Msg(err.Error())
-				return err
-			}
+		val := findValidatorByAddr(valAddr, vals)
+		if val == nil {
+			err := fmt.Errorf("failed to find validator by address %s for block %d", valAddr, commit.Height)
+			log.Error().Msg(err.Error())
+			return err
+		}
 
-			if err := w.ExportValidator(val); err != nil {
-				return err
-			}
+		if err := w.ExportValidator(val); err != nil {
+			return err
+		}
 
-			if err := w.db.SavePreCommit(pc, val.VotingPower, val.ProposerPriority); err != nil {
-				log.Error().Err(err).Str("validator", valAddr).Msg("failed to persist validator pre-commit")
-				return err
-			}
+		if err := w.db.SaveCommitSig(commitSig, val.VotingPower, val.ProposerPriority); err != nil {
+			log.Error().Err(err).Str("validator", valAddr).Msg("failed to persist validator pre-commit")
+			return err
 		}
 	}
 
@@ -184,7 +182,7 @@ func (w Worker) ExportPreCommits(commit *tmtypes.Commit, vals *tmctypes.ResultVa
 func (w Worker) ExportValidator(val *tmtypes.Validator) error {
 	valAddr := val.Address.String()
 
-	consPubKey, err := sdk.Bech32ifyConsPub(val.PubKey) // nolint: typecheck
+	consPubKey, err := sdk.Bech32ifyPubKey(sdk.Bech32PubKeyTypeValPub, val.PubKey) // nolint: typecheck
 	if err != nil {
 		log.Error().Err(err).Str("validator", valAddr).Msg("failed to convert validator public key")
 		return err
@@ -203,7 +201,7 @@ func (w Worker) ExportValidator(val *tmtypes.Validator) error {
 // is returned if the write fails.
 func (w Worker) ExportBlock(b *tmctypes.ResultBlock, txs []types.Tx, vals *tmctypes.ResultValidators) error {
 	totalGas := sumGasTxs(txs)
-	preCommits := uint64(len(b.Block.LastCommit.Precommits))
+	preCommits := uint64(len(b.Block.LastCommit.Signatures))
 
 	// Set the block's proposer if it does not already exist. This may occur if
 	// the proposer has never signed before.

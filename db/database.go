@@ -18,7 +18,7 @@ type Database interface {
 	// and the transactions contained inside that block.
 	// An error is returned if the operation fails.
 	// NOTE. For each transaction inside txs, SaveTx will be called as well.
-	SaveBlock(block *tmctypes.ResultBlock, totalGas, preCommits uint64) error
+	SaveBlock(block *tmctypes.ResultBlock, totalGas, commitSignatures uint64) error
 
 	// SaveTx will be called to save each transaction contained inside a block.
 	// An error is returned if the operation fails.
@@ -34,7 +34,7 @@ type Database interface {
 
 	// SetPreCommit stores a validator's pre-commit.
 	// An error is returned if the operation fails.
-	SavePreCommit(pc *tmtypes.CommitSig, votingPower, proposerPriority int64) error
+	SaveCommitSig(commitSig tmtypes.CommitSig, votingPower, proposerPriority int64) error
 }
 
 // Builder represents a method that allows to build any database from a given codec and configuration

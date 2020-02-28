@@ -86,7 +86,7 @@ func (db Database) SaveBlock(block *tmctypes.ResultBlock, totalGas, preCommits u
 
 	return db.Sql.QueryRow(
 		sqlStatement,
-		block.Block.Height, block.Block.Hash().String(), block.Block.NumTxs,
+		block.Block.Height, block.Block.Hash().String(), len(block.Block.Txs),
 		totalGas, block.Block.ProposerAddress.String(), preCommits, block.Block.Time,
 	).Scan(&id)
 }
@@ -97,7 +97,7 @@ func (db Database) SaveTx(tx types.Tx) error {
 	var id uint64
 
 	sqlStatement := `
-	INSERT INTO transaction (timestamp, gas_wanted, gas_used, height, txhash, events, messages, fee, signatures, memo)
+	INSERT INTO transaction (timestamp, gas_wanted, gas_used, height, txhash, messages, fee, signatures, memo)
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 	RETURNING id;
 	`
@@ -105,11 +105,6 @@ func (db Database) SaveTx(tx types.Tx) error {
 	stdTx, ok := tx.Tx.(auth.StdTx)
 	if !ok {
 		return fmt.Errorf("unsupported tx type: %T", tx.Tx)
-	}
-
-	eventsBz, err := db.Codec.MarshalJSON(tx.Events)
-	if err != nil {
-		return fmt.Errorf("failed to JSON encode tx events: %s", err)
 	}
 
 	msgsBz, err := db.Codec.MarshalJSON(stdTx.GetMsgs())
@@ -123,14 +118,14 @@ func (db Database) SaveTx(tx types.Tx) error {
 	}
 
 	// convert Tendermint signatures into a more human-readable format
-	sigs := make([]signature, len(stdTx.GetSignatures()), len(stdTx.GetSignatures()))
-	for i, sig := range stdTx.GetSignatures() {
+	sigs := make([]signature, len(stdTx.Signatures), len(stdTx.Signatures))
+	for i, sig := range stdTx.Signatures {
 		addr, err := sdk.AccAddressFromHex(sig.Address().String())
 		if err != nil {
 			return fmt.Errorf("failed to convert account address %s: %s\n", sig.Address(), err)
 		}
 
-		pubkey, err := sdk.Bech32ifyAccPub(sig.PubKey) // nolint: typecheck
+		pubkey, err := sdk.Bech32ifyPubKey(sdk.Bech32PubKeyTypeAccPub, sig.PubKey) // nolint: typecheck
 		if err != nil {
 			return fmt.Errorf("failed to convert account public key %X: %s\n", sig.PubKey.Bytes(), err)
 		}
@@ -149,7 +144,7 @@ func (db Database) SaveTx(tx types.Tx) error {
 
 	return db.Sql.QueryRow(
 		sqlStatement,
-		tx.Timestamp, tx.GasWanted, tx.GasUsed, tx.Height, tx.TxHash, string(eventsBz),
+		tx.Timestamp, tx.GasWanted, tx.GasUsed, tx.Height, tx.TxHash,
 		string(msgsBz), string(feeBz), string(sigsBz), stdTx.GetMemo(),
 	).Scan(&id)
 }
@@ -179,18 +174,17 @@ func (db Database) SaveValidator(addr, pk string) error {
 
 // SetPreCommit stores a validator's pre-commit and returns the resulting record
 // ID. An error is returned if the operation fails.
-func (db Database) SavePreCommit(pc *tmtypes.CommitSig, votingPower, proposerPriority int64) error {
+func (db Database) SaveCommitSig(pc tmtypes.CommitSig, votingPower, proposerPriority int64) error {
 	var id uint64
 
 	sqlStatement := `
-	INSERT INTO pre_commit (height, round, validator_address, timestamp, voting_power, proposer_priority)
+	INSERT INTO pre_commit (validator_address, timestamp, voting_power, proposer_priority)
 	VALUES ($1, $2, $3, $4, $5, $6)
 	RETURNING id;
 	`
 
 	return db.Sql.QueryRow(
-		sqlStatement,
-		pc.Height, pc.Round, pc.ValidatorAddress.String(), pc.Timestamp, votingPower, proposerPriority,
+		sqlStatement, pc.ValidatorAddress.String(), pc.Timestamp, votingPower, proposerPriority,
 	).Scan(&id)
 }
 

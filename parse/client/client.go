@@ -8,10 +8,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/desmos-labs/juno/config"
-
-	"github.com/cosmos/cosmos-sdk/codec"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
@@ -25,7 +24,10 @@ type ClientProxy struct {
 }
 
 func New(cfg config.Config, codec *codec.Codec) (ClientProxy, error) {
-	rpcClient := rpcclient.NewHTTP(cfg.RPCNode, "/websocket")
+	rpcClient, err := rpcclient.NewHTTP(cfg.RPCNode, "/websocket")
+	if err != nil {
+		return ClientProxy{}, err
+	}
 
 	if err := rpcClient.Start(); err != nil {
 		return ClientProxy{}, err
@@ -69,7 +71,7 @@ func (cp ClientProxy) TendermintTx(hash string) (*tmctypes.ResultTx, error) {
 // Validators returns all the known Tendermint validators for a given block
 // height. An error is returned if the query fails.
 func (cp ClientProxy) Validators(height int64) (*tmctypes.ResultValidators, error) {
-	return cp.rpcClient.Validators(&height)
+	return cp.rpcClient.Validators(&height, 0, 0)
 }
 
 // Genesis returns the genesis state

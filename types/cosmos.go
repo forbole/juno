@@ -24,8 +24,8 @@ func NewTx(txResponse sdk.TxResponse) (*Tx, error) {
 	}
 
 	// Convert Tendermint signatures into a more human-readable format
-	sigs := make([]Signature, len(stdTx.GetSignatures()), len(stdTx.GetSignatures()))
-	for i, sig := range stdTx.GetSignatures() {
+	sigs := make([]Signature, len(stdTx.Signatures), len(stdTx.Signatures))
+	for i, sig := range stdTx.Signatures {
 		sigs[i] = Signature{
 			StdSignature: sig,
 			Address:      sdk.AccAddress(sig.Address()).String(),
