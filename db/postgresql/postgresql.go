@@ -98,7 +98,7 @@ func (db Database) SaveTx(tx types.Tx) error {
 
 	sqlStatement := `
 	INSERT INTO transaction (timestamp, gas_wanted, gas_used, height, txhash, messages, fee, signatures, memo)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 	RETURNING id;
 	`
 
@@ -179,7 +179,7 @@ func (db Database) SaveCommitSig(pc tmtypes.CommitSig, votingPower, proposerPrio
 
 	sqlStatement := `
 	INSERT INTO pre_commit (validator_address, timestamp, voting_power, proposer_priority)
-	VALUES ($1, $2, $3, $4, $5, $6)
+	VALUES ($1, $2, $3, $4)
 	RETURNING id;
 	`
 
