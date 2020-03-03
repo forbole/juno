@@ -154,6 +154,11 @@ func (w Worker) process(height int64) error {
 func (w Worker) ExportPreCommits(commit *tmtypes.Commit, vals *tmctypes.ResultValidators) error {
 	// persist all validators and pre-commits
 	for _, commitSig := range commit.Signatures {
+		// Avoid empty commits
+		if commitSig.Signature == nil {
+			continue
+		}
+
 		valAddr := commitSig.ValidatorAddress.String()
 
 		val := findValidatorByAddr(valAddr, vals)
