@@ -22,9 +22,9 @@ var (
 )
 
 // GenesisHandler represents a function that allows to handle the genesis state.
-// For convenience of use, the entire GenesisDoc along with the already-unmarshalled AppState
-// and the currently used database will be passed as well.
-type GenesisHandler func(genesisDoc *tmtypes.GenesisDoc, appState map[string]json.RawMessage, db db.Database) error
+// For convenience of use, the entire current codec, the GenesisDoc, the already-unmarshalled AppState
+// and the currently used database will be passed to it.
+type GenesisHandler func(codec *codec.Codec, genesisDoc *tmtypes.GenesisDoc, appState map[string]json.RawMessage, db db.Database) error
 
 // RegisterGenesisHandler allows to register a new GenesisHandler to be called when a new block is parsed.
 // All the registered handlers will be called in order as they are registered (First-In-First-Served).
@@ -167,7 +167,7 @@ func (w Worker) HandleGenesis(genesis *tmtypes.GenesisDoc) error {
 
 	// Call the block handlers
 	for _, handler := range genesisHandlers {
-		if err := handler(genesis, appState, w.db); err != nil {
+		if err := handler(w.cdc, genesis, appState, w.db); err != nil {
 			return err
 		}
 	}
