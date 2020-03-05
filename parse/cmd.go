@@ -104,7 +104,7 @@ func parseCmdHandler(codec *codec.Codec, dbBuilder db.Builder, args []string) er
 	workerCount := viper.GetInt64(config.FlagWorkerCount)
 	workers := make([]worker.Worker, workerCount, workerCount)
 	for i := range workers {
-		workers[i] = worker.NewWorker(cp, exportQueue, *database)
+		workers[i] = worker.NewWorker(codec, cp, exportQueue, *database)
 	}
 
 	wg.Add(1)
