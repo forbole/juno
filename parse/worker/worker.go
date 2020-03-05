@@ -1,8 +1,10 @@
 package worker
 
 import (
+	"encoding/json"
 	"fmt"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/desmos-labs/juno/db"
 	"github.com/desmos-labs/juno/parse/client"
@@ -13,10 +15,22 @@ import (
 )
 
 var (
-	blockHandlers []BlockHandler
-	txHandlers    []TxHandler
-	msgHandlers   []MsgHandler
+	genesisHandlers []GenesisHandler
+	blockHandlers   []BlockHandler
+	txHandlers      []TxHandler
+	msgHandlers     []MsgHandler
 )
+
+// GenesisHandler represents a function that allows to handle the genesis state.
+// For convenience of use, the entire GenesisDoc along with the already-unmarshalled AppState are passed.
+type GenesisHandler func(genesisDoc *tmtypes.GenesisDoc, appState map[string]json.RawMessage) error
+
+// RegisterGenesisHandler allows to register a new GenesisHandler to be called when a new block is parsed.
+// All the registered handlers will be called in order as they are registered (First-In-First-Served).
+// Later handlers will not execute if a previous handler returns an error.
+func RegisterGenesisHandler(handler GenesisHandler) {
+	genesisHandlers = append(genesisHandlers, handler)
+}
 
 // BlockHandler represents a function that allows to handle a single block.
 // For convenience of use, all the transactions present inside the given block
@@ -57,14 +71,15 @@ func RegisterMsgHandler(handler MsgHandler) {
 // Worker defines a job consumer that is responsible for getting and
 // aggregating block and associated data and exporting it to a database.
 type Worker struct {
+	cdc   *codec.Codec
 	cp    client.ClientProxy
 	queue types.Queue
 	db    db.Database
 }
 
 // NewWorker allows to create a new Worker implementation.
-func NewWorker(cp client.ClientProxy, q types.Queue, db db.Database) Worker {
-	return Worker{cp, q, db}
+func NewWorker(cdc *codec.Codec, cp client.ClientProxy, q types.Queue, db db.Database) Worker {
+	return Worker{cdc, cp, q, db}
 }
 
 // Start starts a worker by listening for new jobs (block heights) from the
@@ -99,18 +114,13 @@ func (w Worker) process(height int64) error {
 	}
 
 	if height == 1 {
-		log.Info().Msg("Parse genesis")
-
-		/*if err := w.db.CreateIndexes(); err != nil {
-			log.Info().Err(err).Int64("height", height).Msg("error creating index")
-		}*/
-
-		/*genesis, err := w.cp.Genesis()
+		log.Info().Msg("Parse response")
+		response, err := w.cp.Genesis()
 		if err != nil {
-			log.Info().Err(err).Int64("height", height).Msg("failed to get genesis")
+			log.Info().Err(err).Int64("height", height).Msg("failed to get response")
 		}
 
-		return w.db.ExportGenesis(genesis)*/
+		return w.HandleGenesis(response.Genesis)
 	}
 
 	block, err := w.cp.Block(height)
@@ -148,7 +158,23 @@ func (w Worker) process(height int64) error {
 	return w.ExportBlock(block, txData, vals)
 }
 
-// ExportPreCommits accepts a block commitment and a coressponding set of
+// HandleGenesis accepts a GenesisDoc and calls all the registered genesis handlers
+// in the order in which they have been registered.
+func (w Worker) HandleGenesis(genesis *tmtypes.GenesisDoc) error {
+	var appState map[string]json.RawMessage
+	w.cdc.MustUnmarshalJSON(genesis.AppState, &appState)
+
+	// Call the block handlers
+	for _, handler := range genesisHandlers {
+		if err := handler(genesis, appState); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ExportPreCommits accepts a block commitment and a corresponding set of
 // validators for the commitment and persists them to the database. An error is
 // returned if any write fails or if there is any missing aggregated data.
 func (w Worker) ExportPreCommits(commit *tmtypes.Commit, vals *tmctypes.ResultValidators) error {
@@ -240,6 +266,8 @@ func (w Worker) ExportBlock(b *tmctypes.ResultBlock, txs []types.Tx, vals *tmcty
 	return w.ExportTxs(txs)
 }
 
+// ExportTxs accepts a slice of transactions and persists then inside the database.
+// An error is returned if the write fails.
 func (w Worker) ExportTxs(txs []types.Tx) error {
 	// Handle all the transactions inside the block
 	for _, tx := range txs {
