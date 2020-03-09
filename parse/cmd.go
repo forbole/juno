@@ -40,7 +40,7 @@ func GetParseCmd(cdc *codec.Codec, builder db.Builder) *cobra.Command {
 		Short: "Start parsing a blockchain using the provided config file",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return parseCmdHandler(cdc, builder, args)
+			return ParseCmdHandler(cdc, builder, args[0])
 		},
 	}
 
@@ -57,7 +57,7 @@ func SetupFlags(cmd *cobra.Command) *cobra.Command {
 }
 
 // parseCmdHandler represents the function that should be called when the parse command is executed
-func parseCmdHandler(codec *codec.Codec, dbBuilder db.Builder, args []string) error {
+func ParseCmdHandler(codec *codec.Codec, dbBuilder db.Builder, configPath string) error {
 
 	// Init logging level
 	logLvl, err := zerolog.ParseLevel(viper.GetString(config.FlagLogLevel))
@@ -83,8 +83,7 @@ func parseCmdHandler(codec *codec.Codec, dbBuilder db.Builder, args []string) er
 
 	// Init config
 	log.Info().Msg("Reading config file")
-	cfgFile := args[0]
-	cfg, err := config.ParseConfig(cfgFile)
+	cfg, err := config.ParseConfig(configPath)
 	if err != nil {
 		return err
 	}
