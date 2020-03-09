@@ -44,11 +44,15 @@ func GetParseCmd(cdc *codec.Codec, builder db.Builder) *cobra.Command {
 		},
 	}
 
+	return SetupFlags(cmd)
+}
+
+// SetupFlags allows to setup the given cmd by setting the required parse flags
+func SetupFlags(cmd *cobra.Command) *cobra.Command {
 	cmd.Flags().Int64(config.FlagStartHeight, 1, "sync missing or failed blocks starting from a given height")
 	cmd.Flags().Int64(config.FlagWorkerCount, 1, "number of workers to run concurrently")
 	cmd.Flags().String(config.FlagLogLevel, zerolog.InfoLevel.String(), "logging level")
 	cmd.Flags().String(config.FlagLogFormat, logLevelJSON, "logging format; must be either json or text")
-
 	return cmd
 }
 
