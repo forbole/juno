@@ -9,7 +9,7 @@ import (
 
 func main() {
 	// Build the exec
-	exec := executor.BuildExecutor("juno", types.EmptySetup, simapp.MakeCodec, postgresql.Builder)
+	exec := executor.BuildDefaultExecutor("juno", types.EmptySetup, simapp.MakeCodec, postgresql.Builder)
 
 	// Run the commands and panic on any error
 	err := exec.Execute()

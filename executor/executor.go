@@ -13,23 +13,16 @@ import (
 	"github.com/tendermint/tendermint/libs/cli"
 )
 
-// Utility method that allows to build an Executor containing a root command that
-// has the provided name and description.
+// BuildRootCmd allows to build the default root command having the specified name.
 //
-// The provided setupCfg method will be used to customize the SDK configuration. If you don't want any customization
-// you can use the types.EmptySetup method.
-//
-// The provided cdcBuilder is used to provide a codec that will later be used to deserialize the
-// transaction messages. Make sure you register all the types you need properly.
-//
-// The provided dbBuilder is used to provide the database that will be used to save the data.
-func BuildExecutor(name string, setupCfg types.SdkConfigSetup, cdcBuilder types.CodecBuilder, dbBuilder db.Builder) cli.Executor {
-
+// The given SdkConfigSetup method will be used to setup the Cosmos SDK configuration before
+// creating the command.
+func BuildRootCmd(name string, setupCfg types.SdkConfigSetup) *cobra.Command {
 	sdkConfig := sdk.GetConfig()
 	setupCfg(sdkConfig)
 	sdkConfig.Seal()
 
-	rootCmd := &cobra.Command{
+	return &cobra.Command{
 		Use:   name,
 		Short: fmt.Sprintf("%s is a Cosmos Hub data aggregator and exporter", name),
 		Long: fmt.Sprintf(`A cosmos Hub data aggregator. It improves the Hub's data accessibility
@@ -40,6 +33,20 @@ it even further eases the ability for developers and downstream clients to answe
 queries such as "what is the average gas cost of a block?" while also allowing
 them to compose more aggregate and complex queries.`, name),
 	}
+}
+
+// BuildDefaultExecutor allows to build an Executor containing a root command that
+// has the provided name and description and the default version and parse sub-commands implementations.
+//
+// The provided setupCfg method will be used to customize the SDK configuration. If you don't want any customization
+// you can use the types.EmptySetup method.
+//
+// The provided cdcBuilder is used to provide a codec that will later be used to deserialize the
+// transaction messages. Make sure you register all the types you need properly.
+//
+// The provided dbBuilder is used to provide the database that will be used to save the data.
+func BuildDefaultExecutor(name string, setupCfg types.SdkConfigSetup, cdcBuilder types.CodecBuilder, dbBuilder db.Builder) cli.Executor {
+	rootCmd := BuildRootCmd(name, setupCfg)
 
 	rootCmd.AddCommand(
 		version.GetVersionCmd(),
