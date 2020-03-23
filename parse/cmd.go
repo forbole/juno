@@ -82,7 +82,7 @@ func ParseCmdHandler(codec *codec.Codec, dbBuilder db.Builder, configPath string
 	}
 
 	// Init config
-	log.Info().Msg("Reading config file")
+	log.Debug().Msg("Reading config file")
 	cfg, err := config.ParseConfig(configPath)
 	if err != nil {
 		return err
@@ -115,7 +115,7 @@ func ParseCmdHandler(codec *codec.Codec, dbBuilder db.Builder, configPath string
 	// Start each blocking worker in a go-routine where the worker consumes jobs
 	// off of the export queue.
 	for i, w := range workers {
-		log.Info().Int("number", i+1).Msg("starting worker...")
+		log.Debug().Int("number", i+1).Msg("starting worker...")
 
 		go w.Start()
 	}
@@ -139,11 +139,11 @@ func enqueueMissingBlocks(exportQueue types.Queue, cp client.ClientProxy) {
 		log.Fatal().Err(errors.Wrap(err, "failed to get lastest block from RPC client"))
 	}
 
-	log.Info().Int64("latestBlockHeight", latestBlockHeight).Msg("syncing missing blocks...")
+	log.Debug().Int64("latestBlockHeight", latestBlockHeight).Msg("syncing missing blocks...")
 
 	startHeight := viper.GetInt64(config.FlagStartHeight)
 	for i := startHeight; i <= latestBlockHeight; i++ {
-		log.Info().Int64("height", i).Msg("enqueueing missing block")
+		log.Debug().Int64("height", i).Msg("enqueueing missing block")
 		exportQueue <- i
 	}
 }
@@ -165,7 +165,7 @@ func startNewBlockListener(exportQueue types.Queue, cp client.ClientProxy) {
 		newBlock := e.Data.(tmtypes.EventDataNewBlock).Block
 		height := newBlock.Header.Height
 
-		log.Info().Int64("height", height).Msg("enqueueing new block")
+		log.Debug().Int64("height", height).Msg("enqueueing new block")
 		exportQueue <- height
 	}
 }

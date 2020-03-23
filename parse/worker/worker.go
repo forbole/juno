@@ -87,13 +87,13 @@ func NewWorker(cdc *codec.Codec, cp client.ClientProxy, q types.Queue, db db.Dat
 // given worker queue. Any failed job is logged and re-enqueued.
 func (w Worker) Start() {
 	for i := range w.queue {
-		log.Info().Int64("height", i).Msg("processing block")
+		log.Debug().Int64("height", i).Msg("processing block")
 
 		if err := w.process(i); err != nil {
 			// re-enqueue any failed job
 			// TODO: Implement exponential backoff or max retries for a block height.
 			go func() {
-				log.Info().Int64("height", i).Err(err).Msg("re-enqueueing failed block")
+				log.Error().Err(err).Int64("height", i).Msg("re-enqueueing failed block")
 				w.queue <- i
 			}()
 		}
@@ -115,10 +115,10 @@ func (w Worker) process(height int64) error {
 	}
 
 	if height == 1 {
-		log.Info().Msg("Parse response")
+		log.Debug().Msg("Parse response")
 		response, err := w.cp.Genesis()
 		if err != nil {
-			log.Info().Err(err).Int64("height", height).Msg("failed to get response")
+			return err
 		}
 
 		return w.HandleGenesis(response.Genesis)
@@ -126,13 +126,13 @@ func (w Worker) process(height int64) error {
 
 	block, err := w.cp.Block(height)
 	if err != nil {
-		log.Info().Err(err).Int64("height", height).Msg("failed to get block")
+		log.Error().Err(err).Int64("height", height).Msg("failed to get block")
 		return err
 	}
 
 	txs, err := w.cp.Txs(block)
 	if err != nil {
-		log.Info().Err(err).Int64("height", height).Msg("failed to get transactions for block")
+		log.Error().Err(err).Int64("height", height).Msg("failed to get transactions for block")
 		return err
 	}
 
@@ -148,7 +148,7 @@ func (w Worker) process(height int64) error {
 
 	vals, err := w.cp.Validators(block.Block.LastCommit.Height)
 	if err != nil {
-		log.Info().Err(err).Int64("height", height).Msg("failed to get validators for block")
+		log.Error().Err(err).Int64("height", height).Msg("failed to get validators for block")
 		return err
 	}
 
