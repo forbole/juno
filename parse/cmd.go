@@ -51,6 +51,7 @@ func GetParseCmd(cdc *codec.Codec, builder db.Builder) *cobra.Command {
 func SetupFlags(cmd *cobra.Command) *cobra.Command {
 	cmd.Flags().Int64(config.FlagStartHeight, 1, "sync missing or failed blocks starting from a given height")
 	cmd.Flags().Int64(config.FlagWorkerCount, 1, "number of workers to run concurrently")
+	cmd.Flags().Bool(config.FlagListenNewBlocks, true, "listen to new blocks")
 	cmd.Flags().String(config.FlagLogLevel, zerolog.InfoLevel.String(), "logging level")
 	cmd.Flags().String(config.FlagLogFormat, logLevelJSON, "logging format; must be either json or text")
 	return cmd
@@ -123,8 +124,11 @@ func ParseCmdHandler(codec *codec.Codec, dbBuilder db.Builder, configPath string
 	// Listen for and trap any OS signal to gracefully shutdown and exit
 	trapSignal()
 
-	go startNewBlockListener(exportQueue, cp)
 	go enqueueMissingBlocks(exportQueue, cp)
+
+	if viper.GetBool(config.FlagListenNewBlocks) {
+		go startNewBlockListener(exportQueue, cp)
+	}
 
 	// Block main process (signal capture will call WaitGroup's Done)
 	wg.Wait()

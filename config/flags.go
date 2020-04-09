@@ -9,11 +9,12 @@ import (
 )
 
 const (
-	FlagStartHeight = "start-height"
-	FlagWorkerCount = "workers"
-	FlagLogLevel    = "log-level"
-	FlagLogFormat   = "log-format"
-	FlagFormat      = "format"
+	FlagStartHeight     = "start-height"
+	FlagWorkerCount     = "workers"
+	FlagListenNewBlocks = "listen-new-blocks"
+	FlagLogLevel        = "log-level"
+	FlagLogFormat       = "log-format"
+	FlagFormat          = "format"
 )
 
 // PrepareMainCmd is meant to prepare the given command binding all the viper flags
