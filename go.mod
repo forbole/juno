@@ -11,6 +11,7 @@ require (
 	github.com/rs/zerolog v1.18.0
 	github.com/spf13/cobra v0.0.6
 	github.com/spf13/viper v1.6.2
+	github.com/stretchr/testify v1.4.0
 	github.com/tendermint/tendermint v0.33.0
 	go.mongodb.org/mongo-driver v1.3.0
 	google.golang.org/grpc v1.27.1 // indirect
