@@ -29,15 +29,15 @@ type Db struct {
 }
 
 // Builder allows to create a new MongoDB connection from the given config and codec
-func Builder(cfg config.Config, codec *codec.Codec) (*db.Database, error) {
+func Builder(cfg config.MongoDBConfig, codec *codec.Codec) (*db.Database, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	return Open(cfg, codec, ctx)
 }
 
 // Open allows to open a new MongoDb instance connection using the specified config
-func Open(cfg config.Config, codec *codec.Codec, ctx context.Context) (*db.Database, error) {
-	opts := options.Client().ApplyURI(cfg.DB.Uri)
+func Open(cfg config.MongoDBConfig, codec *codec.Codec, ctx context.Context) (*db.Database, error) {
+	opts := options.Client().ApplyURI(cfg.Uri)
 	client, err := mongo.NewClient(opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to mongodb connections")
@@ -51,7 +51,7 @@ func Open(cfg config.Config, codec *codec.Codec, ctx context.Context) (*db.Datab
 		return nil, errors.Wrap(err, "failed to ping mongodb")
 	}
 
-	var mdb db.Database = Db{Mongo: client.Database(cfg.DB.Name), Codec: codec}
+	var mdb db.Database = Db{Mongo: client.Database(cfg.Name), Codec: codec}
 	return &mdb, nil
 }
 

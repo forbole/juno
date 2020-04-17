@@ -7,6 +7,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/simapp"
 	"github.com/desmos-labs/juno/config"
+	"github.com/desmos-labs/juno/db"
 	"github.com/desmos-labs/juno/db/postgresql"
 	"github.com/desmos-labs/juno/parse/client"
 	"github.com/desmos-labs/juno/types"
@@ -32,12 +33,12 @@ func main() {
 	defer cp.Stop() // nolint: errcheck
 
 	codec := simapp.MakeCodec()
-	db, err := postgresql.Builder(*cfg, codec)
+	database, err := db.DatabaseBuilder(*cfg, codec)
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "failed to open database connection"))
 	}
 
-	postgresqlDb, _ := (*db).(postgresql.Database)
+	postgresqlDb, _ := (*database).(postgresql.Database)
 	defer postgresqlDb.Sql.Close()
 
 	if err := postgresqlDb.Sql.Ping(); err != nil {

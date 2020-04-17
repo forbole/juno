@@ -30,19 +30,19 @@ type Database struct {
 // OpenDB opens a database connection with the given database connection info
 // from config. It returns a database connection handle or an error if the
 // connection fails.
-func Builder(cfg config.Config, codec *codec.Codec) (*db.Database, error) {
+func Builder(cfg config.PostgreSQLConfig, codec *codec.Codec) (*db.Database, error) {
 	sslMode := "disable"
-	if cfg.DB.SSLMode != "" {
-		sslMode = cfg.DB.SSLMode
+	if cfg.SSLMode != "" {
+		sslMode = cfg.SSLMode
 	}
 
 	connStr := fmt.Sprintf(
 		"host=%s port=%d dbname=%s user=%s sslmode=%s",
-		cfg.DB.Host, cfg.DB.Port, cfg.DB.Name, cfg.DB.User, sslMode,
+		cfg.Host, cfg.Port, cfg.Name, cfg.User, sslMode,
 	)
 
-	if cfg.DB.Password != "" {
-		connStr += fmt.Sprintf(" password=%s", cfg.DB.Password)
+	if cfg.Password != "" {
+		connStr += fmt.Sprintf(" password=%s", cfg.Password)
 	}
 
 	postgresDb, err := sql.Open("postgres", connStr)
