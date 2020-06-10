@@ -36,7 +36,7 @@ func RegisterGenesisHandler(handler GenesisHandler) {
 // BlockHandler represents a function that allows to handle a single block.
 // For convenience of use, all the transactions present inside the given block
 // and the currently used database will be passed as well.
-type BlockHandler func(block *tmctypes.ResultBlock, txs []types.Tx, w Worker) error
+type BlockHandler func(block *tmctypes.ResultBlock, txs []types.Tx, vals *tmctypes.ResultValidators, w Worker) error
 
 // RegisterBlockHandler allows to register a new BlockHandler to be called when a new block is parsed.
 // All the registered handlers will be called in order as they are registered (First-In-First-Served).
@@ -258,7 +258,7 @@ func (w Worker) ExportBlock(b *tmctypes.ResultBlock, txs []types.Tx, vals *tmcty
 
 	// Call the block handlers
 	for _, handler := range blockHandlers {
-		if err := handler(b, txs, w); err != nil {
+		if err := handler(b, txs, vals, w); err != nil {
 			return err
 		}
 	}
