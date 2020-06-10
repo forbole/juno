@@ -94,25 +94,34 @@ func (cp ClientProxy) SubscribeNewBlocks(subscriber string) (<-chan tmctypes.Res
 	return eventCh, cancel, err
 }
 
-// Tx queries for a transaction from the REST client and decodes it into a sdk.Tx
-// if the transaction exists. An error is returned if the tx doesn't exist or
-// decoding fails.
-func (cp ClientProxy) Tx(hash string) (sdk.TxResponse, error) {
-	resp, err := http.Get(fmt.Sprintf("%s/txs/%s", cp.clientNode, hash))
+// QueryLCD queries the LCD at the given URL, and deserializes the result into the given pointer.
+// If an error is raised, retuns the error
+func (cp ClientProxy) QueryLCD(url string, ptr interface{}) error {
+	resp, err := http.Get(url)
 	if err != nil {
-		return sdk.TxResponse{}, err
+		return err
 	}
 
 	defer resp.Body.Close()
 
 	bz, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return sdk.TxResponse{}, err
+		return err
 	}
 
-	var tx sdk.TxResponse
+	if err := cp.cdc.UnmarshalJSON(bz, ptr); err != nil {
+		return err
+	}
 
-	if err := cp.cdc.UnmarshalJSON(bz, &tx); err != nil {
+	return nil
+}
+
+// Tx queries for a transaction from the REST client and decodes it into a sdk.Tx
+// if the transaction exists. An error is returned if the tx doesn't exist or
+// decoding fails.
+func (cp ClientProxy) Tx(hash string) (sdk.TxResponse, error) {
+	var tx sdk.TxResponse
+	if err := cp.QueryLCD(fmt.Sprintf("%s/txs/%s", cp.clientNode, hash), &tx); err != nil {
 		return sdk.TxResponse{}, err
 	}
 
