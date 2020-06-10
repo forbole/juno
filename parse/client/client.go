@@ -94,10 +94,10 @@ func (cp ClientProxy) SubscribeNewBlocks(subscriber string) (<-chan tmctypes.Res
 	return eventCh, cancel, err
 }
 
-// QueryLCD queries the LCD at the given URL, and deserializes the result into the given pointer.
+// QueryLCD queries the LCD at the given endpoint, and deserializes the result into the given pointer.
 // If an error is raised, retuns the error
-func (cp ClientProxy) QueryLCD(url string, ptr interface{}) error {
-	resp, err := http.Get(url)
+func (cp ClientProxy) QueryLCD(endpoint string, ptr interface{}) error {
+	resp, err := http.Get(fmt.Sprintf("%s/%s", cp.clientNode, endpoint))
 	if err != nil {
 		return err
 	}
@@ -121,7 +121,7 @@ func (cp ClientProxy) QueryLCD(url string, ptr interface{}) error {
 // decoding fails.
 func (cp ClientProxy) Tx(hash string) (sdk.TxResponse, error) {
 	var tx sdk.TxResponse
-	if err := cp.QueryLCD(fmt.Sprintf("%s/txs/%s", cp.clientNode, hash), &tx); err != nil {
+	if err := cp.QueryLCD(fmt.Sprintf("txs/%s", hash), &tx); err != nil {
 		return sdk.TxResponse{}, err
 	}
 
