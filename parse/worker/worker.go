@@ -72,10 +72,10 @@ func RegisterMsgHandler(handler MsgHandler) {
 // Worker defines a job consumer that is responsible for getting and
 // aggregating block and associated data and exporting it to a database.
 type Worker struct {
-	cdc   *codec.Codec
-	cp    client.ClientProxy
-	queue types.Queue
-	db    db.Database
+	Cdc         *codec.Codec
+	ClientProxy client.ClientProxy
+	queue       types.Queue
+	Db          db.Database
 }
 
 // NewWorker allows to create a new Worker implementation.
@@ -104,7 +104,7 @@ func (w Worker) Start() {
 // height and associated metadata and export it to a database. It returns an
 // error if any export process fails.
 func (w Worker) process(height int64) error {
-	exists, err := w.db.HasBlock(height)
+	exists, err := w.Db.HasBlock(height)
 	if err != nil {
 		return err
 	}
@@ -116,7 +116,7 @@ func (w Worker) process(height int64) error {
 
 	if height == 1 {
 		log.Debug().Msg("Parse response")
-		response, err := w.cp.Genesis()
+		response, err := w.ClientProxy.Genesis()
 		if err != nil {
 			return err
 		}
@@ -124,13 +124,13 @@ func (w Worker) process(height int64) error {
 		return w.HandleGenesis(response.Genesis)
 	}
 
-	block, err := w.cp.Block(height)
+	block, err := w.ClientProxy.Block(height)
 	if err != nil {
 		log.Error().Err(err).Int64("height", height).Msg("failed to get block")
 		return err
 	}
 
-	txs, err := w.cp.Txs(block)
+	txs, err := w.ClientProxy.Txs(block)
 	if err != nil {
 		log.Error().Err(err).Int64("height", height).Msg("failed to get transactions for block")
 		return err
@@ -146,7 +146,7 @@ func (w Worker) process(height int64) error {
 		txData[index] = *convTx
 	}
 
-	vals, err := w.cp.Validators(block.Block.LastCommit.Height)
+	vals, err := w.ClientProxy.Validators(block.Block.LastCommit.Height)
 	if err != nil {
 		log.Error().Err(err).Int64("height", height).Msg("failed to get validators for block")
 		return err
@@ -163,11 +163,11 @@ func (w Worker) process(height int64) error {
 // in the order in which they have been registered.
 func (w Worker) HandleGenesis(genesis *tmtypes.GenesisDoc) error {
 	var appState map[string]json.RawMessage
-	w.cdc.MustUnmarshalJSON(genesis.AppState, &appState)
+	w.Cdc.MustUnmarshalJSON(genesis.AppState, &appState)
 
 	// Call the block handlers
 	for _, handler := range genesisHandlers {
-		if err := handler(w.cdc, genesis, appState, w); err != nil {
+		if err := handler(w.Cdc, genesis, appState, w); err != nil {
 			return err
 		}
 	}
@@ -199,7 +199,7 @@ func (w Worker) ExportPreCommits(commit *tmtypes.Commit, vals *tmctypes.ResultVa
 			return err
 		}
 
-		if err := w.db.SaveCommitSig(commitSig, val.VotingPower, val.ProposerPriority); err != nil {
+		if err := w.Db.SaveCommitSig(commitSig, val.VotingPower, val.ProposerPriority); err != nil {
 			log.Error().Err(err).Str("validator", valAddr).Msg("failed to persist validator pre-commit")
 			return err
 		}
@@ -220,7 +220,7 @@ func (w Worker) ExportValidator(val *tmtypes.Validator) error {
 		return err
 	}
 
-	if err := w.db.SaveValidator(valAddr, consPubKey); err != nil {
+	if err := w.Db.SaveValidator(valAddr, consPubKey); err != nil {
 		log.Error().Err(err).Str("validator", valAddr).Msg("failed to persist validator")
 		return err
 	}
@@ -251,7 +251,7 @@ func (w Worker) ExportBlock(b *tmctypes.ResultBlock, txs []types.Tx, vals *tmcty
 	}
 
 	// Save the block
-	if err := w.db.SaveBlock(b, totalGas, preCommits); err != nil {
+	if err := w.Db.SaveBlock(b, totalGas, preCommits); err != nil {
 		log.Error().Err(err).Int64("height", b.Block.Height).Msg("failed to persist block")
 		return err
 	}
@@ -273,7 +273,7 @@ func (w Worker) ExportTxs(txs []types.Tx) error {
 	// Handle all the transactions inside the block
 	for _, tx := range txs {
 		// Save the transaction itself
-		if err := w.db.SaveTx(tx); err != nil {
+		if err := w.Db.SaveTx(tx); err != nil {
 			log.Error().Err(err).Str("hash", tx.TxHash).Msg("failed to handle transaction")
 			return err
 		}
