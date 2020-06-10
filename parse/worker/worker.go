@@ -24,7 +24,7 @@ var (
 // GenesisHandler represents a function that allows to handle the genesis state.
 // For convenience of use, the entire current codec, the GenesisDoc, the already-unmarshalled AppState
 // and the currently used database will be passed to it.
-type GenesisHandler func(codec *codec.Codec, genesisDoc *tmtypes.GenesisDoc, appState map[string]json.RawMessage, db db.Database) error
+type GenesisHandler func(codec *codec.Codec, genesisDoc *tmtypes.GenesisDoc, appState map[string]json.RawMessage, w Worker) error
 
 // RegisterGenesisHandler allows to register a new GenesisHandler to be called when a new block is parsed.
 // All the registered handlers will be called in order as they are registered (First-In-First-Served).
@@ -36,7 +36,7 @@ func RegisterGenesisHandler(handler GenesisHandler) {
 // BlockHandler represents a function that allows to handle a single block.
 // For convenience of use, all the transactions present inside the given block
 // and the currently used database will be passed as well.
-type BlockHandler func(block *tmctypes.ResultBlock, txs []types.Tx, db db.Database) error
+type BlockHandler func(block *tmctypes.ResultBlock, txs []types.Tx, w Worker) error
 
 // RegisterBlockHandler allows to register a new BlockHandler to be called when a new block is parsed.
 // All the registered handlers will be called in order as they are registered (First-In-First-Served).
@@ -47,7 +47,7 @@ func RegisterBlockHandler(handler BlockHandler) {
 
 // TxHandler represents a function that allows to handle a single transaction.
 // For convenience of use, the currently used database will be passed as well.
-type TxHandler func(tx types.Tx, db db.Database) error
+type TxHandler func(tx types.Tx, w Worker) error
 
 // RegisterTxHandler allows to register a new TxHandler to be called when a new transaction is parsed.
 // All the registered handlers will be called in order as they are registered (First-In-First-Served).
@@ -60,7 +60,7 @@ func RegisterTxHandler(handler TxHandler) {
 // In order to be able to get the logs of that message, or other useful information, the transaction
 // that contains it as well as the index of such message inside the transaction itself will be passed too.
 // For convenience of use, the currently used database will be passed too.
-type MsgHandler func(tx types.Tx, index int, msg sdk.Msg, db db.Database) error
+type MsgHandler func(tx types.Tx, index int, msg sdk.Msg, w Worker) error
 
 // RegisterMsgHandler allows to register a new MsgHandler to be called when a new message is parsed.
 // All the registered handlers will be called in order as they are registered (First-In-First-Served).
@@ -167,7 +167,7 @@ func (w Worker) HandleGenesis(genesis *tmtypes.GenesisDoc) error {
 
 	// Call the block handlers
 	for _, handler := range genesisHandlers {
-		if err := handler(w.cdc, genesis, appState, w.db); err != nil {
+		if err := handler(w.cdc, genesis, appState, w); err != nil {
 			return err
 		}
 	}
@@ -258,7 +258,7 @@ func (w Worker) ExportBlock(b *tmctypes.ResultBlock, txs []types.Tx, vals *tmcty
 
 	// Call the block handlers
 	for _, handler := range blockHandlers {
-		if err := handler(b, txs, w.db); err != nil {
+		if err := handler(b, txs, w); err != nil {
 			return err
 		}
 	}
@@ -280,7 +280,7 @@ func (w Worker) ExportTxs(txs []types.Tx) error {
 
 		// Call the tx handlers
 		for _, handler := range txHandlers {
-			if err := handler(tx, w.db); err != nil {
+			if err := handler(tx, w); err != nil {
 				return err
 			}
 		}
@@ -289,7 +289,7 @@ func (w Worker) ExportTxs(txs []types.Tx) error {
 		for i, msg := range tx.Messages {
 			// Call the handlers
 			for _, handler := range msgHandlers {
-				if err := handler(tx, i, msg, w.db); err != nil {
+				if err := handler(tx, i, msg, w); err != nil {
 					return err
 				}
 			}
