@@ -186,12 +186,12 @@ func (w Worker) ExportPreCommits(commit *tmtypes.Commit, vals *tmctypes.ResultVa
 			continue
 		}
 
-		valAddr := commitSig.ValidatorAddress.String()
+		valAddr := sdk.ConsAddress(commitSig.ValidatorAddress).String()
 
 		val := findValidatorByAddr(valAddr, vals)
 		if val == nil {
-			err := fmt.Errorf("failed to find validator by address %s for block %d", valAddr, commit.Height)
-			log.Error().Msg(err.Error())
+			err := fmt.Errorf("failed to find validator")
+			log.Error().Str("validator", valAddr).Time("commit_timestamp", commitSig.Timestamp).Err(err).Send()
 			return err
 		}
 
@@ -241,8 +241,8 @@ func (w Worker) ExportBlock(b *tmctypes.ResultBlock, txs []types.Tx, vals *tmcty
 
 	val := findValidatorByAddr(proposerAddr, vals)
 	if val == nil {
-		err := fmt.Errorf("failed to find validator by address %s for block %d", proposerAddr, b.Block.Height)
-		log.Error().Str("validator", proposerAddr).Int64("height", b.Block.Height).Msg("failed to find validator by address")
+		err := fmt.Errorf("failed to find validator")
+		log.Error().Str("validator", proposerAddr).Int64("height", b.Block.Height).Err(err).Send()
 		return err
 	}
 

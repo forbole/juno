@@ -9,12 +9,12 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
-// findValidatorByAddr finds a validator by a HEX address given a set of
+// findValidatorByAddr finds a validator by a consensus address given a set of
 // Tendermint validators for a particular block. If no validator is found, nil
 // is returned.
-func findValidatorByAddr(addrHex string, vals *tmctypes.ResultValidators) *tmtypes.Validator {
+func findValidatorByAddr(consAddr string, vals *tmctypes.ResultValidators) *tmtypes.Validator {
 	for _, val := range vals.Validators {
-		if strings.ToLower(addrHex) == strings.ToLower(sdk.ConsAddress(val.Address).String()) {
+		if strings.ToLower(consAddr) == strings.ToLower(sdk.ConsAddress(val.Address).String()) {
 			return val
 		}
 	}
