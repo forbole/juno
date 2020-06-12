@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/desmos-labs/juno/config"
 	"github.com/desmos-labs/juno/db"
+	"github.com/desmos-labs/juno/parse/client"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
@@ -50,4 +52,4 @@ func SetupLogging() error {
 // AdditionalOperation represents a single additional operation that should be done when
 // the setup is completed. It receives the same configuration and database instances
 // that are going to be used later during the parsing.
-type AdditionalOperation = func(cfg config.Config, db db.Database) error
+type AdditionalOperation = func(cfg config.Config, codec *codec.Codec, cp client.ClientProxy, db db.Database) error

@@ -77,7 +77,7 @@ func ParseCmdHandler(codec *codec.Codec, dbBuilder db.Builder, configPath string
 
 	// Perform additional operations
 	for _, op := range ops {
-		if err := op(*cfg, *database); err != nil {
+		if err := op(*cfg, codec, cp, *database); err != nil {
 			return err
 		}
 	}
