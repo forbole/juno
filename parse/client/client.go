@@ -10,6 +10,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/desmos-labs/juno/config"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -95,7 +96,7 @@ func (cp ClientProxy) SubscribeNewBlocks(subscriber string) (<-chan tmctypes.Res
 }
 
 // QueryLCD queries the LCD at the given endpoint, and deserializes the result into the given pointer.
-// If an error is raised, retuns the error
+// If an error is raised, returns the error.
 func (cp ClientProxy) QueryLCD(endpoint string, ptr interface{}) error {
 	resp, err := http.Get(fmt.Sprintf("%s/%s", cp.clientNode, endpoint))
 	if err != nil {
@@ -114,6 +115,20 @@ func (cp ClientProxy) QueryLCD(endpoint string, ptr interface{}) error {
 	}
 
 	return nil
+}
+
+// QueryLCDWithHeight should be used when the endpoint of the LCD returns the height of the
+// request inside the result. It queries such endpoint, deserializes the result and further the
+// result data into the given pointer. It returns the retrieved height as well as any error that
+// might have been raised.
+func (cp ClientProxy) QueryLCDWithHeight(endpoint string, ptr interface{}) (int64, error) {
+	var result rest.ResponseWithHeight
+	err := cp.QueryLCD(endpoint, &result)
+	if err != nil {
+		return -1, err
+	}
+
+	return result.Height, cp.cdc.UnmarshalJSON(result.Result, ptr)
 }
 
 // Tx queries for a transaction from the REST client and decodes it into a sdk.Tx
