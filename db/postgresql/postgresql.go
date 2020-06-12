@@ -155,7 +155,7 @@ func (db Database) SaveTx(tx types.Tx) error {
 func (db Database) HasValidator(addr string) (bool, error) {
 	var res bool
 	err := db.Sql.QueryRow(
-		"SELECT EXISTS(SELECT 1 FROM validator WHERE address = $1);",
+		"SELECT EXISTS(SELECT 1 FROM validator WHERE consensus_address = $1);",
 		addr,
 	).Scan(&res)
 
@@ -166,7 +166,7 @@ func (db Database) HasValidator(addr string) (bool, error) {
 // returned if the operation fails.
 func (db Database) SaveValidator(addr, pk string) error {
 	_, err := db.Sql.Exec(
-		"INSERT INTO validator (address, consensus_pubkey) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING id;",
+		"INSERT INTO validator (consensus_address, consensus_pubkey) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING id;",
 		addr, pk,
 	)
 

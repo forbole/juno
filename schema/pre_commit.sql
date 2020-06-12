@@ -3,15 +3,16 @@
 
 -- Table Definition ----------------------------------------------
 
-CREATE TABLE pre_commit (
-    id SERIAL PRIMARY KEY,
-    validator_address character varying(52) NOT NULL REFERENCES validator(address),
-    timestamp timestamp without time zone NOT NULL,
-    voting_power integer NOT NULL,
-    proposer_priority integer NOT NULL
+CREATE TABLE pre_commit
+(
+    id                SERIAL PRIMARY KEY,
+    validator_address character varying(52)       NOT NULL REFERENCES validator (consensus_address),
+    timestamp         timestamp without time zone NOT NULL,
+    voting_power      integer                     NOT NULL,
+    proposer_priority integer                     NOT NULL
 );
 
 -- Indices -------------------------------------------------------
 
-CREATE UNIQUE INDEX pre_commit_pkey ON pre_commit(id int4_ops);
-CREATE INDEX pre_commit_validator_address_key ON pre_commit(validator_address TEXT_PATTERN_OPS);
+CREATE UNIQUE INDEX pre_commit_pkey ON pre_commit (id int4_ops);
+CREATE INDEX pre_commit_validator_address_key ON pre_commit (validator_address TEXT_PATTERN_OPS);

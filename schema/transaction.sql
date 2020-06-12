@@ -3,20 +3,21 @@
 
 -- Table Definition ----------------------------------------------
 
-CREATE TABLE transaction (
-    id SERIAL PRIMARY KEY,
-    timestamp timestamp without time zone NOT NULL,
-    gas_wanted integer DEFAULT 0,
-    gas_used integer DEFAULT 0,
-    height integer NOT NULL REFERENCES block(height),
-    txhash character varying(64) NOT NULL UNIQUE,
-    messages jsonb NOT NULL DEFAULT '[]'::jsonb,
-    fee jsonb NOT NULL DEFAULT '{}'::jsonb,
-    signatures jsonb NOT NULL DEFAULT '[]'::jsonb,
-    memo character varying(256)
+CREATE TABLE transaction
+(
+    id         SERIAL PRIMARY KEY,
+    timestamp  timestamp without time zone NOT NULL,
+    gas_wanted integer                              DEFAULT 0,
+    gas_used   integer                              DEFAULT 0,
+    height     integer                     NOT NULL REFERENCES block (height),
+    txhash     character varying(64)       NOT NULL UNIQUE,
+    messages   jsonb                       NOT NULL DEFAULT '[]'::jsonb,
+    fee        jsonb                       NOT NULL DEFAULT '{}'::jsonb,
+    signatures jsonb                       NOT NULL DEFAULT '[]'::jsonb,
+    memo       character varying(256)
 );
 
 -- Indices -------------------------------------------------------
 
-CREATE UNIQUE INDEX transaction_pkey ON transaction(id int4_ops);
-CREATE UNIQUE INDEX transaction_txhash_key ON transaction(txhash TEXT_PATTERN_OPS);
+CREATE UNIQUE INDEX transaction_pkey ON transaction (id int4_ops);
+CREATE UNIQUE INDEX transaction_txhash_key ON transaction (txhash TEXT_PATTERN_OPS);
