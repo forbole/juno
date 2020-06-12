@@ -19,4 +19,4 @@ CREATE TABLE transaction (
 -- Indices -------------------------------------------------------
 
 CREATE UNIQUE INDEX transaction_pkey ON transaction(id int4_ops);
-CREATE UNIQUE INDEX transaction_txhash_key ON transaction(txhash text_ops);
+CREATE UNIQUE INDEX transaction_txhash_key ON transaction(txhash TEXT_PATTERN_OPS);

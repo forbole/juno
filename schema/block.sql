@@ -9,7 +9,7 @@ CREATE TABLE block (
     hash character varying(64) NOT NULL UNIQUE,
     num_txs integer DEFAULT 0,
     total_gas integer DEFAULT 0,
-    proposer_address character varying(40) NOT NULL REFERENCES validator(address),
+    proposer_address character varying(52) NOT NULL REFERENCES validator(address),
     pre_commits integer NOT NULL,
     timestamp timestamp without time zone NOT NULL
 );
@@ -18,4 +18,4 @@ CREATE TABLE block (
 
 CREATE UNIQUE INDEX block_pkey ON block(id int4_ops);
 CREATE UNIQUE INDEX block_height_key ON block(height int4_ops);
-CREATE UNIQUE INDEX block_hash_key ON block(hash text_ops);
+CREATE UNIQUE INDEX block_hash_key ON block(hash TEXT_PATTERN_OPS);

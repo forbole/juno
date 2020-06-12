@@ -212,9 +212,9 @@ func (w Worker) ExportPreCommits(commit *tmtypes.Commit, vals *tmctypes.ResultVa
 // consensus public key. An error is returned if the public key cannot be Bech32
 // encoded or if the DB write fails.
 func (w Worker) ExportValidator(val *tmtypes.Validator) error {
-	valAddr := val.Address.String()
+	valAddr := sdk.ConsAddress(val.Address).String()
 
-	consPubKey, err := sdk.Bech32ifyPubKey(sdk.Bech32PubKeyTypeValPub, val.PubKey) // nolint: typecheck
+	consPubKey, err := sdk.Bech32ifyPubKey(sdk.Bech32PubKeyTypeValPub, val.PubKey)
 	if err != nil {
 		log.Error().Err(err).Str("validator", valAddr).Msg("failed to convert validator public key")
 		return err
@@ -237,7 +237,7 @@ func (w Worker) ExportBlock(b *tmctypes.ResultBlock, txs []types.Tx, vals *tmcty
 
 	// Set the block's proposer if it does not already exist. This may occur if
 	// the proposer has never signed before.
-	proposerAddr := b.Block.ProposerAddress.String()
+	proposerAddr := sdk.ConsAddress(b.Block.ProposerAddress).String()
 
 	val := findValidatorByAddr(proposerAddr, vals)
 	if val == nil {

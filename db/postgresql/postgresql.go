@@ -8,6 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/desmos-labs/juno/config"
 	"github.com/desmos-labs/juno/db"
+	"github.com/desmos-labs/juno/db/utils"
 	"github.com/desmos-labs/juno/types"
 	_ "github.com/lib/pq" // nolint
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -87,7 +88,7 @@ func (db Database) SaveBlock(block *tmctypes.ResultBlock, totalGas, preCommits u
 	return db.Sql.QueryRow(
 		sqlStatement,
 		block.Block.Height, block.Block.Hash().String(), len(block.Block.Txs),
-		totalGas, block.Block.ProposerAddress.String(), preCommits, block.Block.Time,
+		totalGas, utils.ConvertValidatorAddressToString(block.Block.ProposerAddress), preCommits, block.Block.Time,
 	).Scan(&id)
 }
 
@@ -183,8 +184,8 @@ func (db Database) SaveCommitSig(pc tmtypes.CommitSig, votingPower, proposerPrio
 	RETURNING id;
 	`
 
-	return db.Sql.QueryRow(
-		sqlStatement, pc.ValidatorAddress.String(), pc.Timestamp, votingPower, proposerPriority,
+	return db.Sql.QueryRow(sqlStatement,
+		utils.ConvertValidatorAddressToString(pc.ValidatorAddress), pc.Timestamp, votingPower, proposerPriority,
 	).Scan(&id)
 }
 

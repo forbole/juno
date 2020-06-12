@@ -5,12 +5,12 @@
 
 CREATE TABLE validator (
     id SERIAL PRIMARY KEY,
-    address character varying(40) NOT NULL UNIQUE,
+    address character varying(52) NOT NULL UNIQUE,
     consensus_pubkey character varying(83) NOT NULL UNIQUE
 );
 
 -- Indices -------------------------------------------------------
 
 CREATE UNIQUE INDEX validator_pkey ON validator(id int4_ops);
-CREATE UNIQUE INDEX validator_address_key ON validator(address text_ops);
-CREATE UNIQUE INDEX validator_consensus_pubkey_key ON validator(consensus_pubkey text_ops);
+CREATE UNIQUE INDEX validator_address_key ON validator(address TEXT_PATTERN_OPS);
+CREATE UNIQUE INDEX validator_consensus_pubkey_key ON validator(consensus_pubkey TEXT_PATTERN_OPS);

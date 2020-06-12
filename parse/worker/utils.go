@@ -3,6 +3,7 @@ package worker
 import (
 	"strings"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/desmos-labs/juno/types"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -13,7 +14,7 @@ import (
 // is returned.
 func findValidatorByAddr(addrHex string, vals *tmctypes.ResultValidators) *tmtypes.Validator {
 	for _, val := range vals.Validators {
-		if strings.ToLower(addrHex) == strings.ToLower(val.Address.String()) {
+		if strings.ToLower(addrHex) == strings.ToLower(sdk.ConsAddress(val.Address).String()) {
 			return val
 		}
 	}

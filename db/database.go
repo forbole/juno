@@ -24,12 +24,13 @@ type Database interface {
 	// An error is returned if the operation fails.
 	SaveTx(tx types.Tx) error
 
-	// HasValidator returns true if a given validator by HEX address exists.
+	// HasValidator returns true if a given validator by consensus address exists.
 	// An error is returned if the operation fails.
 	HasValidator(address string) (bool, error)
 
 	// SetValidator stores a validator if it does not already exist.
 	// An error is returned if the operation fails.
+	// The address should be the consensus address of the validator.
 	SaveValidator(address, publicKey string) error
 
 	// SetPreCommit stores a validator's pre-commit.
