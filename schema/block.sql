@@ -5,8 +5,7 @@
 
 CREATE TABLE block
 (
-    id               SERIAL PRIMARY KEY,
-    height           integer                     NOT NULL UNIQUE,
+    height           integer                     PRIMARY KEY,
     hash             character varying(64)       NOT NULL UNIQUE,
     num_txs          integer DEFAULT 0,
     total_gas        integer DEFAULT 0,

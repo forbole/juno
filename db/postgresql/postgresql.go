@@ -77,31 +77,24 @@ func (db Database) HasBlock(height int64) (bool, error) {
 // SetBlock stores a block and returns the resulting record ID. An error is
 // returned if the operation fails.
 func (db Database) SaveBlock(block *tmctypes.ResultBlock, totalGas, preCommits uint64) error {
-	var id uint64
-
 	sqlStatement := `
 	INSERT INTO block (height, hash, num_txs, total_gas, proposer_address, pre_commits, timestamp)
-	VALUES ($1, $2, $3, $4, $5, $6, $7)
-	RETURNING id;
+	VALUES ($1, $2, $3, $4, $5, $6, $7);
 	`
 
-	return db.Sql.QueryRow(
-		sqlStatement,
+	_, err := db.Sql.Exec(sqlStatement,
 		block.Block.Height, block.Block.Hash().String(), len(block.Block.Txs),
 		totalGas, utils.ConvertValidatorAddressToString(block.Block.ProposerAddress), preCommits, block.Block.Time,
-	).Scan(&id)
+	)
+	return err
 }
 
 // SetTx stores a transaction and returns the resulting record ID. An error is
 // returned if the operation fails.
 func (db Database) SaveTx(tx types.Tx) error {
-	var id uint64
-
 	sqlStatement := `
 	INSERT INTO transaction (timestamp, gas_wanted, gas_used, height, txhash, messages, fee, signatures, memo)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-	RETURNING id;
-	`
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);`
 
 	stdTx, ok := tx.Tx.(auth.StdTx)
 	if !ok {
@@ -143,50 +136,40 @@ func (db Database) SaveTx(tx types.Tx) error {
 		return fmt.Errorf("failed to JSON encode tx signatures: %s", err)
 	}
 
-	return db.Sql.QueryRow(
-		sqlStatement,
+	_, err = db.Sql.Exec(sqlStatement,
 		tx.Timestamp, tx.GasWanted, tx.GasUsed, tx.Height, tx.TxHash,
 		string(msgsBz), string(feeBz), string(sigsBz), stdTx.GetMemo(),
-	).Scan(&id)
+	)
+	return err
 }
 
 // HasValidator returns true if a given validator by HEX address exists. An
 // error should never be returned.
 func (db Database) HasValidator(addr string) (bool, error) {
 	var res bool
-	err := db.Sql.QueryRow(
-		"SELECT EXISTS(SELECT 1 FROM validator WHERE consensus_address = $1);",
-		addr,
-	).Scan(&res)
-
+	stmt := `SELECT EXISTS(SELECT 1 FROM validator WHERE consensus_address = $1);`
+	err := db.Sql.QueryRow(stmt, addr).Scan(&res)
 	return res, err
 }
 
 // SetValidator stores a validator if it does not already exist. An error is
 // returned if the operation fails.
 func (db Database) SaveValidator(addr, pk string) error {
-	_, err := db.Sql.Exec(
-		"INSERT INTO validator (consensus_address, consensus_pubkey) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING id;",
-		addr, pk,
-	)
-
+	stmt := `INSERT INTO validator (consensus_address, consensus_pubkey) VALUES ($1, $2) ON CONFLICT DO NOTHING;`
+	_, err := db.Sql.Exec(stmt, addr, pk)
 	return err
 }
 
 // SetPreCommit stores a validator's pre-commit and returns the resulting record
 // ID. An error is returned if the operation fails.
 func (db Database) SaveCommitSig(pc tmtypes.CommitSig, votingPower, proposerPriority int64) error {
-	var id uint64
+	sqlStatement := `INSERT INTO pre_commit (validator_address, timestamp, voting_power, proposer_priority)
+					 VALUES ($1, $2, $3, $4);`
 
-	sqlStatement := `
-	INSERT INTO pre_commit (validator_address, timestamp, voting_power, proposer_priority)
-	VALUES ($1, $2, $3, $4)
-	RETURNING id;
-	`
-
-	return db.Sql.QueryRow(sqlStatement,
+	_, err := db.Sql.Exec(sqlStatement,
 		utils.ConvertValidatorAddressToString(pc.ValidatorAddress), pc.Timestamp, votingPower, proposerPriority,
-	).Scan(&id)
+	)
+	return err
 }
 
 type signature struct {

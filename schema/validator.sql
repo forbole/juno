@@ -5,9 +5,8 @@
 
 CREATE TABLE validator
 (
-    id                SERIAL PRIMARY KEY,
-    consensus_address character varying(52) NOT NULL UNIQUE, /* Validator consensus address */
-    consensus_pubkey  character varying(83) NOT NULL UNIQUE
+    consensus_address TEXT NOT NULL PRIMARY KEY, /* Validator consensus address */
+    consensus_pubkey  TEXT NOT NULL UNIQUE
 );
 
 -- Indices -------------------------------------------------------
