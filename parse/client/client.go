@@ -13,6 +13,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/desmos-labs/juno/config"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
+	httpclient "github.com/tendermint/tendermint/rpc/client/http"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
@@ -25,7 +26,7 @@ type ClientProxy struct {
 }
 
 func New(cfg config.Config, codec *codec.Codec) (ClientProxy, error) {
-	rpcClient, err := rpcclient.NewHTTP(cfg.RPCNode, "/websocket")
+	rpcClient, err := httpclient.New(cfg.RPCNode, "/websocket")
 	if err != nil {
 		return ClientProxy{}, err
 	}
