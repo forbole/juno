@@ -214,7 +214,7 @@ func (w Worker) ExportPreCommits(commit *tmtypes.Commit, vals *tmctypes.ResultVa
 func (w Worker) ExportValidator(val *tmtypes.Validator) error {
 	valAddr := sdk.ConsAddress(val.Address).String()
 
-	consPubKey, err := sdk.Bech32ifyPubKey(sdk.Bech32PubKeyTypeValPub, val.PubKey)
+	consPubKey, err := sdk.Bech32ifyPubKey(sdk.Bech32PubKeyTypeConsPub, val.PubKey)
 	if err != nil {
 		log.Error().Err(err).Str("validator", valAddr).Msg("failed to convert validator public key")
 		return err
