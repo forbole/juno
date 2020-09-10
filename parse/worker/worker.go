@@ -121,10 +121,7 @@ func (w Worker) process(height int64) error {
 			return err
 		}
 
-		// Get the genesis
-		if err := w.HandleGenesis(response.Genesis); err != nil {
-			return err
-		}
+		return w.HandleGenesis(response.Genesis)
 	}
 
 	block, err := w.ClientProxy.Block(height)
