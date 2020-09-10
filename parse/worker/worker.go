@@ -115,13 +115,16 @@ func (w Worker) process(height int64) error {
 	}
 
 	if height == 1 {
-		log.Debug().Msg("Parse response")
+		log.Debug().Msg("Getting genesis")
 		response, err := w.ClientProxy.Genesis()
 		if err != nil {
 			return err
 		}
 
-		return w.HandleGenesis(response.Genesis)
+		// Get the genesis
+		if err := w.HandleGenesis(response.Genesis); err != nil {
+			return err
+		}
 	}
 
 	block, err := w.ClientProxy.Block(height)
