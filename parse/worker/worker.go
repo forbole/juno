@@ -16,10 +16,25 @@ import (
 
 var (
 	genesisHandlers []GenesisHandler
-	blockHandlers   []BlockHandler
-	txHandlers      []TxHandler
-	msgHandlers     []MsgHandler
+	logGenesisError Logger = func(err error) {
+		log.Error().Err(err).Msg("error while handling genesis")
+	}
+	blockHandlers []BlockHandler
+	logBlockError Logger = func(err error) {
+		log.Error().Err(err).Msg("error while handling block")
+	}
+	txHandlers []TxHandler
+	logTxError Logger = func(err error) {
+		log.Error().Err(err).Msg("error while handling transaction")
+	}
+	msgHandlers []MsgHandler
+	logMsgError Logger = func(err error) {
+		log.Error().Err(err).Msg("error while handling message")
+	}
 )
+
+// Logger defines a function that takes an error and performs something to log it.
+type Logger func(err error)
 
 // GenesisHandler represents a function that allows to handle the genesis state.
 // For convenience of use, the entire current codec, the GenesisDoc, the already-unmarshalled AppState
@@ -28,9 +43,15 @@ type GenesisHandler func(codec *codec.Codec, genesisDoc *tmtypes.GenesisDoc, app
 
 // RegisterGenesisHandler allows to register a new GenesisHandler to be called when a new block is parsed.
 // All the registered handlers will be called in order as they are registered (First-In-First-Served).
-// Later handlers will not execute if a previous handler returns an error.
+// Later handlers *will* execute if a previous handler returns an error.
+// All returned errors will be passed to the method registered using SetGenesisHandler, or logged by default.
 func RegisterGenesisHandler(handler GenesisHandler) {
 	genesisHandlers = append(genesisHandlers, handler)
+}
+
+// SetGenesisLogger sets the method that should be called each time a genesisHandler returns an error.
+func SetGenesisLogger(logger Logger) {
+	logGenesisError = logger
 }
 
 // BlockHandler represents a function that allows to handle a single block.
@@ -40,9 +61,15 @@ type BlockHandler func(block *tmctypes.ResultBlock, txs []types.Tx, vals *tmctyp
 
 // RegisterBlockHandler allows to register a new BlockHandler to be called when a new block is parsed.
 // All the registered handlers will be called in order as they are registered (First-In-First-Served).
-// Later handlers will not execute if a previous handler returns an error.
+// Later handlers *will* execute if a previous handler returns an error.
+// All errors returned will be passed to the method registered using SetBlockLogger, or logged by default.
 func RegisterBlockHandler(handler BlockHandler) {
 	blockHandlers = append(blockHandlers, handler)
+}
+
+// SetBlockLogger sets the method that should be called when a blockHandler returns an error.
+func SetBlockLogger(logger Logger) {
+	logBlockError = logger
 }
 
 // TxHandler represents a function that allows to handle a single transaction.
@@ -51,9 +78,15 @@ type TxHandler func(tx types.Tx, w Worker) error
 
 // RegisterTxHandler allows to register a new TxHandler to be called when a new transaction is parsed.
 // All the registered handlers will be called in order as they are registered (First-In-First-Served).
-// Later handlers will not execute if a previous handler returns an error.
+// Later handlers *will* execute if a previous handler returns an error.
+// All errors returned will be passed to the method registered using SetTxLogger, or logged by default.
 func RegisterTxHandler(handler TxHandler) {
 	txHandlers = append(txHandlers, handler)
+}
+
+// SetTxLogger sets the method that should be called each time a transaction handler returns an error.
+func SetTxLogger(logger Logger) {
+	logTxError = logger
 }
 
 // MsgHandler represents a function that allows to handle a single transaction message.
@@ -64,9 +97,15 @@ type MsgHandler func(tx types.Tx, index int, msg sdk.Msg, w Worker) error
 
 // RegisterMsgHandler allows to register a new MsgHandler to be called when a new message is parsed.
 // All the registered handlers will be called in order as they are registered (First-In-First-Served).
-// Later handlers will not execute if a previous handler returns an error.
+// Later handlers *will* execute if a previous handler returns an error.
+// All errors returned will be passed to the method registered using SetMsgLogger, or logged by default.
 func RegisterMsgHandler(handler MsgHandler) {
 	msgHandlers = append(msgHandlers, handler)
+}
+
+// SetMsgLogger sets the method that should be called when a message handler returns an error.
+func SetMsgLogger(logger Logger) {
+	logMsgError = logger
 }
 
 // Worker defines a job consumer that is responsible for getting and
@@ -168,7 +207,7 @@ func (w Worker) HandleGenesis(genesis *tmtypes.GenesisDoc) error {
 	// Call the block handlers
 	for _, handler := range genesisHandlers {
 		if err := handler(w.Cdc, genesis, appState, w); err != nil {
-			return err
+			logGenesisError(err)
 		}
 	}
 
@@ -259,7 +298,7 @@ func (w Worker) ExportBlock(b *tmctypes.ResultBlock, txs []types.Tx, vals *tmcty
 	// Call the block handlers
 	for _, handler := range blockHandlers {
 		if err := handler(b, txs, vals, w); err != nil {
-			return err
+			logBlockError(err)
 		}
 	}
 
@@ -281,7 +320,7 @@ func (w Worker) ExportTxs(txs []types.Tx) error {
 		// Call the tx handlers
 		for _, handler := range txHandlers {
 			if err := handler(tx, w); err != nil {
-				return err
+				logTxError(err)
 			}
 		}
 
@@ -290,7 +329,7 @@ func (w Worker) ExportTxs(txs []types.Tx) error {
 			// Call the handlers
 			for _, handler := range msgHandlers {
 				if err := handler(tx, i, msg, w); err != nil {
-					return err
+					logMsgError(err)
 				}
 			}
 		}
