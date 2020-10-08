@@ -37,6 +37,7 @@ func ParseCmdHandler(codec *codec.Codec, dbBuilder db.Builder, configPath string
 	if err != nil {
 		return errors.Wrap(err, "failed to start RPC client")
 	}
+	// nolint: errcheck
 	defer cp.Stop()
 
 	// Create a queue that will collect, aggregate, and export blocks and metadata
