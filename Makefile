@@ -37,7 +37,7 @@ coverage:
 
 ci-test:
 	@echo "executing unit tests..."
-	@go test -mod=readonly -v -coverprofile coverage.out ./...
+	@go test -mod=readonly -v -coverprofile coverage.txt ./...
 
 ci-lint:
 	@echo "running GolangCI-Lint..."
