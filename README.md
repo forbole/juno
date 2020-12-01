@@ -1,5 +1,5 @@
 # Juno
-> This branch is intended to be used with Cosmos SDK `v0.38.3` and Tendermint `v0.33.3`.
+> This branch is intended to be used with Cosmos SDK `v0.39.x`.
 
 [![Build Status](https://travis-ci.org/fissionlabsio/juno.svg?branch=master)](https://travis-ci.org/fissionlabsio/juno)
 [![Go Report Card](https://goreportcard.com/badge/github.com/fissionlabsio/juno)](https://goreportcard.com/report/github.com/fissionlabsio/juno)

@@ -1,4 +1,4 @@
-package version
+package cmd
 
 import (
 	"encoding/json"
@@ -19,8 +19,8 @@ var (
 	Commit = ""
 )
 
-// GetVersionCmd returns the command that allows to show the version information
-func GetVersionCmd() *cobra.Command {
+// VersionCmd returns the command that allows to show the version information
+func VersionCmd() *cobra.Command {
 	versionCmd := &cobra.Command{
 		Use:   "version",
 		Short: "Print the version information",

@@ -31,7 +31,7 @@ type Database struct {
 // OpenDB opens a database connection with the given database connection info
 // from config. It returns a database connection handle or an error if the
 // connection fails.
-func Builder(cfg config.PostgreSQLConfig, codec *codec.Codec) (*db.Database, error) {
+func Builder(cfg *config.PostgreSQLConfig, codec *codec.Codec) (db.Database, error) {
 	sslMode := "disable"
 	if cfg.SSLMode != "" {
 		sslMode = cfg.SSLMode
@@ -51,8 +51,7 @@ func Builder(cfg config.PostgreSQLConfig, codec *codec.Codec) (*db.Database, err
 		return nil, err
 	}
 
-	var database db.Database = Database{Sql: postgresDb, Codec: codec}
-	return &database, nil
+	return &Database{Sql: postgresDb, Codec: codec}, nil
 }
 
 // LastBlockHeight returns the latest block stored.

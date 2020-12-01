@@ -9,8 +9,8 @@ all: ci-lint ci-test install
 # Build / Install
 ###############################################################################
 
-LD_FLAGS = -X github.com/angelorc/desmos-parser/version.Version=$(VERSION) \
-	-X github.com/angelorc/desmos-parser/version.Commit=$(COMMIT)
+LD_FLAGS = -X github.com/desmos-labs/juno.Version=$(VERSION) \
+	-X github.com/desmos-labs/juno.Commit=$(COMMIT)
 
 BUILD_FLAGS := -ldflags '$(LD_FLAGS)'
 
