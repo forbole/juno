@@ -8,6 +8,7 @@ import (
 type Config struct {
 	RPCNode        string         `toml:"rpc_node"`
 	ClientNode     string         `toml:"client_node"`
+	Modules        []string       `toml:"modules"`
 	DatabaseConfig DatabaseConfig `toml:"database"`
 }
 

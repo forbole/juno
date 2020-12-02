@@ -19,15 +19,16 @@ import (
 // Worker defines a job consumer that is responsible for getting and
 // aggregating block and associated data and exporting it to a database.
 type Worker struct {
-	queue types.Queue
-	cdc   *codec.Codec
-	cp    *client.Proxy
-	db    db.Database
+	queue   types.Queue
+	cdc     *codec.Codec
+	cp      *client.Proxy
+	db      db.Database
+	modules []x.Module
 }
 
 // NewWorker allows to create a new Worker implementation.
-func NewWorker(cdc *codec.Codec, q types.Queue, cp *client.Proxy, db db.Database) Worker {
-	return Worker{cdc: cdc, cp: cp, queue: q, db: db}
+func NewWorker(cdc *codec.Codec, q types.Queue, cp *client.Proxy, db db.Database, modules []x.Module) Worker {
+	return Worker{cdc: cdc, cp: cp, queue: q, db: db, modules: modules}
 }
 
 // Start starts a worker by listening for new jobs (block heights) from the
@@ -113,7 +114,7 @@ func (w Worker) HandleGenesis(genesis *tmtypes.GenesisDoc) error {
 	w.cdc.MustUnmarshalJSON(genesis.AppState, &appState)
 
 	// Call the block handlers
-	for _, module := range x.ModuleBasic {
+	for _, module := range w.modules {
 		if err := module.HandleGenesis(genesis, appState, w.cdc, w.cp, w.db); err != nil {
 			logging.LogGenesisError(err)
 		}
@@ -204,7 +205,7 @@ func (w Worker) ExportBlock(b *tmctypes.ResultBlock, txs []types.Tx, vals *tmcty
 	}
 
 	// Call the block handlers
-	for _, module := range x.ModuleBasic {
+	for _, module := range w.modules {
 		if err := module.HandleBlock(b, txs, vals, w.cdc, w.cp, w.db); err != nil {
 			logging.LogBlockError(err)
 		}
@@ -226,7 +227,7 @@ func (w Worker) ExportTxs(txs []types.Tx) error {
 		}
 
 		// Call the tx handlers
-		for _, module := range x.ModuleBasic {
+		for _, module := range w.modules {
 			if err := module.HandleTx(tx, w.cdc, w.cp, w.db); err != nil {
 				logging.LogTxError(err)
 			}
@@ -235,7 +236,7 @@ func (w Worker) ExportTxs(txs []types.Tx) error {
 		// Handle all the messages contained inside the transaction
 		for i, msg := range tx.Messages {
 			// Call the handlers
-			for _, module := range x.ModuleBasic {
+			for _, module := range w.modules {
 				if err := module.HandleMsg(i, msg, tx, w.cdc, w.cp, w.db); err != nil {
 					logging.LogMsgError(err)
 				}

@@ -5,6 +5,8 @@ import (
 	"github.com/desmos-labs/juno/client"
 	"github.com/desmos-labs/juno/types"
 	"github.com/desmos-labs/juno/worker"
+	"github.com/desmos-labs/juno/x"
+	"github.com/desmos-labs/juno/x/registrar"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -30,7 +32,9 @@ var (
 	waitGroup sync.WaitGroup
 )
 
-// ParseCmd returns the command that should be run when we want to start parsing a chain state
+// ParseCmd returns the command that should be run when we want to start parsing a chain state.
+// The given codec.Codec is used to parse data, while the db.Builder is going to be used to build the database
+// instance used to store the parsed data.
 func ParseCmd(cdc *codec.Codec, buildDb db.Builder) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "parse [config-file]",
@@ -49,6 +53,9 @@ func ParseCmd(cdc *codec.Codec, buildDb db.Builder) *cobra.Command {
 				return err
 			}
 
+			// Get the modules
+			modules := registrar.GetModules(cfg.Modules)
+
 			// Get the database
 			database, err := buildDb(cfg, cdc)
 			if err != nil {
@@ -62,7 +69,7 @@ func ParseCmd(cdc *codec.Codec, buildDb db.Builder) *cobra.Command {
 			}
 			defer cp.Stop()
 
-			return StartParsing(cdc, cp, database)
+			return StartParsing(cdc, cp, database, modules)
 		},
 	}
 
@@ -103,7 +110,7 @@ func setupLogging() error {
 }
 
 // parseCmdHandler represents the function that should be called when the parse command is executed
-func StartParsing(codec *codec.Codec, cp *client.Proxy, db db.Database) error {
+func StartParsing(codec *codec.Codec, cp *client.Proxy, db db.Database, modules []x.Module) error {
 	// Create a queue that will collect, aggregate, and export blocks and metadata
 	exportQueue := types.NewQueue(25)
 
@@ -111,7 +118,7 @@ func StartParsing(codec *codec.Codec, cp *client.Proxy, db db.Database) error {
 	workerCount := viper.GetInt64(FlagWorkerCount)
 	workers := make([]worker.Worker, workerCount, workerCount)
 	for i := range workers {
-		workers[i] = worker.NewWorker(codec, exportQueue, cp, db)
+		workers[i] = worker.NewWorker(codec, exportQueue, cp, db, modules)
 	}
 
 	waitGroup.Add(1)

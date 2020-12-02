@@ -8,6 +8,9 @@ import (
 )
 
 func main() {
+	// Register modules
+	// registrar.RegisterModules(staking.Module{}, consensus.Module{}, ...)
+
 	// Build the exec
 	exec := cmd.BuildDefaultExecutor("juno", config.EmptySetup, simapp.MakeCodec, stddb.Builder)
 

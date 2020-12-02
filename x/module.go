@@ -12,8 +12,6 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
-var ModuleBasic []Module
-
 // Module represents a generic module that has the ability to properly handle the chain data.
 type Module interface {
 	// Name returns the module name
@@ -62,4 +60,18 @@ type Module interface {
 	// NOTE. The returned error will be logged using the logging.LogMsgError method. All other modules' handlers
 	// will still be called.
 	HandleMsg(index int, msg sdk.Msg, tx types.Tx, cdc *codec.Codec, cp *client.Proxy, db db.Database) error
+}
+
+// Modules represents a slice of Module objects
+type Modules []Module
+
+// FindByName returns the module having the given name inside the m slice.
+// If no modules are found, returns nil and false.
+func (m Modules) FindByName(name string) (module Module, found bool) {
+	for _, m := range m {
+		if m.Name() == name {
+			return m, true
+		}
+	}
+	return nil, false
 }
