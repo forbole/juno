@@ -5,6 +5,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/desmos-labs/juno/client"
+	"github.com/desmos-labs/juno/config"
 	"github.com/desmos-labs/juno/db"
 	"github.com/desmos-labs/juno/types"
 	"github.com/go-co-op/gocron"
@@ -17,16 +18,16 @@ type Module interface {
 	// Name returns the module name
 	Name() string
 
-	// RegisterPeriodicOperations allows to register all the operations that will be run on a periodic basis.
-	// The given scheduler can be used to define the periodicity of each task.
-	// NOTE. This method will only be run ONCE during the module initialization.
-	RegisterPeriodicOperations(scheduler *gocron.Scheduler, cdc *codec.Codec, cp *client.Proxy, db db.Database) error
-
 	// RunAdditionalOperations runs all the additional operations required to the module.
 	// This is the perfect place where to initialize all the operations that subscribe to websockets or other
 	// external sources.
 	// NOTE. This method will only be run ONCE before starting the parsing of the blocks.
-	RunAdditionalOperations(cdc *codec.Codec, cp *client.Proxy, db db.Database) error
+	RunAdditionalOperations(cfg *config.Config, cdc *codec.Codec, cp *client.Proxy, db db.Database) error
+
+	// RegisterPeriodicOperations allows to register all the operations that will be run on a periodic basis.
+	// The given scheduler can be used to define the periodicity of each task.
+	// NOTE. This method will only be run ONCE during the module initialization.
+	RegisterPeriodicOperations(scheduler *gocron.Scheduler, cdc *codec.Codec, cp *client.Proxy, db db.Database) error
 
 	// HandleGenesis allows to handle the genesis state.
 	// For convenience of use, the already-unmarshalled AppState is provided along with the full GenesisDoc.

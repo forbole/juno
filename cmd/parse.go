@@ -56,7 +56,7 @@ func ParseCmd(cdc *codec.Codec, buildDb db.Builder) *cobra.Command {
 			}
 
 			// Get the modules
-			modules := registrar.GetModules(cfg.Modules)
+			registeredModules := registrar.GetModules(cfg.Modules)
 
 			// Get the database
 			database, err := buildDb(cfg, cdc)
@@ -72,14 +72,14 @@ func ParseCmd(cdc *codec.Codec, buildDb db.Builder) *cobra.Command {
 			defer cp.Stop()
 
 			// Run all the additional operations
-			for _, module := range modules {
-				err := module.RunAdditionalOperations(cdc, cp, database)
+			for _, module := range registeredModules {
+				err := module.RunAdditionalOperations(cfg, cdc, cp, database)
 				if err != nil {
 					return err
 				}
 			}
 
-			return StartParsing(cdc, cp, database, modules)
+			return StartParsing(cdc, cp, database, registeredModules)
 		},
 	}
 
