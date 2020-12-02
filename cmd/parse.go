@@ -3,10 +3,10 @@ package cmd
 import (
 	"fmt"
 	"github.com/desmos-labs/juno/client"
+	"github.com/desmos-labs/juno/modules"
+	"github.com/desmos-labs/juno/modules/registrar"
 	"github.com/desmos-labs/juno/types"
 	"github.com/desmos-labs/juno/worker"
-	"github.com/desmos-labs/juno/x"
-	"github.com/desmos-labs/juno/x/registrar"
 	"github.com/go-co-op/gocron"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
@@ -120,15 +120,16 @@ func setupLogging() error {
 }
 
 // parseCmdHandler represents the function that should be called when the parse command is executed
-func StartParsing(codec *codec.Codec, cp *client.Proxy, db db.Database, modules []x.Module) error {
+func StartParsing(cdc *codec.Codec, cp *client.Proxy, db db.Database, modules []modules.Module) error {
 	// Start periodic operations
 	scheduler := gocron.NewScheduler(time.UTC)
 	for _, module := range modules {
-		err := module.RegisterPeriodicOperations(scheduler)
+		err := module.RegisterPeriodicOperations(scheduler, cdc, cp, db)
 		if err != nil {
 			return err
 		}
 	}
+	scheduler.StartAsync()
 
 	// Create a queue that will collect, aggregate, and export blocks and metadata
 	exportQueue := types.NewQueue(25)
@@ -137,7 +138,7 @@ func StartParsing(codec *codec.Codec, cp *client.Proxy, db db.Database, modules 
 	workerCount := viper.GetInt64(FlagWorkerCount)
 	workers := make([]worker.Worker, workerCount, workerCount)
 	for i := range workers {
-		workers[i] = worker.NewWorker(codec, exportQueue, cp, db, modules)
+		workers[i] = worker.NewWorker(cdc, exportQueue, cp, db, modules)
 	}
 
 	waitGroup.Add(1)

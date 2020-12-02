@@ -1,4 +1,4 @@
-package x
+package modules
 
 import (
 	"encoding/json"
@@ -20,7 +20,7 @@ type Module interface {
 	// RegisterPeriodicOperations allows to register all the operations that will be run on a periodic basis.
 	// The given scheduler can be used to define the periodicity of each task.
 	// NOTE. This method will only be run ONCE during the module initialization.
-	RegisterPeriodicOperations(scheduler *gocron.Scheduler) error
+	RegisterPeriodicOperations(scheduler *gocron.Scheduler, cdc *codec.Codec, cp *client.Proxy, db db.Database) error
 
 	// RunAdditionalOperations runs all the additional operations required to the module.
 	// This is the perfect place where to initialize all the operations that subscribe to websockets or other

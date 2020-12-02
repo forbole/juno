@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/desmos-labs/juno/logging"
-	"github.com/desmos-labs/juno/x"
+	"github.com/desmos-labs/juno/modules"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -23,11 +23,11 @@ type Worker struct {
 	cdc     *codec.Codec
 	cp      *client.Proxy
 	db      db.Database
-	modules []x.Module
+	modules []modules.Module
 }
 
 // NewWorker allows to create a new Worker implementation.
-func NewWorker(cdc *codec.Codec, q types.Queue, cp *client.Proxy, db db.Database, modules []x.Module) Worker {
+func NewWorker(cdc *codec.Codec, q types.Queue, cp *client.Proxy, db db.Database, modules []modules.Module) Worker {
 	return Worker{cdc: cdc, cp: cp, queue: q, db: db, modules: modules}
 }
 
