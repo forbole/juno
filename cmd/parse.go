@@ -7,6 +7,7 @@ import (
 	"github.com/desmos-labs/juno/worker"
 	"github.com/desmos-labs/juno/x"
 	"github.com/desmos-labs/juno/x/registrar"
+	"github.com/go-co-op/gocron"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -14,6 +15,7 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/desmos-labs/juno/config"
@@ -69,6 +71,14 @@ func ParseCmd(cdc *codec.Codec, buildDb db.Builder) *cobra.Command {
 			}
 			defer cp.Stop()
 
+			// Run all the additional operations
+			for _, module := range modules {
+				err := module.RunAdditionalOperations(cdc, cp, database)
+				if err != nil {
+					return err
+				}
+			}
+
 			return StartParsing(cdc, cp, database, modules)
 		},
 	}
@@ -111,6 +121,15 @@ func setupLogging() error {
 
 // parseCmdHandler represents the function that should be called when the parse command is executed
 func StartParsing(codec *codec.Codec, cp *client.Proxy, db db.Database, modules []x.Module) error {
+	// Start periodic operations
+	scheduler := gocron.NewScheduler(time.UTC)
+	for _, module := range modules {
+		err := module.RegisterPeriodicOperations(scheduler)
+		if err != nil {
+			return err
+		}
+	}
+
 	// Create a queue that will collect, aggregate, and export blocks and metadata
 	exportQueue := types.NewQueue(25)
 
