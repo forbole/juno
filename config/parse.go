@@ -20,12 +20,12 @@ func Read(configPath string) (*Config, error) {
 		return nil, fmt.Errorf("failed to read config: %s", err)
 	}
 
-	return parseString(configData)
+	return ParseString(configData)
 }
 
-// parseString attempts to read and parse a Juno config from the given string bytes.
+// ParseString attempts to read and parse a Juno config from the given string bytes.
 // An error reading or parsing the config results in a panic.
-func parseString(configData []byte) (*Config, error) {
+func ParseString(configData []byte) (*Config, error) {
 	var cfg configToml
 	md, err := toml.Decode(string(configData), &cfg)
 	if err != nil {

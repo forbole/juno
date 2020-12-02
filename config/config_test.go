@@ -23,7 +23,7 @@ user = "user"
 password = "password"
 `
 
-	cfg, err := config.parseString([]byte(tomlString))
+	cfg, err := config.ParseString([]byte(tomlString))
 	require.NoError(t, err)
 
 	postgreConfig, ok := cfg.DatabaseConfig.Config.(*config.PostgreSQLConfig)
@@ -48,7 +48,7 @@ name = "desmos"
 uri = "mongodb://example.com"
 `
 
-	cfg, err := config.parseString([]byte(tomlString))
+	cfg, err := config.ParseString([]byte(tomlString))
 	require.NoError(t, err)
 
 	mongoConfig, ok := cfg.DatabaseConfig.Config.(*config.MongoDBConfig)

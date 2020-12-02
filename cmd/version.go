@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/desmos-labs/juno/config"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v2"
@@ -41,7 +40,7 @@ func VersionCmd() *cobra.Command {
 				err error
 			)
 
-			versionFormat := viper.GetString(config.FlagFormat)
+			versionFormat := viper.GetString(FlagFormat)
 			switch versionFormat {
 			case "json":
 				bz, err = json.Marshal(verInfo)
@@ -59,7 +58,7 @@ func VersionCmd() *cobra.Command {
 		},
 	}
 
-	versionCmd.Flags().String(config.FlagFormat, "text", "Print the version in the given format (text | json)")
+	versionCmd.Flags().String(FlagFormat, "text", "Print the version in the given format (text | json)")
 
 	return versionCmd
 }
