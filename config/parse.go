@@ -2,9 +2,10 @@ package config
 
 import (
 	"fmt"
+	"io/ioutil"
+
 	"github.com/BurntSushi/toml"
 	"github.com/rs/zerolog/log"
-	"io/ioutil"
 )
 
 // SetupConfig takes the path to a configuration file and returns the properly parsed configuration

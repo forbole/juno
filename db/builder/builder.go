@@ -2,6 +2,7 @@ package builder
 
 import (
 	"fmt"
+
 	"github.com/desmos-labs/juno/db"
 
 	"github.com/cosmos/cosmos-sdk/codec"

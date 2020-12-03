@@ -7,10 +7,12 @@ import (
 
 // SdkConfigSetup represents a method that allows to customize the given sdk.Config.
 // This should be used to set custom Bech32 addresses prefixes and other app-related configurations.
-type SdkConfigSetup func(*sdk.Config)
+type SdkConfigSetup func(config *Config, sdkConfig *sdk.Config)
 
 // Handy implementation of SdkConfigSetup that performs no operations
-func EmptySetup(*sdk.Config) {}
+func EmptySetup(*Config, *sdk.Config) {}
+
+// -----------------------------------------------------------------
 
 // CodecBuilder represents a function that is used to return the proper application codec.
 type CodecBuilder func() *codec.Codec

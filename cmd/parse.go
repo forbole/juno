@@ -2,6 +2,13 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
+	"time"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/desmos-labs/juno/client"
 	"github.com/desmos-labs/juno/modules"
 	"github.com/desmos-labs/juno/modules/registrar"
@@ -11,11 +18,6 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 	tmtypes "github.com/tendermint/tendermint/types"
-	"os"
-	"os/signal"
-	"sync"
-	"syscall"
-	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/desmos-labs/juno/config"
@@ -37,7 +39,7 @@ var (
 // ParseCmd returns the command that should be run when we want to start parsing a chain state.
 // The given codec.Codec is used to parse data, while the db.Builder is going to be used to build the database
 // instance used to store the parsed data.
-func ParseCmd(cdc *codec.Codec, buildDb db.Builder) *cobra.Command {
+func ParseCmd(cdcBuilder config.CodecBuilder, setupCfg config.SdkConfigSetup, buildDb db.Builder) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "parse [config-file]",
 		Short: "Start parsing a blockchain using the provided config file",
@@ -54,6 +56,14 @@ func ParseCmd(cdc *codec.Codec, buildDb db.Builder) *cobra.Command {
 			if err != nil {
 				return err
 			}
+
+			// Build the codec
+			cdc := cdcBuilder(cfg)
+
+			// Setup the SDK configuration
+			sdkConfig := sdk.GetConfig()
+			setupCfg(cfg, sdkConfig)
+			sdkConfig.Seal()
 
 			// Get the modules
 			registeredModules := registrar.GetModules(cfg.Modules)

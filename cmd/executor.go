@@ -2,13 +2,13 @@ package cmd
 
 import (
 	"fmt"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"os"
+
 	"github.com/desmos-labs/juno/config"
 	"github.com/desmos-labs/juno/db"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/cli"
-	"os"
 )
 
 // BuildDefaultExecutor allows to build an Executor containing a root command that
@@ -25,14 +25,6 @@ import (
 func BuildDefaultExecutor(
 	name string, setupCfg config.SdkConfigSetup, cdcBuilder config.CodecBuilder, dbBuilder db.Builder,
 ) cli.Executor {
-	// Build the codec
-	cdc := cdcBuilder()
-
-	// Setup the SDK configuration
-	sdkConfig := sdk.GetConfig()
-	setupCfg(sdkConfig)
-	sdkConfig.Seal()
-
 	rootCmd := &cobra.Command{
 		Use:   name,
 		Short: fmt.Sprintf("%s is a Cosmos SDK-based chain data aggregator and exporter", name),
@@ -46,7 +38,7 @@ them to compose more aggregate and complex queries.`, name),
 
 	rootCmd.AddCommand(
 		VersionCmd(),
-		ParseCmd(cdc, dbBuilder),
+		ParseCmd(cdcBuilder, setupCfg, dbBuilder),
 	)
 
 	return PrepareMainCmd(rootCmd)

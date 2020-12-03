@@ -3,6 +3,7 @@ package worker
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/desmos-labs/juno/logging"
 	"github.com/desmos-labs/juno/modules"
 
