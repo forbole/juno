@@ -39,13 +39,19 @@ ci-test:
 	@echo "executing unit tests..."
 	@go test -mod=readonly -v -coverprofile coverage.txt ./...
 
-ci-lint:
-	@echo "running GolangCI-Lint..."
-	@GO111MODULE=on golangci-lint run
-	@echo "formatting..."
-	@find . -name '*.go' -type f -not -path "*.git*" | xargs gofmt -d -s
-	@echo "verifying modules..."
-	@go mod verify
+lint:
+	golangci-lint run --out-format=tab
+
+lint-fix:
+	golangci-lint run --fix --out-format=tab --issues-exit-code=0
+.PHONY: lint lint-fix
+
+
+format:
+	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -path "./client/docs/statik/statik.go" -not -path "./tests/mocks/*" -not -name '*.pb.go' | xargs gofmt -w -s
+	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -path "./client/docs/statik/statik.go" -not -path "./tests/mocks/*" -not -name '*.pb.go' | xargs misspell -w
+	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -path "./client/docs/statik/statik.go" -not -path "./tests/mocks/*" -not -name '*.pb.go' | xargs goimports -w -local github.com/desmos-labs/desmos
+.PHONY: format
 
 clean:
 	rm -f tools-stamp ./build/**

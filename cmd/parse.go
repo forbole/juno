@@ -58,7 +58,7 @@ func ParseCmd(cdcBuilder config.CodecBuilder, setupCfg config.SdkConfigSetup, bu
 			}
 
 			// Build the codec
-			cdc := cdcBuilder(cfg)
+			cdc := cdcBuilder()
 
 			// Setup the SDK configuration
 			sdkConfig := sdk.GetConfig()
@@ -66,7 +66,7 @@ func ParseCmd(cdcBuilder config.CodecBuilder, setupCfg config.SdkConfigSetup, bu
 			sdkConfig.Seal()
 
 			// Get the modules
-			registeredModules := registrar.GetModules(cfg.Modules)
+			registeredModules := registrar.GetModules(cfg.CosmosConfig.Modules)
 
 			// Get the database
 			database, err := buildDb(cfg, cdc)
@@ -79,6 +79,8 @@ func ParseCmd(cdcBuilder config.CodecBuilder, setupCfg config.SdkConfigSetup, bu
 			if err != nil {
 				return fmt.Errorf("failed to start RPC client: %s", err)
 			}
+
+			// nolint:errcheck
 			defer cp.Stop()
 
 			// Run all the additional operations

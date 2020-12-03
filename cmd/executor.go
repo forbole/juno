@@ -15,7 +15,7 @@ import (
 // has the provided name and description and the default version and parse sub-commands implementations.
 //
 // The provided setupCfg method will be used to customize the SDK configuration. If you don't want any customization
-// you can use the config.EmptySetup variable.
+// you can use the config.DefaultSetup variable.
 //
 // The provided cdcBuilder is used to provide a codec that will later be used to deserialize the
 // transaction messages. Make sure you register all the types you need properly.

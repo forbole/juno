@@ -47,8 +47,9 @@ func ParseString(configData []byte) (*Config, error) {
 	}
 
 	return &Config{
-		RPCNode:    cfg.RPCNode,
-		ClientNode: cfg.ClientNode,
+		RPCNode:      cfg.RPCNode,
+		ClientNode:   cfg.ClientNode,
+		CosmosConfig: cfg.Cosmos,
 		DatabaseConfig: DatabaseConfig{
 			Type:   cfg.DB.Type,
 			Config: config,

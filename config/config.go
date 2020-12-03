@@ -8,8 +8,14 @@ import (
 type Config struct {
 	RPCNode        string         `toml:"rpc_node"`
 	ClientNode     string         `toml:"client_node"`
-	Modules        []string       `toml:"modules"`
+	CosmosConfig   CosmosConfig   `toml:"cosmos"`
 	DatabaseConfig DatabaseConfig `toml:"database"`
+}
+
+// CosmosConfig contains the data to configure the Cosmos SDK
+type CosmosConfig struct {
+	Prefix  string   `toml:"prefix"`
+	Modules []string `toml:"modules"`
 }
 
 // DatabaseConfig represents a generic database configuration
@@ -41,6 +47,7 @@ type PostgreSQLConfig struct {
 type configToml struct {
 	RPCNode    string           `toml:"rpc_node"`
 	ClientNode string           `toml:"client_node"`
+	Cosmos     CosmosConfig     `toml:"cosmos"`
 	DB         databaseInfoToml `toml:"database"`
 }
 
