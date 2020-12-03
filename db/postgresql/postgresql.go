@@ -92,7 +92,7 @@ func (db Database) SaveBlock(block *tmctypes.ResultBlock, totalGas, preCommits u
 // returned if the operation fails.
 func (db Database) SaveTx(tx types.Tx) error {
 	sqlStatement := `
-	INSERT INTO transaction (timestamp, gas_wanted, gas_used, height, txhash, messages, fee, signatures, memo)
+	INSERT INTO transaction (timestamp, gas_wanted, gas_used, height, hash, messages, fee, signatures, memo)
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);`
 
 	stdTx, ok := tx.Tx.(auth.StdTx)

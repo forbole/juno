@@ -6,7 +6,6 @@ on:
       - '!gh-pages'
 
 jobs:
-
   Analyze:
     runs-on: ubuntu-latest
     steps:

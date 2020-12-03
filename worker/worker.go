@@ -101,7 +101,8 @@ func (w Worker) process(height int64) error {
 		return err
 	}
 
-	if err := w.ExportPreCommits(block.Block.LastCommit, vals); err != nil {
+	err = w.ExportPreCommits(block.Block.LastCommit, vals)
+	if err != nil {
 		return err
 	}
 
@@ -135,21 +136,33 @@ func (w Worker) ExportPreCommits(commit *tmtypes.Commit, vals *tmctypes.ResultVa
 			continue
 		}
 
-		valAddr := sdk.ConsAddress(commitSig.ValidatorAddress).String()
-
+		valAddr := sdk.ConsAddress(commitSig.ValidatorAddress)
 		val := findValidatorByAddr(valAddr, vals)
 		if val == nil {
 			err := fmt.Errorf("failed to find validator")
-			log.Error().Str("validator", valAddr).Time("commit_timestamp", commitSig.Timestamp).Err(err).Send()
+			log.Error().
+				Err(err).
+				Int64("height", commit.Height).
+				Str("validator_hex", commitSig.ValidatorAddress.String()).
+				Str("validator_bech32", valAddr.String()).
+				Time("commit_timestamp", commitSig.Timestamp).
+				Send()
 			return err
 		}
 
-		if err := w.ExportValidator(val); err != nil {
+		err := w.ExportValidator(val)
+		if err != nil {
 			return err
 		}
 
-		if err := w.db.SaveCommitSig(commitSig, val.VotingPower, val.ProposerPriority); err != nil {
-			log.Error().Err(err).Str("validator", valAddr).Msg("failed to persist validator pre-commit")
+		err = w.db.SaveCommitSig(commitSig, val.VotingPower, val.ProposerPriority)
+		if err != nil {
+			log.Error().
+				Err(err).
+				Int64("height", commit.Height).
+				Str("validator_hex", commitSig.ValidatorAddress.String()).
+				Str("validator_bech32", valAddr.String()).
+				Msg("failed to persist validator pre-commit")
 			return err
 		}
 	}
@@ -169,7 +182,8 @@ func (w Worker) ExportValidator(val *tmtypes.Validator) error {
 		return err
 	}
 
-	if err := w.db.SaveValidator(valAddr, consPubKey); err != nil {
+	err = w.db.SaveValidator(valAddr, consPubKey)
+	if err != nil {
 		log.Error().Err(err).Str("validator", valAddr).Msg("failed to persist validator")
 		return err
 	}
@@ -186,28 +200,37 @@ func (w Worker) ExportBlock(b *tmctypes.ResultBlock, txs []types.Tx, vals *tmcty
 
 	// Set the block's proposer if it does not already exist. This may occur if
 	// the proposer has never signed before.
-	proposerAddr := sdk.ConsAddress(b.Block.ProposerAddress).String()
+	proposerAddr := sdk.ConsAddress(b.Block.ProposerAddress)
 
 	val := findValidatorByAddr(proposerAddr, vals)
 	if val == nil {
 		err := fmt.Errorf("failed to find validator")
-		log.Error().Str("validator", proposerAddr).Int64("height", b.Block.Height).Err(err).Send()
+		log.Error().
+			Err(err).
+			Int64("height", b.Block.Height).
+			Str("validator_hex", b.Block.ProposerAddress.String()).
+			Str("validator_bech32", proposerAddr.String()).
+			Time("commit_timestamp", b.Block.Time).
+			Send()
 		return err
 	}
 
-	if err := w.ExportValidator(val); err != nil {
+	err := w.ExportValidator(val)
+	if err != nil {
 		return err
 	}
 
 	// Save the block
-	if err := w.db.SaveBlock(b, totalGas, preCommits); err != nil {
+	err = w.db.SaveBlock(b, totalGas, preCommits)
+	if err != nil {
 		log.Error().Err(err).Int64("height", b.Block.Height).Msg("failed to persist block")
 		return err
 	}
 
 	// Call the block handlers
 	for _, module := range w.modules {
-		if err := module.HandleBlock(b, txs, vals, w.cdc, w.cp, w.db); err != nil {
+		err := module.HandleBlock(b, txs, vals, w.cdc, w.cp, w.db)
+		if err != nil {
 			logging.LogBlockError(err)
 		}
 	}
@@ -222,14 +245,16 @@ func (w Worker) ExportTxs(txs []types.Tx) error {
 	// Handle all the transactions inside the block
 	for _, tx := range txs {
 		// Save the transaction itself
-		if err := w.db.SaveTx(tx); err != nil {
+		err := w.db.SaveTx(tx)
+		if err != nil {
 			log.Error().Err(err).Str("hash", tx.TxHash).Msg("failed to handle transaction")
 			return err
 		}
 
 		// Call the tx handlers
 		for _, module := range w.modules {
-			if err := module.HandleTx(tx, w.cdc, w.cp, w.db); err != nil {
+			err := module.HandleTx(tx, w.cdc, w.cp, w.db)
+			if err != nil {
 				logging.LogTxError(err)
 			}
 		}
@@ -238,7 +263,8 @@ func (w Worker) ExportTxs(txs []types.Tx) error {
 		for i, msg := range tx.Messages {
 			// Call the handlers
 			for _, module := range w.modules {
-				if err := module.HandleMsg(i, msg, tx, w.cdc, w.cp, w.db); err != nil {
+				err := module.HandleMsg(i, msg, tx, w.cdc, w.cp, w.db)
+				if err != nil {
 					logging.LogMsgError(err)
 				}
 			}

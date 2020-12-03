@@ -73,7 +73,26 @@ func (cp Proxy) TendermintTx(hash string) (*tmctypes.ResultTx, error) {
 // Validators returns all the known Tendermint validators for a given block
 // height. An error is returned if the query fails.
 func (cp Proxy) Validators(height int64) (*tmctypes.ResultValidators, error) {
-	return cp.rpcClient.Validators(&height, 0, 1000000)
+	vals := &tmctypes.ResultValidators{
+		BlockHeight: height,
+	}
+
+	page := 1
+	stop := false
+	for !stop {
+		result, err := cp.rpcClient.Validators(&height, page, 100)
+		if err != nil {
+			return nil, err
+		}
+		vals.Validators = append(vals.Validators, result.Validators...)
+		vals.Count += result.Count
+		vals.Total = result.Total
+
+		page += 1
+		stop = vals.Count == vals.Total
+	}
+
+	return vals, nil
 }
 
 // Genesis returns the genesis state
