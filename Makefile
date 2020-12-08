@@ -1,5 +1,6 @@
 VERSION := $(shell echo $(shell git describe --tags) | sed 's/^v//')
 COMMIT  := $(shell git log -1 --format='%H')
+DOCKER := $(shell which docker)
 
 export GO111MODULE = on
 
@@ -40,10 +41,10 @@ ci-test:
 	@go test -mod=readonly -v -coverprofile coverage.txt ./...
 
 lint:
-	golangci-lint run --out-format=tab
+	$(DOCKER) run --rm -v $(CURDIR):/app -w /app golangci/golangci-lint:v1.28.0 golangci-lint run --out-format=tab
 
 lint-fix:
-	golangci-lint run --fix --out-format=tab --issues-exit-code=0
+	$(DOCKER) run --rm -v $(CURDIR):/app -w /app golangci/golangci-lint:v1.28.0 golangci-lint run --fix --out-format=tab --issues-exit-code=0
 .PHONY: lint lint-fix
 
 
