@@ -21,7 +21,7 @@ func findValidatorByAddr(consAddr sdk.ConsAddress, vals *tmctypes.ResultValidato
 }
 
 // sumGasTxs returns the total gas consumed by a set of transactions.
-func sumGasTxs(txs []types.Tx) uint64 {
+func sumGasTxs(txs []*types.Tx) uint64 {
 	var totalGas uint64
 
 	for _, tx := range txs {

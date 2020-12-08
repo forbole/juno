@@ -38,26 +38,47 @@ To install the binary run `make install`.
 ### Working with PostgreSQL
 #### Config
 ```toml
-rpc_node = "<rpc-ip/host>:<rpc-port>"
-client_node = "<client-ip/host>:<client-port>"
+[cosmos]
+prefix = "desmos"
+modules = []
+
+[rpc]
+address = "<rpc-ip/host>:<rpc-port>"
+
+[grpc]
+address = "<grpc-ip/host>:<grpc-port>"
+insecure = true
+
+[api]
+address = "<client-ip/host>:<client-port>"
 
 [database]
 type = "mongodb"
 
 [database.config]
 host = "<db-host>"
-port = <db-port>
+port = 5432
 name = "<db-name>"
 user = "<db-user>"
 password = "<db-password>"
-ssl_mode = "<ssl-mode>"
 ```
 
 ### Working with MongoDB
 #### Config
 ```toml
-rpc_node = "<rpc-ip/host>:<rpc-port>"
-client_node = "<client-ip/host>:<client-port>"
+[cosmos]
+prefix = "desmos"
+modules = []
+
+[rpc]
+address = "<rpc-ip/host>:<rpc-port>"
+
+[grpc]
+address = "<grpc-ip/host>:<grpc-port>"
+insecure = true
+
+[api]
+address = "<client-ip/host>:<client-port>"
 
 [database]
 type = "postgresql"

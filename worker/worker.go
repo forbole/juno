@@ -21,14 +21,14 @@ import (
 // aggregating block and associated data and exporting it to a database.
 type Worker struct {
 	queue   types.Queue
-	cdc     *codec.Codec
+	cdc     *codec.LegacyAmino
 	cp      *client.Proxy
 	db      db.Database
 	modules []modules.Module
 }
 
 // NewWorker allows to create a new Worker implementation.
-func NewWorker(cdc *codec.Codec, q types.Queue, cp *client.Proxy, db db.Database, modules []modules.Module) Worker {
+func NewWorker(cdc *codec.LegacyAmino, q types.Queue, cp *client.Proxy, db db.Database, modules []modules.Module) Worker {
 	return Worker{cdc: cdc, cp: cp, queue: q, db: db, modules: modules}
 }
 
@@ -86,13 +86,13 @@ func (w Worker) process(height int64) error {
 	}
 
 	// Convert the transaction to a more easy-to-handle type
-	var txData = make([]types.Tx, len(txs))
+	var txData = make([]*types.Tx, len(txs))
 	for index, tx := range txs {
 		convTx, err := types.NewTx(tx)
 		if err != nil {
-			return fmt.Errorf("error handleTx")
+			return fmt.Errorf("error converting transaction: %s", err.Error())
 		}
-		txData[index] = *convTx
+		txData[index] = convTx
 	}
 
 	vals, err := w.cp.Validators(block.Block.LastCommit.Height)
@@ -113,7 +113,9 @@ func (w Worker) process(height int64) error {
 // in the order in which they have been registered.
 func (w Worker) HandleGenesis(genesis *tmtypes.GenesisDoc) error {
 	var appState map[string]json.RawMessage
-	w.cdc.MustUnmarshalJSON(genesis.AppState, &appState)
+	if err := json.Unmarshal(genesis.AppState, &appState); err != nil {
+		return fmt.Errorf("error unmarshalling genesis doc %s: %s", appState, err.Error())
+	}
 
 	// Call the block handlers
 	for _, module := range w.modules {
@@ -194,7 +196,7 @@ func (w Worker) ExportValidator(val *tmtypes.Validator) error {
 // ExportBlock accepts a finalized block and a corresponding set of transactions
 // and persists them to the database along with attributable metadata. An error
 // is returned if the write fails.
-func (w Worker) ExportBlock(b *tmctypes.ResultBlock, txs []types.Tx, vals *tmctypes.ResultValidators) error {
+func (w Worker) ExportBlock(b *tmctypes.ResultBlock, txs []*types.Tx, vals *tmctypes.ResultValidators) error {
 	totalGas := sumGasTxs(txs)
 	preCommits := uint64(len(b.Block.LastCommit.Signatures))
 
@@ -241,7 +243,7 @@ func (w Worker) ExportBlock(b *tmctypes.ResultBlock, txs []types.Tx, vals *tmcty
 
 // ExportTxs accepts a slice of transactions and persists then inside the database.
 // An error is returned if the write fails.
-func (w Worker) ExportTxs(txs []types.Tx) error {
+func (w Worker) ExportTxs(txs []*types.Tx) error {
 	// Handle all the transactions inside the block
 	for _, tx := range txs {
 		// Save the transaction itself
@@ -260,7 +262,7 @@ func (w Worker) ExportTxs(txs []types.Tx) error {
 		}
 
 		// Handle all the messages contained inside the transaction
-		for i, msg := range tx.Messages {
+		for i, msg := range tx.Msgs {
 			// Call the handlers
 			for _, module := range w.modules {
 				err := module.HandleMsg(i, msg, tx, w.cdc, w.cp, w.db)

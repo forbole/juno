@@ -58,7 +58,7 @@ func ParseCmd(cdcBuilder config.CodecBuilder, setupCfg config.SdkConfigSetup, bu
 			}
 
 			// Build the codec
-			cdc := cdcBuilder()
+			_, cdc := cdcBuilder()
 
 			// Setup the SDK configuration
 			sdkConfig := sdk.GetConfig()
@@ -75,9 +75,9 @@ func ParseCmd(cdcBuilder config.CodecBuilder, setupCfg config.SdkConfigSetup, bu
 			}
 
 			// Init the client
-			cp, err := client.New(*cfg, cdc)
+			cp, err := client.New(cfg, cdc)
 			if err != nil {
-				return fmt.Errorf("failed to start RPC client: %s", err)
+				return fmt.Errorf("failed to start client: %s", err)
 			}
 
 			// nolint:errcheck
@@ -132,7 +132,7 @@ func setupLogging() error {
 }
 
 // parseCmdHandler represents the function that should be called when the parse command is executed
-func StartParsing(cdc *codec.Codec, cp *client.Proxy, db db.Database, modules []modules.Module) error {
+func StartParsing(cdc *codec.LegacyAmino, cp *client.Proxy, db db.Database, modules []modules.Module) error {
 	// Start periodic operations
 	scheduler := gocron.NewScheduler(time.UTC)
 	for _, module := range modules {

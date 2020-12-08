@@ -12,7 +12,7 @@ func main() {
 	// registrar.RegisterModules(staking.Module{}, consensus.Module{}, ...)
 
 	// Build the exec
-	exec := cmd.BuildDefaultExecutor("juno", config.DefaultSetup, simapp.MakeCodec, stddb.Builder)
+	exec := cmd.BuildDefaultExecutor("juno", config.DefaultSetup, simapp.MakeCodecs, stddb.Builder)
 
 	// Run the commands and panic on any error
 	err := exec.Execute()

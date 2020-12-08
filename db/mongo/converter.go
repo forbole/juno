@@ -27,8 +27,8 @@ func ConvertBlockToBSONSetDocument(block *tmctypes.ResultBlock, totalGas, preCom
 
 // ConvertTxToBSONSetDocument converts the given tx into a BSON document
 // that allows it to be saved inside a collection
-func ConvertTxToBSONSetDocument(codec *codec.Codec, tx types.Tx) (bson.D, error) {
-	msgsBz, err := codec.MarshalJSON(tx.Messages)
+func ConvertTxToBSONSetDocument(codec *codec.LegacyAmino, tx *types.Tx) (bson.D, error) {
+	msgsBz, err := codec.MarshalJSON(tx.Msgs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to JSON encode tx messages: %s", err)
 	}
