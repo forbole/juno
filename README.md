@@ -41,12 +41,16 @@ To install the binary run `make install`.
 rpc_node = "<rpc-ip/host>:<rpc-port>"
 client_node = "<client-ip/host>:<client-port>"
 
+[cosmos]
+prefix = "desmos"
+modules = []
+
 [database]
 type = "mongodb"
 
 [database.config]
 host = "<db-host>"
-port = <db-port>
+port = 5432
 name = "<db-name>"
 user = "<db-user>"
 password = "<db-password>"
@@ -58,6 +62,10 @@ ssl_mode = "<ssl-mode>"
 ```toml
 rpc_node = "<rpc-ip/host>:<rpc-port>"
 client_node = "<client-ip/host>:<client-port>"
+
+[cosmos]
+prefix = "desmos"
+modules = []
 
 [database]
 type = "postgresql"
