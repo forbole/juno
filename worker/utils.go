@@ -1,8 +1,6 @@
 package worker
 
 import (
-	"strings"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/desmos-labs/juno/types"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -12,9 +10,9 @@ import (
 // findValidatorByAddr finds a validator by a consensus address given a set of
 // Tendermint validators for a particular block. If no validator is found, nil
 // is returned.
-func findValidatorByAddr(consAddr string, vals *tmctypes.ResultValidators) *tmtypes.Validator {
+func findValidatorByAddr(consAddr sdk.ConsAddress, vals *tmctypes.ResultValidators) *tmtypes.Validator {
 	for _, val := range vals.Validators {
-		if strings.ToLower(consAddr) == strings.ToLower(sdk.ConsAddress(val.Address).String()) {
+		if consAddr.Equals(sdk.ConsAddress(val.Address)) {
 			return val
 		}
 	}

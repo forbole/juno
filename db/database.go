@@ -38,5 +38,5 @@ type Database interface {
 	SaveCommitSig(commitSig tmtypes.CommitSig, votingPower, proposerPriority int64) error
 }
 
-// Builder represents a method that allows to build any database from a given codec and configuration
-type Builder func(config.Config, *codec.Codec) (*Database, error)
+// Create represents a method that allows to build any database from a given codec and configuration
+type Builder func(cfg *config.Config, cdc *codec.Codec) (Database, error)

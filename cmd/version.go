@@ -1,11 +1,10 @@
-package version
+package cmd
 
 import (
 	"encoding/json"
 	"fmt"
 	"runtime"
 
-	"github.com/desmos-labs/juno/config"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v2"
@@ -19,8 +18,8 @@ var (
 	Commit = ""
 )
 
-// GetVersionCmd returns the command that allows to show the version information
-func GetVersionCmd() *cobra.Command {
+// VersionCmd returns the command that allows to show the version information
+func VersionCmd() *cobra.Command {
 	versionCmd := &cobra.Command{
 		Use:   "version",
 		Short: "Print the version information",
@@ -41,7 +40,7 @@ func GetVersionCmd() *cobra.Command {
 				err error
 			)
 
-			versionFormat := viper.GetString(config.FlagFormat)
+			versionFormat := viper.GetString(FlagFormat)
 			switch versionFormat {
 			case "json":
 				bz, err = json.Marshal(verInfo)
@@ -59,7 +58,7 @@ func GetVersionCmd() *cobra.Command {
 		},
 	}
 
-	versionCmd.Flags().String(config.FlagFormat, "text", "Print the version in the given format (text | json)")
+	versionCmd.Flags().String(FlagFormat, "text", "Print the version in the given format (text | json)")
 
 	return versionCmd
 }
