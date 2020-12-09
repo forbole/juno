@@ -11,6 +11,20 @@ import (
 	"github.com/tendermint/tendermint/libs/cli"
 )
 
+// RootCmd allows to build the default root command having the given name
+func RootCmd(name string) *cobra.Command {
+	return &cobra.Command{
+		Use:   name,
+		Short: fmt.Sprintf("%s is a CosmosConfig SDK-based chain data aggregator and exporter", name),
+		Long: fmt.Sprintf(`A CosmosConfig SDK-based chain data aggregator. It improves the chain's data accessibility
+by providing an indexed database exposing aggregated resources and models such as blocks, validators, pre-commits, 
+transactions, and various aspects of the governance module. 
+%s is meant to run with a GraphQL layer on top so that it even further eases the ability for developers and
+downstream clients to answer queries such as "What is the average gas cost of a block?" while also allowing
+them to compose more aggregate and complex queries.`, name),
+	}
+}
+
 // BuildDefaultExecutor allows to build an Executor containing a root command that
 // has the provided name and description and the default version and parse sub-commands implementations.
 //
@@ -25,16 +39,7 @@ import (
 func BuildDefaultExecutor(
 	name string, setupCfg config.SdkConfigSetup, cdcBuilder config.CodecBuilder, dbBuilder db.Builder,
 ) cli.Executor {
-	rootCmd := &cobra.Command{
-		Use:   name,
-		Short: fmt.Sprintf("%s is a CosmosConfig SDK-based chain data aggregator and exporter", name),
-		Long: fmt.Sprintf(`A CosmosConfig SDK-based chain data aggregator. It improves the chain's data accessibility
-by providing an indexed database exposing aggregated resources and models such as blocks, validators, pre-commits, 
-transactions, and various aspects of the governance module. 
-%s is meant to run with a GraphQL layer on top so that it even further eases the ability for developers and
-downstream clients to answer queries such as "What is the average gas cost of a block?" while also allowing
-them to compose more aggregate and complex queries.`, name),
-	}
+	rootCmd := RootCmd(name)
 
 	rootCmd.AddCommand(
 		VersionCmd(),
