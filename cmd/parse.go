@@ -45,50 +45,9 @@ func ParseCmd(cdcBuilder config.CodecBuilder, setupCfg config.SdkConfigSetup, bu
 		Short: "Start parsing a blockchain using the provided config file",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// Setup the logger
-			err := setupLogging()
+			cdc, cp, database, registeredModules, err := SetupParsing(args, cdcBuilder, setupCfg, buildDb)
 			if err != nil {
 				return err
-			}
-
-			// Setup the config
-			cfg, err := config.Read(args[0])
-			if err != nil {
-				return err
-			}
-
-			// Build the codec
-			_, cdc := cdcBuilder()
-
-			// Setup the SDK configuration
-			sdkConfig := sdk.GetConfig()
-			setupCfg(cfg, sdkConfig)
-			sdkConfig.Seal()
-
-			// Get the modules
-			registeredModules := registrar.GetModules(cfg.CosmosConfig.Modules)
-
-			// Get the database
-			database, err := buildDb(cfg, cdc)
-			if err != nil {
-				return err
-			}
-
-			// Init the client
-			cp, err := client.New(cfg, cdc)
-			if err != nil {
-				return fmt.Errorf("failed to start client: %s", err)
-			}
-
-			// nolint:errcheck
-			defer cp.Stop()
-
-			// Run all the additional operations
-			for _, module := range registeredModules {
-				err := module.RunAdditionalOperations(cfg, cdc, cp, database)
-				if err != nil {
-					return err
-				}
 			}
 
 			return StartParsing(cdc, cp, database, registeredModules)
@@ -96,6 +55,60 @@ func ParseCmd(cdcBuilder config.CodecBuilder, setupCfg config.SdkConfigSetup, bu
 	}
 
 	return SetupFlags(cmd)
+}
+
+// SetupParsing setups all the things that should be later passed to StartParsing in order
+// to parse the chain data properly.
+func SetupParsing(
+	args []string, cdcBuilder config.CodecBuilder, setupCfg config.SdkConfigSetup, buildDb db.Builder,
+) (*codec.LegacyAmino, *client.Proxy, db.Database, []modules.Module, error) {
+	// Setup the logger
+	err := setupLogging()
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	// Setup the config
+	cfg, err := config.Read(args[0])
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	// Build the codec
+	_, cdc := cdcBuilder()
+
+	// Setup the SDK configuration
+	sdkConfig := sdk.GetConfig()
+	setupCfg(cfg, sdkConfig)
+	sdkConfig.Seal()
+
+	// Get the modules
+	registeredModules := registrar.GetModules(cfg.CosmosConfig.Modules)
+
+	// Get the database
+	database, err := buildDb(cfg, cdc)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	// Init the client
+	cp, err := client.New(cfg, cdc)
+	if err != nil {
+		return nil, nil, nil, nil, fmt.Errorf("failed to start client: %s", err)
+	}
+
+	// nolint:errcheck
+	defer cp.Stop()
+
+	// Run all the additional operations
+	for _, module := range registeredModules {
+		err := module.RunAdditionalOperations(cfg, cdc, cp, database)
+		if err != nil {
+			return nil, nil, nil, nil, err
+		}
+	}
+
+	return cdc, cp, database, registeredModules, nil
 }
 
 // SetupFlags setups all the flags for the parse command
