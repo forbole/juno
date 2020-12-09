@@ -95,13 +95,17 @@ func ParseCmd(cdcBuilder config.CodecBuilder, setupCfg config.SdkConfigSetup, bu
 		},
 	}
 
+	return SetupFlags(cmd)
+}
+
+// SetupFlags setups all the flags for the parse command
+func SetupFlags(cmd *cobra.Command) *cobra.Command {
 	cmd.Flags().Int64(FlagStartHeight, 1, "sync missing or failed blocks starting from a given height")
 	cmd.Flags().Int64(FlagWorkerCount, 1, "number of workers to run concurrently")
 	cmd.Flags().Bool(FlagParseOldBlocks, true, "parse old blocks")
 	cmd.Flags().Bool(FlagListenNewBlocks, true, "listen to new blocks")
 	cmd.Flags().String(FlagLogLevel, zerolog.InfoLevel.String(), "logging level")
 	cmd.Flags().String(FlagLogFormat, LogLevelJSON, "logging format; must be either json or text")
-
 	return cmd
 }
 
