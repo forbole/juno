@@ -98,7 +98,7 @@ func (db Db) SaveBlock(b *tmctypes.ResultBlock, totalGas, preCommits uint64) err
 }
 
 // SaveTx implements Database
-func (db Db) SaveTx(tx types.Tx) error {
+func (db Db) SaveTx(tx *types.Tx) error {
 	ctx, cancel := BuildCtx()
 	defer cancel()
 

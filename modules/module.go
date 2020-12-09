@@ -46,7 +46,7 @@ type Module interface {
 	// NOTE. The returned error will be logged using the logging.LogBlockError method. All other modules' handlers
 	// will still be called.
 	HandleBlock(
-		block *tmctypes.ResultBlock, txs []types.Tx, vals *tmctypes.ResultValidators,
+		block *tmctypes.ResultBlock, txs []*types.Tx, vals *tmctypes.ResultValidators,
 		cdc *codec.Codec, cp *client.Proxy, db db.Database,
 	) error
 
@@ -54,14 +54,14 @@ type Module interface {
 	// For each message present inside the transaction, HandleMsg will be called as well.
 	// NOTE. The returned error will be logged using the logging.LogTxError method. All other modules' handlers
 	// will still be called.
-	HandleTx(tx types.Tx, cdc *codec.Codec, cp *client.Proxy, db db.Database) error
+	HandleTx(tx *types.Tx, cdc *codec.Codec, cp *client.Proxy, db db.Database) error
 
 	// HandleTx handles a single transaction.
 	// For convenience of usa, the index of the message inside the transaction and the transaction itself
 	// are passed as well.
 	// NOTE. The returned error will be logged using the logging.LogMsgError method. All other modules' handlers
 	// will still be called.
-	HandleMsg(index int, msg sdk.Msg, tx types.Tx, cdc *codec.Codec, cp *client.Proxy, db db.Database) error
+	HandleMsg(index int, msg sdk.Msg, tx *types.Tx, cdc *codec.Codec, cp *client.Proxy, db db.Database) error
 }
 
 // Modules represents a slice of Module objects
