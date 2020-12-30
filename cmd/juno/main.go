@@ -5,6 +5,7 @@ import (
 	"github.com/desmos-labs/juno/cmd"
 	"github.com/desmos-labs/juno/config"
 	stddb "github.com/desmos-labs/juno/db/builder"
+	"os"
 )
 
 func main() {
@@ -17,6 +18,6 @@ func main() {
 	// Run the commands and panic on any error
 	err := exec.Execute()
 	if err != nil {
-		panic(err)
+		os.Exit(1)
 	}
 }

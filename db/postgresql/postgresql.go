@@ -37,9 +37,14 @@ func Builder(cfg *config.PostgreSQLConfig, codec *codec.Codec) (db.Database, err
 		sslMode = cfg.SSLMode
 	}
 
+	schema := "public"
+	if cfg.Schema != "" {
+		schema = cfg.Schema
+	}
+
 	connStr := fmt.Sprintf(
-		"host=%s port=%d dbname=%s user=%s sslmode=%s",
-		cfg.Host, cfg.Port, cfg.Name, cfg.User, sslMode,
+		"host=%s port=%d dbname=%s user=%s sslmode=%s search_path=%s",
+		cfg.Host, cfg.Port, cfg.Name, cfg.User, sslMode, schema,
 	)
 
 	if cfg.Password != "" {
