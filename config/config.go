@@ -57,18 +57,3 @@ type databaseInfoToml struct {
 	Type   string         `toml:"type"`
 	Config toml.Primitive `toml:"config"`
 }
-
-// ____________________________________________________________
-
-type configToml struct {
-	RPCNode    string           `toml:"rpc_node"`
-	ClientNode string           `toml:"client_node"`
-	Cosmos     CosmosConfig     `toml:"cosmos"`
-	DB         databaseInfoToml `toml:"database"`
-}
-
-type databaseInfoToml struct {
-	Name   string         `toml:"name"`
-	Type   string         `toml:"type"`
-	Config toml.Primitive `toml:"config"`
-}
