@@ -67,4 +67,5 @@ type PostgreSQLConfig struct {
 	User     string `toml:"user"`
 	Password string `toml:"password"`
 	SSLMode  string `toml:"ssl_mode"`
+	Schema   string `toml:"schema"`
 }
