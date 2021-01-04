@@ -25,7 +25,7 @@ type Proxy struct {
 	apiClient string           // Full node
 }
 
-func New(cfg config.Config, codec *codec.Codec) (*Proxy, error) {
+func New(cfg *config.Config, codec *codec.Codec) (*Proxy, error) {
 	rpcClient, err := httpclient.New(cfg.RPCNode, "/websocket")
 	if err != nil {
 		return nil, err

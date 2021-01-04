@@ -61,7 +61,7 @@ func ParseCmd(cdcBuilder config.CodecBuilder, setupCfg config.SdkConfigSetup, bu
 // to parse the chain data properly.
 func SetupParsing(
 	args []string, cdcBuilder config.CodecBuilder, setupCfg config.SdkConfigSetup, buildDb db.Builder,
-) (*codec.LegacyAmino, *client.Proxy, db.Database, []modules.Module, error) {
+) (*codec.Codec, *client.Proxy, db.Database, []modules.Module, error) {
 	// Setup the logger
 	err := setupLogging()
 	if err != nil {
@@ -75,7 +75,7 @@ func SetupParsing(
 	}
 
 	// Build the codec
-	_, cdc := cdcBuilder()
+	cdc := cdcBuilder()
 
 	// Setup the SDK configuration
 	sdkConfig := sdk.GetConfig()
@@ -149,7 +149,7 @@ func setupLogging() error {
 }
 
 // parseCmdHandler represents the function that should be called when the parse command is executed
-func StartParsing(cdc *codec.LegacyAmino, cp *client.Proxy, db db.Database, modules []modules.Module) error {
+func StartParsing(cdc *codec.Codec, cp *client.Proxy, db db.Database, modules []modules.Module) error {
 	// Start periodic operations
 	scheduler := gocron.NewScheduler(time.UTC)
 	for _, module := range modules {
