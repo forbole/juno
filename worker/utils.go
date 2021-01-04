@@ -1,6 +1,7 @@
 package worker
 
 import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/desmos-labs/juno/types"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -11,7 +12,7 @@ import (
 // is returned.
 func findValidatorByAddr(consAddr string, vals *tmctypes.ResultValidators) *tmtypes.Validator {
 	for _, val := range vals.Validators {
-		if consAddr == val.Address.String() {
+		if consAddr == sdk.ConsAddress(val.Address).String() {
 			return val
 		}
 	}
