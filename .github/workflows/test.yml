@@ -27,7 +27,7 @@ jobs:
         with:
           go-version: 1.15
       - name: Test & Create coverage report
-        run: make install test-unit stop-docker-test
+        run: make install test-unit
       - name: Upload cove coverage
         uses: codecov/codecov-action@v1.0.7
         with:
