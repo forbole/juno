@@ -20,9 +20,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v2
-      - name: Test & Coverage report creation
-        run: make install test-unit
-      - uses: codecov/codecov-action@v1.0.7
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.15
+      - name: Test & Create coverage report
+        run: make install test-unit stop-docker-test
+      - name: Upload cove coverage
+        uses: codecov/codecov-action@v1.0.7
         with:
           file: ./coverage.txt
