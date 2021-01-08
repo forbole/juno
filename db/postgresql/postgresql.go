@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"fmt"
-
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/desmos-labs/juno/config"
 	"github.com/desmos-labs/juno/db"
@@ -97,8 +96,8 @@ func (db Database) SaveBlock(block *tmctypes.ResultBlock, totalGas, preCommits u
 // returned if the operation fails.
 func (db Database) SaveTx(tx *types.Tx) error {
 	sqlStatement := `
-	INSERT INTO transaction (timestamp, gas_wanted, gas_used, height, hash, messages, fee, signatures, memo)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);`
+INSERT INTO transaction (timestamp, gas_wanted, gas_used, height, hash, messages, fee, signatures, memo, raw_log, success)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);`
 
 	stdTx, ok := tx.Tx.(auth.StdTx)
 	if !ok {
@@ -142,7 +141,7 @@ func (db Database) SaveTx(tx *types.Tx) error {
 
 	_, err = db.Sql.Exec(sqlStatement,
 		tx.Timestamp, tx.GasWanted, tx.GasUsed, tx.Height, tx.TxHash,
-		string(msgsBz), string(feeBz), string(sigsBz), stdTx.GetMemo(),
+		string(msgsBz), string(feeBz), string(sigsBz), stdTx.GetMemo(), tx.RawLog, tx.Successful(),
 	)
 	return err
 }
