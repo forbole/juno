@@ -97,8 +97,8 @@ func (db Database) SaveTx(tx *types.Tx) error {
 	stdTx := tx.StdTx
 
 	sqlStatement := `
-	INSERT INTO transaction (timestamp, gas_wanted, gas_used, height, hash, messages, fee, signatures, memo)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);`
+INSERT INTO transaction (timestamp, gas_wanted, gas_used, height, hash, messages, fee, signatures, memo, raw_log, success)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);`
 
 	msgsBz, err := db.Codec.MarshalJSON(stdTx.GetMsgs())
 	if err != nil {
@@ -137,7 +137,7 @@ func (db Database) SaveTx(tx *types.Tx) error {
 
 	_, err = db.Sql.Exec(sqlStatement,
 		tx.Timestamp, tx.GasWanted, tx.GasUsed, tx.Height, tx.TxHash,
-		string(msgsBz), string(feeBz), string(sigsBz), stdTx.GetMemo(),
+		string(msgsBz), string(feeBz), string(sigsBz), stdTx.GetMemo(), tx.RawLog, tx.Successful(),
 	)
 	return err
 }

@@ -64,6 +64,11 @@ func (tx Tx) FindAttributeByKey(event sdk.StringEvent, attrKey string) (string, 
 	return "", fmt.Errorf("no event with attribute %s found inside tx with hash %s", attrKey, tx.TxHash)
 }
 
+// Successful tells whether this tx is successful or not
+func (tx Tx) Successful() bool {
+	return tx.Code == 0
+}
+
 // Signature wraps auth.StdSignature adding the address of the signer
 type Signature struct {
 	legacytx.StdSignature

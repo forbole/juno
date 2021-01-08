@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/desmos-labs/juno/config"
-	"github.com/desmos-labs/juno/db"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/cli"
+
+	"github.com/desmos-labs/juno/config"
+	"github.com/desmos-labs/juno/db"
 )
 
 // RootCmd allows to build the default root command having the given name
