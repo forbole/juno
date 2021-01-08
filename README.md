@@ -1,8 +1,9 @@
 # Juno
 > This branch is intended to be used with Cosmos SDK `v0.39.x`.
 
-[![Build Status](https://travis-ci.org/fissionlabsio/juno.svg?branch=master)](https://travis-ci.org/fissionlabsio/juno)
-[![Go Report Card](https://goreportcard.com/badge/github.com/fissionlabsio/juno)](https://goreportcard.com/report/github.com/fissionlabsio/juno)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/desmos-labs/juno/Tests)](https://github.com/desmos-labs/juno/actions?query=workflow%3ATests)
+[![Go Report Card](https://goreportcard.com/badge/github.com/desmos-labs/juno)](https://goreportcard.com/report/github.com/desmos-labs/juno)
+[![Codecov](https://img.shields.io/codecov/c/github/desmos-labs/juno)](https://codecov.io/gh/desmos-labs/juno/branch/cosmos-v0.39.x)
 
 > Juno is a Cosmos Hub blockchain data aggregator and exporter that provides the ability for developers and clients to query for indexed chain data.
 
