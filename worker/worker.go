@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/desmos-labs/juno/db/utils"
+
 	"github.com/desmos-labs/juno/logging"
 	"github.com/desmos-labs/juno/modules"
 
@@ -179,7 +181,7 @@ func (w Worker) ExportPreCommits(commit *tmtypes.Commit, vals *tmctypes.ResultVa
 func (w Worker) ExportValidator(val *tmtypes.Validator) error {
 	valAddr := sdk.ConsAddress(val.Address).String()
 
-	consPubKey, err := sdk.Bech32ifyPubKey(sdk.Bech32PubKeyTypeConsPub, val.PubKey)
+	consPubKey, err := utils.ConvertValidatorPubKeyToBech32String(val.PubKey)
 	if err != nil {
 		log.Error().Err(err).Str("validator", valAddr).Msg("failed to convert validator public key")
 		return err

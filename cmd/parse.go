@@ -9,17 +9,19 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/desmos-labs/juno/client"
-	"github.com/desmos-labs/juno/modules"
-	"github.com/desmos-labs/juno/modules/registrar"
-	"github.com/desmos-labs/juno/types"
-	"github.com/desmos-labs/juno/worker"
 	"github.com/go-co-op/gocron"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 	tmtypes "github.com/tendermint/tendermint/types"
 
+	"github.com/desmos-labs/juno/client"
+	"github.com/desmos-labs/juno/modules"
+	"github.com/desmos-labs/juno/modules/registrar"
+	"github.com/desmos-labs/juno/types"
+	"github.com/desmos-labs/juno/worker"
+
 	"github.com/cosmos/cosmos-sdk/codec"
+
 	"github.com/desmos-labs/juno/config"
 	"github.com/desmos-labs/juno/db"
 
