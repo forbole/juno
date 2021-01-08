@@ -93,9 +93,6 @@ If you want to know how to run a GraphQL server that allows to expose the parsed
 
 - [PostgreSQL setup with GraphQL](.docs/postgres-graphql-setup.md)
 
-## Running as a service
-If you want to run it as a service, you can follow [this guide](.docs/service-example.md).
-
 ## Contributing
 Contributions are welcome! Please open an Issues or Pull Request for any changes.
 
