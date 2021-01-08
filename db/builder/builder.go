@@ -6,6 +6,7 @@ import (
 	"github.com/desmos-labs/juno/db"
 
 	"github.com/cosmos/cosmos-sdk/codec"
+
 	"github.com/desmos-labs/juno/config"
 	"github.com/desmos-labs/juno/db/mongo"
 	"github.com/desmos-labs/juno/db/postgresql"

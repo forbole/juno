@@ -4,14 +4,16 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/codec"
+	_ "github.com/lib/pq" // nolint
+	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmtypes "github.com/tendermint/tendermint/types"
+
 	"github.com/desmos-labs/juno/config"
 	"github.com/desmos-labs/juno/db"
 	"github.com/desmos-labs/juno/db/utils"
 	"github.com/desmos-labs/juno/types"
-	_ "github.com/lib/pq" // nolint
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
-	tmtypes "github.com/tendermint/tendermint/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"

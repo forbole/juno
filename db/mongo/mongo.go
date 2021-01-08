@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"time"
 
+	tmtypes "github.com/tendermint/tendermint/types"
+
 	"github.com/desmos-labs/juno/config"
 	"github.com/desmos-labs/juno/db"
 	"github.com/desmos-labs/juno/types"
-	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/pkg/errors"
