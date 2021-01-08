@@ -14,7 +14,7 @@ import (
 
 // Builder represents a generic Builder implementation that build the proper database
 // instance based on the configuration the user has specified
-func Builder(cfg *config.Config, codec *codec.Codec) (db.Database, error) {
+func Builder(cfg *config.Config, codec *codec.LegacyAmino) (db.Database, error) {
 	switch cfg := cfg.DatabaseConfig.Config.(type) {
 	case *config.MongoDBConfig:
 		return mongo.Builder(cfg, codec)

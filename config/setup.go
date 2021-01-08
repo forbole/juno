@@ -29,4 +29,4 @@ func DefaultSetup(cfg *Config, sdkConfig *sdk.Config) {
 // -----------------------------------------------------------------
 
 // CodecBuilder represents a function that is used to return the proper application codec.
-type CodecBuilder func() *codec.Codec
+type CodecBuilder func() (codec.Marshaler, *codec.LegacyAmino)

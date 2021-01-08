@@ -40,4 +40,4 @@ type Database interface {
 }
 
 // Create represents a method that allows to build any database from a given codec and configuration
-type Builder func(cfg *config.Config, cdc *codec.Codec) (Database, error)
+type Builder func(cfg *config.Config, cdc *codec.LegacyAmino) (Database, error)
