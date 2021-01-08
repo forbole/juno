@@ -9,12 +9,13 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/desmos-labs/juno/client"
-	"github.com/desmos-labs/juno/db"
-	"github.com/desmos-labs/juno/types"
 	"github.com/rs/zerolog/log"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
+
+	"github.com/desmos-labs/juno/client"
+	"github.com/desmos-labs/juno/db"
+	"github.com/desmos-labs/juno/types"
 )
 
 // Worker defines a job consumer that is responsible for getting and

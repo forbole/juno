@@ -68,7 +68,7 @@ func (tx Tx) FindAttributeByKey(event sdk.StringEvent, attrKey string) (string, 
 
 // Successful tells whether this tx is successful or not
 func (tx Tx) Successful() bool {
-	return tx.Code != 0
+	return tx.Code == 0
 }
 
 // Signature wraps auth.StdSignature adding the address of the signer

@@ -2,9 +2,10 @@ package worker
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/desmos-labs/juno/types"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
+
+	"github.com/desmos-labs/juno/types"
 )
 
 // findValidatorByAddr finds a validator by a consensus address given a set of
