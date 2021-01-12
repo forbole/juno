@@ -51,6 +51,7 @@ func ParseCmd(cdcBuilder config.CodecBuilder, setupCfg config.SdkConfigSetup, bu
 			if err != nil {
 				return err
 			}
+			defer cp.Stop()
 
 			return StartParsing(cdc, cp, database, registeredModules)
 		},
@@ -98,9 +99,6 @@ func SetupParsing(
 	if err != nil {
 		return nil, nil, nil, nil, fmt.Errorf("failed to start client: %s", err)
 	}
-
-	// nolint:errcheck
-	defer cp.Stop()
 
 	// Run all the additional operations
 	for _, module := range registeredModules {
