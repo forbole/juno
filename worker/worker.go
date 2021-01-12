@@ -4,17 +4,20 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/desmos-labs/juno/db/utils"
+
 	"github.com/desmos-labs/juno/logging"
 	"github.com/desmos-labs/juno/modules"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/desmos-labs/juno/client"
-	"github.com/desmos-labs/juno/db"
-	"github.com/desmos-labs/juno/types"
 	"github.com/rs/zerolog/log"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
+
+	"github.com/desmos-labs/juno/client"
+	"github.com/desmos-labs/juno/db"
+	"github.com/desmos-labs/juno/types"
 )
 
 // Worker defines a job consumer that is responsible for getting and
@@ -139,7 +142,7 @@ func (w Worker) ExportPreCommits(commit *tmtypes.Commit, vals *tmctypes.ResultVa
 		}
 
 		valAddr := sdk.ConsAddress(commitSig.ValidatorAddress)
-		val := findValidatorByAddr(valAddr, vals)
+		val := findValidatorByAddr(valAddr.String(), vals)
 		if val == nil {
 			err := fmt.Errorf("failed to find validator")
 			log.Error().
@@ -178,7 +181,7 @@ func (w Worker) ExportPreCommits(commit *tmtypes.Commit, vals *tmctypes.ResultVa
 func (w Worker) ExportValidator(val *tmtypes.Validator) error {
 	valAddr := sdk.ConsAddress(val.Address).String()
 
-	consPubKey, err := sdk.Bech32ifyPubKey(sdk.Bech32PubKeyTypeConsPub, val.PubKey)
+	consPubKey, err := utils.ConvertValidatorPubKeyToBech32String(val.PubKey)
 	if err != nil {
 		log.Error().Err(err).Str("validator", valAddr).Msg("failed to convert validator public key")
 		return err
@@ -204,7 +207,7 @@ func (w Worker) ExportBlock(b *tmctypes.ResultBlock, txs []*types.Tx, vals *tmct
 	// the proposer has never signed before.
 	proposerAddr := sdk.ConsAddress(b.Block.ProposerAddress)
 
-	val := findValidatorByAddr(proposerAddr, vals)
+	val := findValidatorByAddr(proposerAddr.String(), vals)
 	if val == nil {
 		err := fmt.Errorf("failed to find validator")
 		log.Error().

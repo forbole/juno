@@ -1,8 +1,9 @@
 package registrar
 
 import (
-	"github.com/desmos-labs/juno/modules"
 	"github.com/rs/zerolog/log"
+
+	"github.com/desmos-labs/juno/modules"
 )
 
 var (

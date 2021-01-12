@@ -3,8 +3,9 @@ package config_test
 import (
 	"testing"
 
-	"github.com/desmos-labs/juno/config"
 	"github.com/stretchr/testify/require"
+
+	"github.com/desmos-labs/juno/config"
 )
 
 func TestParseConfigString_PostgreSQL(t *testing.T) {

@@ -5,10 +5,11 @@ import (
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/desmos-labs/juno/types"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 	"go.mongodb.org/mongo-driver/bson"
+
+	"github.com/desmos-labs/juno/types"
 )
 
 func ConvertBlockToBSONSetDocument(block *tmctypes.ResultBlock, totalGas, preCommits uint64) bson.D {

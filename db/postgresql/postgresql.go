@@ -4,14 +4,16 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/codec"
+	_ "github.com/lib/pq" // nolint
+	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmtypes "github.com/tendermint/tendermint/types"
+
 	"github.com/desmos-labs/juno/config"
 	"github.com/desmos-labs/juno/db"
 	"github.com/desmos-labs/juno/db/utils"
 	"github.com/desmos-labs/juno/types"
-	_ "github.com/lib/pq" // nolint
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
-	tmtypes "github.com/tendermint/tendermint/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -86,7 +88,7 @@ func (db Database) SaveBlock(block *tmctypes.ResultBlock, totalGas, preCommits u
 
 	_, err := db.Sql.Exec(sqlStatement,
 		block.Block.Height, block.Block.Hash().String(), len(block.Block.Txs),
-		totalGas, utils.ConvertValidatorAddressToString(block.Block.ProposerAddress), preCommits, block.Block.Time,
+		totalGas, utils.ConvertValidatorAddressToBech32String(block.Block.ProposerAddress), preCommits, block.Block.Time,
 	)
 	return err
 }
@@ -97,8 +99,8 @@ func (db Database) SaveTx(tx *types.Tx) error {
 	stdTx := tx.StdTx
 
 	sqlStatement := `
-	INSERT INTO transaction (timestamp, gas_wanted, gas_used, height, hash, messages, fee, signatures, memo)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);`
+INSERT INTO transaction (timestamp, gas_wanted, gas_used, height, hash, messages, fee, signatures, memo, raw_log, success)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);`
 
 	msgsBz, err := db.Codec.MarshalJSON(stdTx.GetMsgs())
 	if err != nil {
@@ -137,7 +139,7 @@ func (db Database) SaveTx(tx *types.Tx) error {
 
 	_, err = db.Sql.Exec(sqlStatement,
 		tx.Timestamp, tx.GasWanted, tx.GasUsed, tx.Height, tx.TxHash,
-		string(msgsBz), string(feeBz), string(sigsBz), stdTx.GetMemo(),
+		string(msgsBz), string(feeBz), string(sigsBz), stdTx.GetMemo(), tx.RawLog, tx.Successful(),
 	)
 	return err
 }
@@ -166,7 +168,7 @@ func (db Database) SaveCommitSig(pc tmtypes.CommitSig, votingPower, proposerPrio
 					 VALUES ($1, $2, $3, $4);`
 
 	_, err := db.Sql.Exec(sqlStatement,
-		utils.ConvertValidatorAddressToString(pc.ValidatorAddress), pc.Timestamp, votingPower, proposerPriority,
+		utils.ConvertValidatorAddressToBech32String(pc.ValidatorAddress), pc.Timestamp, votingPower, proposerPriority,
 	)
 	return err
 }

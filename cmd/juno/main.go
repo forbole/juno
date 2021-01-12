@@ -1,11 +1,13 @@
 package main
 
 import (
+	"os"
+
 	"github.com/cosmos/cosmos-sdk/simapp"
+
 	"github.com/desmos-labs/juno/cmd"
 	"github.com/desmos-labs/juno/config"
 	stddb "github.com/desmos-labs/juno/db/builder"
-	"os"
 )
 
 func main() {
