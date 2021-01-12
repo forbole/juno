@@ -1,45 +1,18 @@
 package config
 
+import (
+	"github.com/BurntSushi/toml"
+)
+
 // Config defines all necessary juno configuration parameters.
 type Config struct {
-	RPCConfig      *RPCConfig
-	APIConfig      *APIConfig
-	GrpcConfig     *GrpcConfig
-	CosmosConfig   *CosmosConfig
-	DatabaseConfig *DatabaseConfig
+	RPCNode        string         `toml:"rpc_node"`
+	ClientNode     string         `toml:"client_node"`
+	CosmosConfig   CosmosConfig   `toml:"cosmos"`
+	DatabaseConfig DatabaseConfig `toml:"database"`
 }
 
-// NewConfig builds a new Config instance
-func NewConfig(
-	rpcConfig *RPCConfig, apiConfig *APIConfig, grpConfig *GrpcConfig,
-	cosmosConfig *CosmosConfig, dbConfig *DatabaseConfig,
-) *Config {
-	return &Config{
-		RPCConfig:      rpcConfig,
-		APIConfig:      apiConfig,
-		GrpcConfig:     grpConfig,
-		CosmosConfig:   cosmosConfig,
-		DatabaseConfig: dbConfig,
-	}
-}
-
-// GrpcConfig contains the configuration of the gRPC endpoint
-type GrpcConfig struct {
-	Address  string `toml:"address"`
-	Insecure bool   `toml:"insecure"`
-}
-
-// RPCConfig contains the configuration of the RPC endpoint
-type RPCConfig struct {
-	Address string `toml:"address"`
-}
-
-// APIConfig contains the configuration of the REST API endpoint
-type APIConfig struct {
-	Address string `toml:"address"`
-}
-
-// CosmosConfig contains the data to configure the CosmosConfig SDK
+// CosmosConfig contains the data to configure the Cosmos SDK
 type CosmosConfig struct {
 	Prefix  string   `toml:"prefix"`
 	Modules []string `toml:"modules"`
@@ -68,4 +41,19 @@ type PostgreSQLConfig struct {
 	Password string `toml:"password"`
 	SSLMode  string `toml:"ssl_mode"`
 	Schema   string `toml:"schema"`
+}
+
+// ____________________________________________________________
+
+type configToml struct {
+	RPCNode    string           `toml:"rpc_node"`
+	ClientNode string           `toml:"client_node"`
+	Cosmos     CosmosConfig     `toml:"cosmos"`
+	DB         databaseInfoToml `toml:"database"`
+}
+
+type databaseInfoToml struct {
+	Name   string         `toml:"name"`
+	Type   string         `toml:"type"`
+	Config toml.Primitive `toml:"config"`
 }

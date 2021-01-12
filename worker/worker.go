@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/desmos-labs/juno/db/utils"
-
 	"github.com/desmos-labs/juno/logging"
 	"github.com/desmos-labs/juno/modules"
 
@@ -24,14 +22,14 @@ import (
 // aggregating block and associated data and exporting it to a database.
 type Worker struct {
 	queue   types.Queue
-	cdc     *codec.LegacyAmino
+	cdc     *codec.Codec
 	cp      *client.Proxy
 	db      db.Database
 	modules []modules.Module
 }
 
 // NewWorker allows to create a new Worker implementation.
-func NewWorker(cdc *codec.LegacyAmino, q types.Queue, cp *client.Proxy, db db.Database, modules []modules.Module) Worker {
+func NewWorker(cdc *codec.Codec, q types.Queue, cp *client.Proxy, db db.Database, modules []modules.Module) Worker {
 	return Worker{cdc: cdc, cp: cp, queue: q, db: db, modules: modules}
 }
 
@@ -93,7 +91,7 @@ func (w Worker) process(height int64) error {
 	for index, tx := range txs {
 		convTx, err := types.NewTx(tx)
 		if err != nil {
-			return fmt.Errorf("error converting transaction: %s", err.Error())
+			return fmt.Errorf("error handleTx")
 		}
 		txData[index] = convTx
 	}
@@ -116,9 +114,7 @@ func (w Worker) process(height int64) error {
 // in the order in which they have been registered.
 func (w Worker) HandleGenesis(genesis *tmtypes.GenesisDoc) error {
 	var appState map[string]json.RawMessage
-	if err := json.Unmarshal(genesis.AppState, &appState); err != nil {
-		return fmt.Errorf("error unmarshalling genesis doc %s: %s", appState, err.Error())
-	}
+	w.cdc.MustUnmarshalJSON(genesis.AppState, &appState)
 
 	// Call the block handlers
 	for _, module := range w.modules {
@@ -181,7 +177,7 @@ func (w Worker) ExportPreCommits(commit *tmtypes.Commit, vals *tmctypes.ResultVa
 func (w Worker) ExportValidator(val *tmtypes.Validator) error {
 	valAddr := sdk.ConsAddress(val.Address).String()
 
-	consPubKey, err := utils.ConvertValidatorPubKeyToBech32String(val.PubKey)
+	consPubKey, err := sdk.Bech32ifyPubKey(sdk.Bech32PubKeyTypeConsPub, val.PubKey)
 	if err != nil {
 		log.Error().Err(err).Str("validator", valAddr).Msg("failed to convert validator public key")
 		return err
@@ -265,7 +261,7 @@ func (w Worker) ExportTxs(txs []*types.Tx) error {
 		}
 
 		// Handle all the messages contained inside the transaction
-		for i, msg := range tx.Msgs {
+		for i, msg := range tx.Messages {
 			// Call the handlers
 			for _, module := range w.modules {
 				err := module.HandleMsg(i, msg, tx, w.cdc, w.cp, w.db)

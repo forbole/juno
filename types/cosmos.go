@@ -3,28 +3,28 @@ package types
 import (
 	"fmt"
 
-	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth"
 )
 
 // Tx represents an already existing blockchain transaction
 type Tx struct {
-	legacytx.StdTx
 	sdk.TxResponse
-	Signatures []Signature
-	Logs       sdk.ABCIMessageLogs
+	Messages   []sdk.Msg   `json:"messages"`
+	Fee        auth.StdFee `json:"fee"`
+	Signatures []Signature `json:"signatures"`
+	Memo       string      `json:"memo"`
 }
 
 // NewTx allows to create a new Tx instance from the given txResponse
 func NewTx(txResponse sdk.TxResponse) (*Tx, error) {
-	stdTx, ok := txResponse.Tx.GetCachedValue().(legacytx.StdTx)
+	stdTx, ok := txResponse.Tx.(auth.StdTx)
 	if !ok {
 		return nil, fmt.Errorf("unsupported tx type: %T", txResponse.Tx)
 	}
 
 	// Convert Tendermint signatures into a more human-readable format
-	sigs := make([]Signature, len(stdTx.Signatures))
+	sigs := make([]Signature, len(stdTx.Signatures), len(stdTx.Signatures))
 	for i, sig := range stdTx.Signatures {
 		sigs[i] = Signature{
 			StdSignature: sig,
@@ -34,9 +34,10 @@ func NewTx(txResponse sdk.TxResponse) (*Tx, error) {
 
 	return &Tx{
 		TxResponse: txResponse,
-		StdTx:      stdTx,
+		Fee:        stdTx.Fee,
+		Messages:   stdTx.GetMsgs(),
 		Signatures: sigs,
-		Logs:       txResponse.Logs,
+		Memo:       stdTx.Memo,
 	}, nil
 }
 
@@ -72,6 +73,6 @@ func (tx Tx) Successful() bool {
 
 // Signature wraps auth.StdSignature adding the address of the signer
 type Signature struct {
-	legacytx.StdSignature
+	auth.StdSignature
 	Address string `json:"address,omitempty"`
 }

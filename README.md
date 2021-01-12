@@ -1,9 +1,9 @@
 # Juno
-> This branch is intended to be used with Cosmos SDK `v0.40.x`.
+> This branch is intended to be used with Cosmos SDK `v0.39.x`.
 
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/desmos-labs/juno/Tests)](https://github.com/desmos-labs/juno/actions?query=workflow%3ATests)
 [![Go Report Card](https://goreportcard.com/badge/github.com/desmos-labs/juno)](https://goreportcard.com/report/github.com/desmos-labs/juno)
-[![Codecov](https://img.shields.io/codecov/c/github/desmos-labs/juno)](https://codecov.io/gh/desmos-labs/juno/branch/cosmos-v0.40.x)
+[![Codecov](https://img.shields.io/codecov/c/github/desmos-labs/juno)](https://codecov.io/gh/desmos-labs/juno/branch/cosmos-v0.39.x)
 
 > Juno is a Cosmos Hub blockchain data aggregator and exporter that provides the ability for developers and clients to query for indexed chain data.
 
@@ -39,19 +39,8 @@ To install the binary run `make install`.
 ### Working with PostgreSQL
 #### Config
 ```toml
-[cosmos]
-prefix = "desmos"
-modules = []
-
-[rpc]
-address = "<rpc-ip/host>:<rpc-port>"
-
-[grpc]
-address = "<grpc-ip/host>:<grpc-port>"
-insecure = true
-
-[api]
-address = "<client-ip/host>:<client-port>"
+rpc_node = "<rpc-ip/host>:<rpc-port>"
+client_node = "<client-ip/host>:<client-port>"
 
 [cosmos]
 prefix = "desmos"
@@ -66,24 +55,14 @@ port = 5432
 name = "<db-name>"
 user = "<db-user>"
 password = "<db-password>"
+ssl_mode = "<ssl-mode>"
 ```
 
 ### Working with MongoDB
 #### Config
 ```toml
-[cosmos]
-prefix = "desmos"
-modules = []
-
-[rpc]
-address = "<rpc-ip/host>:<rpc-port>"
-
-[grpc]
-address = "<grpc-ip/host>:<grpc-port>"
-insecure = true
-
-[api]
-address = "<client-ip/host>:<client-port>"
+rpc_node = "<rpc-ip/host>:<rpc-port>"
+client_node = "<client-ip/host>:<client-port>"
 
 [cosmos]
 prefix = "desmos"
