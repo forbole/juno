@@ -16,6 +16,7 @@ import (
 	"github.com/desmos-labs/juno/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/auth"
 )
 
 // type check to ensure interface is properly implemented
@@ -25,13 +26,13 @@ var _ db.Database = Database{}
 // for data aggregation and exporting.
 type Database struct {
 	Sql   *sql.DB
-	Codec *codec.LegacyAmino
+	Codec *codec.Codec
 }
 
 // OpenDB opens a database connection with the given database connection info
 // from config. It returns a database connection handle or an error if the
 // connection fails.
-func Builder(cfg *config.PostgreSQLConfig, codec *codec.LegacyAmino) (db.Database, error) {
+func Builder(cfg *config.PostgreSQLConfig, codec *codec.Codec) (db.Database, error) {
 	sslMode := "disable"
 	if cfg.SSLMode != "" {
 		sslMode = cfg.SSLMode
@@ -88,7 +89,7 @@ func (db Database) SaveBlock(block *tmctypes.ResultBlock, totalGas, preCommits u
 
 	_, err := db.Sql.Exec(sqlStatement,
 		block.Block.Height, block.Block.Hash().String(), len(block.Block.Txs),
-		totalGas, utils.ConvertValidatorAddressToBech32String(block.Block.ProposerAddress), preCommits, block.Block.Time,
+		totalGas, utils.ConvertValidatorAddressToString(block.Block.ProposerAddress), preCommits, block.Block.Time,
 	)
 	return err
 }
@@ -96,11 +97,14 @@ func (db Database) SaveBlock(block *tmctypes.ResultBlock, totalGas, preCommits u
 // SetTx stores a transaction and returns the resulting record ID. An error is
 // returned if the operation fails.
 func (db Database) SaveTx(tx *types.Tx) error {
-	stdTx := tx.StdTx
-
 	sqlStatement := `
 INSERT INTO transaction (timestamp, gas_wanted, gas_used, height, hash, messages, fee, signatures, memo, raw_log, success)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);`
+
+	stdTx, ok := tx.Tx.(auth.StdTx)
+	if !ok {
+		return fmt.Errorf("unsupported tx type: %T", tx.Tx)
+	}
 
 	msgsBz, err := db.Codec.MarshalJSON(stdTx.GetMsgs())
 	if err != nil {
@@ -113,7 +117,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);`
 	}
 
 	// convert Tendermint signatures into a more human-readable format
-	sigs := make([]signature, len(stdTx.Signatures))
+	sigs := make([]signature, len(stdTx.Signatures), len(stdTx.Signatures))
 	for i, sig := range stdTx.Signatures {
 		addr, err := sdk.AccAddressFromHex(sig.Address().String())
 		if err != nil {
@@ -168,7 +172,7 @@ func (db Database) SaveCommitSig(pc tmtypes.CommitSig, votingPower, proposerPrio
 					 VALUES ($1, $2, $3, $4);`
 
 	_, err := db.Sql.Exec(sqlStatement,
-		utils.ConvertValidatorAddressToBech32String(pc.ValidatorAddress), pc.Timestamp, votingPower, proposerPriority,
+		utils.ConvertValidatorAddressToString(pc.ValidatorAddress), pc.Timestamp, votingPower, proposerPriority,
 	)
 	return err
 }

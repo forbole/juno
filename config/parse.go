@@ -8,20 +8,6 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type configToml struct {
-	RPCConfig    RPCConfig        `toml:"rpc"`
-	APIConfig    APIConfig        `toml:"api"`
-	GrpcConfig   GrpcConfig       `toml:"grpc"`
-	CosmosConfig CosmosConfig     `toml:"cosmos"`
-	DB           databaseInfoToml `toml:"database"`
-}
-
-type databaseInfoToml struct {
-	Name   string         `toml:"name"`
-	Type   string         `toml:"type"`
-	Config toml.Primitive `toml:"config"`
-}
-
 // SetupConfig takes the path to a configuration file and returns the properly parsed configuration
 func Read(configPath string) (*Config, error) {
 	if configPath == "" {
@@ -60,14 +46,13 @@ func ParseString(configData []byte) (*Config, error) {
 		return nil, err
 	}
 
-	return NewConfig(
-		&cfg.RPCConfig,
-		&cfg.APIConfig,
-		&cfg.GrpcConfig,
-		&cfg.CosmosConfig,
-		&DatabaseConfig{
+	return &Config{
+		RPCNode:      cfg.RPCNode,
+		ClientNode:   cfg.ClientNode,
+		CosmosConfig: cfg.Cosmos,
+		DatabaseConfig: DatabaseConfig{
 			Type:   cfg.DB.Type,
 			Config: config,
 		},
-	), nil
+	}, nil
 }

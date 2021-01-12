@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"time"
 
-	"google.golang.org/grpc"
-
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
@@ -21,18 +19,15 @@ import (
 )
 
 // Proxy implements a wrapper around both a Tendermint RPC client and a
-// CosmosConfig Sdk REST client that allows for essential data queries.
+// Cosmos Sdk REST client that allows for essential data queries.
 type Proxy struct {
-	ctx         context.Context
-	legacyAmino *codec.LegacyAmino
-
-	rpcClient     rpcclient.Client
-	apiEndpoint   string
-	grpConnection *grpc.ClientConn
+	cdc       *codec.Codec
+	rpcClient rpcclient.Client // Tendermint RPC node
+	apiClient string           // Full node
 }
 
-func New(cfg *config.Config, legacyAmino *codec.LegacyAmino) (*Proxy, error) {
-	rpcClient, err := httpclient.New(cfg.RPCConfig.Address, "/websocket")
+func New(cfg *config.Config, codec *codec.Codec) (*Proxy, error) {
+	rpcClient, err := httpclient.New(cfg.RPCNode, "/websocket")
 	if err != nil {
 		return nil, err
 	}
@@ -41,29 +36,13 @@ func New(cfg *config.Config, legacyAmino *codec.LegacyAmino) (*Proxy, error) {
 		return nil, err
 	}
 
-	var grpcOpts []grpc.DialOption
-	if cfg.GrpcConfig.Insecure {
-		grpcOpts = append(grpcOpts, grpc.WithInsecure())
-	}
-
-	grpcConnection, err := grpc.Dial(cfg.GrpcConfig.Address, grpcOpts...)
-	if err != nil {
-		return nil, err
-	}
-
-	return &Proxy{
-		legacyAmino:   legacyAmino,
-		ctx:           context.Background(),
-		rpcClient:     rpcClient,
-		apiEndpoint:   cfg.APIConfig.Address,
-		grpConnection: grpcConnection,
-	}, nil
+	return &Proxy{rpcClient: rpcClient, apiClient: cfg.ClientNode, cdc: codec}, nil
 }
 
 // LatestHeight returns the latest block height on the active chain. An error
 // is returned if the query fails.
 func (cp Proxy) LatestHeight() (int64, error) {
-	status, err := cp.rpcClient.Status(cp.ctx)
+	status, err := cp.rpcClient.Status()
 	if err != nil {
 		return -1, err
 	}
@@ -74,11 +53,11 @@ func (cp Proxy) LatestHeight() (int64, error) {
 
 // Block queries for a block by height. An error is returned if the query fails.
 func (cp Proxy) Block(height int64) (*tmctypes.ResultBlock, error) {
-	return cp.rpcClient.Block(cp.ctx, &height)
+	return cp.rpcClient.Block(&height)
 }
 
 func (cp Proxy) BlockResults(height int64) (*tmctypes.ResultBlockResults, error) {
-	return cp.rpcClient.BlockResults(cp.ctx, &height)
+	return cp.rpcClient.BlockResults(&height)
 }
 
 // TendermintTx queries for a transaction by hash. An error is returned if the
@@ -89,7 +68,7 @@ func (cp Proxy) TendermintTx(hash string) (*tmctypes.ResultTx, error) {
 		return nil, err
 	}
 
-	return cp.rpcClient.Tx(cp.ctx, hashRaw, false)
+	return cp.rpcClient.Tx(hashRaw, false)
 }
 
 // Validators returns all the known Tendermint validators for a given block
@@ -102,7 +81,7 @@ func (cp Proxy) Validators(height int64) (*tmctypes.ResultValidators, error) {
 	page := 1
 	stop := false
 	for !stop {
-		result, err := cp.rpcClient.Validators(cp.ctx, &height, &page, nil)
+		result, err := cp.rpcClient.Validators(&height, page, 100)
 		if err != nil {
 			return nil, err
 		}
@@ -119,7 +98,7 @@ func (cp Proxy) Validators(height int64) (*tmctypes.ResultValidators, error) {
 
 // Genesis returns the genesis state
 func (cp Proxy) Genesis() (*tmctypes.ResultGenesis, error) {
-	return cp.rpcClient.Genesis(cp.ctx)
+	return cp.rpcClient.Genesis()
 }
 
 // Stop defers the node stop execution to the RPC client.
@@ -148,7 +127,7 @@ func (cp Proxy) SubscribeNewBlocks(subscriber string) (<-chan tmctypes.ResultEve
 // QueryLCD queries the LCD at the given endpoint, and deserializes the result into the given pointer.
 // If an error is raised, returns the error.
 func (cp Proxy) QueryLCD(endpoint string, ptr interface{}) error {
-	resp, err := http.Get(fmt.Sprintf("%s/%s", cp.apiEndpoint, endpoint))
+	resp, err := http.Get(fmt.Sprintf("%s/%s", cp.apiClient, endpoint))
 	if err != nil {
 		return err
 	}
@@ -160,7 +139,7 @@ func (cp Proxy) QueryLCD(endpoint string, ptr interface{}) error {
 		return err
 	}
 
-	if err := cp.legacyAmino.UnmarshalJSON(bz, ptr); err != nil {
+	if err := cp.cdc.UnmarshalJSON(bz, ptr); err != nil {
 		return err
 	}
 
@@ -178,26 +157,27 @@ func (cp Proxy) QueryLCDWithHeight(endpoint string, ptr interface{}) (int64, err
 		return -1, err
 	}
 
-	return result.Height, cp.legacyAmino.UnmarshalJSON(result.Result, ptr)
+	return result.Height, cp.cdc.UnmarshalJSON(result.Result, ptr)
 }
 
 // Tx queries for a transaction from the REST client and decodes it into a sdk.Tx
 // if the transaction exists. An error is returned if the tx doesn't exist or
 // decoding fails.
 func (cp Proxy) Tx(hash string) (sdk.TxResponse, error) {
-	var response sdk.TxResponse
-	if err := cp.QueryLCD(fmt.Sprintf("txs/%s", hash), &response); err != nil {
+	var tx sdk.TxResponse
+	if err := cp.QueryLCD(fmt.Sprintf("txs/%s", hash), &tx); err != nil {
 		return sdk.TxResponse{}, err
 	}
 
-	return response, nil
+	return tx, nil
 }
 
 // Txs queries for all the transactions in a block. Transactions are returned
 // in the sdk.TxResponse format which internally contains an sdk.Tx. An error is
 // returned if any query fails.
 func (cp Proxy) Txs(block *tmctypes.ResultBlock) ([]sdk.TxResponse, error) {
-	txResponses := make([]sdk.TxResponse, len(block.Block.Txs))
+	txResponses := make([]sdk.TxResponse, len(block.Block.Txs), len(block.Block.Txs))
+
 	for i, tmTx := range block.Block.Txs {
 		txResponse, err := cp.Tx(fmt.Sprintf("%X", tmTx.Hash()))
 		if err != nil {

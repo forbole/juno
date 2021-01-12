@@ -26,18 +26,18 @@ var _ db.Database = Db{}
 // MongoDb represents a MongoDb instance that relies on a MongoDB instance
 type Db struct {
 	Mongo *mongo.Database
-	Codec *codec.LegacyAmino
+	Codec *codec.Codec
 }
 
 // Builder allows to create a new MongoDB connection from the given config and codec
-func Builder(cfg *config.MongoDBConfig, codec *codec.LegacyAmino) (db.Database, error) {
+func Builder(cfg *config.MongoDBConfig, codec *codec.Codec) (db.Database, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	return Open(cfg, codec, ctx)
 }
 
 // Open allows to open a new MongoDb instance connection using the specified config
-func Open(cfg *config.MongoDBConfig, codec *codec.LegacyAmino, ctx context.Context) (db.Database, error) {
+func Open(cfg *config.MongoDBConfig, codec *codec.Codec, ctx context.Context) (db.Database, error) {
 	opts := options.Client().ApplyURI(cfg.Uri)
 	client, err := mongo.NewClient(opts)
 	if err != nil {
