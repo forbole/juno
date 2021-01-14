@@ -163,13 +163,12 @@ func (db Database) SaveValidator(addr, pk string) error {
 
 // SetPreCommit stores a validator's pre-commit and returns the resulting record
 // ID. An error is returned if the operation fails.
-func (db Database) SaveCommitSig(pc tmtypes.CommitSig, votingPower, proposerPriority int64) error {
-	sqlStatement := `INSERT INTO pre_commit (validator_address, timestamp, voting_power, proposer_priority)
-					 VALUES ($1, $2, $3, $4);`
+func (db Database) SaveCommitSig(height int64, pc tmtypes.CommitSig, votingPower, proposerPriority int64) error {
+	sqlStatement := `INSERT INTO pre_commit (validator_address, height, timestamp, voting_power, proposer_priority)
+					 VALUES ($1, $2, $3, $4, $5);`
 
-	_, err := db.Sql.Exec(sqlStatement,
-		utils.ConvertValidatorAddressToBech32String(pc.ValidatorAddress), pc.Timestamp, votingPower, proposerPriority,
-	)
+	address := utils.ConvertValidatorAddressToBech32String(pc.ValidatorAddress)
+	_, err := db.Sql.Exec(sqlStatement, address, height, pc.Timestamp, votingPower, proposerPriority)
 	return err
 }
 
