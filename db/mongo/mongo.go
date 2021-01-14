@@ -156,13 +156,16 @@ func (db Db) SaveValidator(addr, pk string) error {
 
 // SetPreCommit stores a validator's pre-commit and returns the resulting record
 // ID. An error is returned if the operation fails.
-func (db Db) SaveCommitSig(commitSig tmtypes.CommitSig, votingPower, proposerPriority int64) error {
+func (db Db) SaveCommitSig(height int64, commitSig tmtypes.CommitSig, votingPower, proposerPriority int64) error {
 	ctx, cancel := BuildCtx()
 	defer cancel()
 
 	filter := bson.D{
+		{"height", height},
 		{"timestamp", commitSig.Timestamp},
 		{"validator_address", commitSig.ValidatorAddress.String()},
+		{"validator_voting_power", votingPower},
+		{"proposer_priority", proposerPriority},
 	}
 	update := ConvertPrecommitToBSONSetDocument(commitSig, votingPower, proposerPriority)
 

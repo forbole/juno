@@ -104,7 +104,7 @@ func (w Worker) process(height int64) error {
 		return err
 	}
 
-	err = w.ExportPreCommits(block.Block.LastCommit, vals)
+	err = w.ExportPreCommit(block.Block.LastCommit, vals)
 	if err != nil {
 		return err
 	}
@@ -130,10 +130,10 @@ func (w Worker) HandleGenesis(genesis *tmtypes.GenesisDoc) error {
 	return nil
 }
 
-// ExportPreCommits accepts a block commitment and a corresponding set of
+// ExportPreCommit accepts a block commitment and a corresponding set of
 // validators for the commitment and persists them to the database. An error is
 // returned if any write fails or if there is any missing aggregated data.
-func (w Worker) ExportPreCommits(commit *tmtypes.Commit, vals *tmctypes.ResultValidators) error {
+func (w Worker) ExportPreCommit(commit *tmtypes.Commit, vals *tmctypes.ResultValidators) error {
 	// persist all validators and pre-commits
 	for _, commitSig := range commit.Signatures {
 		// Avoid empty commits
@@ -160,7 +160,7 @@ func (w Worker) ExportPreCommits(commit *tmtypes.Commit, vals *tmctypes.ResultVa
 			return err
 		}
 
-		err = w.db.SaveCommitSig(commitSig, val.VotingPower, val.ProposerPriority)
+		err = w.db.SaveCommitSig(commit.Height, commitSig, val.VotingPower, val.ProposerPriority)
 		if err != nil {
 			log.Error().
 				Err(err).
