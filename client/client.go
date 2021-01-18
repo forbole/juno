@@ -24,19 +24,7 @@ import (
 	"github.com/desmos-labs/juno/config"
 )
 
-// Proxy implements a wrapper around both a Tendermint RPC client and a
-// CosmosConfig Sdk REST client that allows for essential data queries.
-type Proxy struct {
-	ctx            context.Context
-	encodingConfig *params.EncodingConfig
-
-	rpcClient   rpcclient.Client
-	apiEndpoint string
-
-	grpConnection   *grpc.ClientConn
-	txServiceClient tx.ServiceClient
-}
-
+// New allows to build a new Proxy instance
 func New(cfg *config.Config, encodingConfig *params.EncodingConfig) (*Proxy, error) {
 	rpcClient, err := httpclient.New(cfg.RPCConfig.Address, "/websocket")
 	if err != nil {
@@ -67,9 +55,27 @@ func New(cfg *config.Config, encodingConfig *params.EncodingConfig) (*Proxy, err
 	}, nil
 }
 
+// Proxy implements a wrapper around both a Tendermint RPC client and a
+// CosmosConfig Sdk REST client that allows for essential data queries.
+type Proxy struct {
+	ctx            context.Context
+	encodingConfig *params.EncodingConfig
+
+	rpcClient   rpcclient.Client
+	apiEndpoint string
+
+	grpConnection   *grpc.ClientConn
+	txServiceClient tx.ServiceClient
+}
+
+// GrpcConnection returns the underlying gRPC connection
+func (cp *Proxy) GrpcConnection() *grpc.ClientConn {
+	return cp.grpConnection
+}
+
 // LatestHeight returns the latest block height on the active chain. An error
 // is returned if the query fails.
-func (cp Proxy) LatestHeight() (int64, error) {
+func (cp *Proxy) LatestHeight() (int64, error) {
 	status, err := cp.rpcClient.Status(cp.ctx)
 	if err != nil {
 		return -1, err
@@ -80,17 +86,17 @@ func (cp Proxy) LatestHeight() (int64, error) {
 }
 
 // Block queries for a block by height. An error is returned if the query fails.
-func (cp Proxy) Block(height int64) (*tmctypes.ResultBlock, error) {
+func (cp *Proxy) Block(height int64) (*tmctypes.ResultBlock, error) {
 	return cp.rpcClient.Block(cp.ctx, &height)
 }
 
-func (cp Proxy) BlockResults(height int64) (*tmctypes.ResultBlockResults, error) {
+func (cp *Proxy) BlockResults(height int64) (*tmctypes.ResultBlockResults, error) {
 	return cp.rpcClient.BlockResults(cp.ctx, &height)
 }
 
 // TendermintTx queries for a transaction by hash. An error is returned if the
 // query fails.
-func (cp Proxy) TendermintTx(hash string) (*tmctypes.ResultTx, error) {
+func (cp *Proxy) TendermintTx(hash string) (*tmctypes.ResultTx, error) {
 	hashRaw, err := hex.DecodeString(hash)
 	if err != nil {
 		return nil, err
@@ -101,7 +107,7 @@ func (cp Proxy) TendermintTx(hash string) (*tmctypes.ResultTx, error) {
 
 // Validators returns all the known Tendermint validators for a given block
 // height. An error is returned if the query fails.
-func (cp Proxy) Validators(height int64) (*tmctypes.ResultValidators, error) {
+func (cp *Proxy) Validators(height int64) (*tmctypes.ResultValidators, error) {
 	vals := &tmctypes.ResultValidators{
 		BlockHeight: height,
 	}
@@ -125,12 +131,12 @@ func (cp Proxy) Validators(height int64) (*tmctypes.ResultValidators, error) {
 }
 
 // Genesis returns the genesis state
-func (cp Proxy) Genesis() (*tmctypes.ResultGenesis, error) {
+func (cp *Proxy) Genesis() (*tmctypes.ResultGenesis, error) {
 	return cp.rpcClient.Genesis(cp.ctx)
 }
 
 // Stop defers the node stop execution to the RPC client.
-func (cp Proxy) Stop() error {
+func (cp *Proxy) Stop() error {
 	return cp.rpcClient.Stop()
 }
 
@@ -138,7 +144,7 @@ func (cp Proxy) Stop() error {
 // client with the given subscriber name. A receiving only channel, context
 // cancel function and an error is returned. It is up to the caller to cancel
 // the context and handle any errors appropriately.
-func (cp Proxy) SubscribeEvents(subscriber, query string) (<-chan tmctypes.ResultEvent, context.CancelFunc, error) {
+func (cp *Proxy) SubscribeEvents(subscriber, query string) (<-chan tmctypes.ResultEvent, context.CancelFunc, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	eventCh, err := cp.rpcClient.Subscribe(ctx, subscriber, query)
 	return eventCh, cancel, err
@@ -148,13 +154,13 @@ func (cp Proxy) SubscribeEvents(subscriber, query string) (<-chan tmctypes.Resul
 // client with the given subscriber name. An receiving only channel, context
 // cancel function and an error is returned. It is up to the caller to cancel
 // the context and handle any errors appropriately.
-func (cp Proxy) SubscribeNewBlocks(subscriber string) (<-chan tmctypes.ResultEvent, context.CancelFunc, error) {
+func (cp *Proxy) SubscribeNewBlocks(subscriber string) (<-chan tmctypes.ResultEvent, context.CancelFunc, error) {
 	return cp.SubscribeEvents(subscriber, "tm.event = 'NewBlock'")
 }
 
 // QueryLCD queries the LCD at the given endpoint, and deserializes the result into the given pointer.
 // If an error is raised, returns the error.
-func (cp Proxy) QueryLCD(endpoint string, ptr interface{}) error {
+func (cp *Proxy) QueryLCD(endpoint string, ptr interface{}) error {
 	resp, err := http.Get(fmt.Sprintf("%s/%s", cp.apiEndpoint, endpoint))
 	if err != nil {
 		return err
@@ -178,7 +184,7 @@ func (cp Proxy) QueryLCD(endpoint string, ptr interface{}) error {
 // request inside the result. It queries such endpoint, deserializes the result and further the
 // result data into the given pointer. It returns the retrieved height as well as any error that
 // might have been raised.
-func (cp Proxy) QueryLCDWithHeight(endpoint string, ptr interface{}) (int64, error) {
+func (cp *Proxy) QueryLCDWithHeight(endpoint string, ptr interface{}) (int64, error) {
 	var result rest.ResponseWithHeight
 	err := cp.QueryLCD(endpoint, &result)
 	if err != nil {
@@ -191,7 +197,7 @@ func (cp Proxy) QueryLCDWithHeight(endpoint string, ptr interface{}) (int64, err
 // Tx queries for a transaction from the REST client and decodes it into a sdk.Tx
 // if the transaction exists. An error is returned if the tx doesn't exist or
 // decoding fails.
-func (cp Proxy) Tx(hash string) (*sdk.TxResponse, *tx.Tx, error) {
+func (cp *Proxy) Tx(hash string) (*sdk.TxResponse, *tx.Tx, error) {
 	res, err := cp.txServiceClient.GetTx(context.Background(), &tx.GetTxRequest{Hash: hash})
 	if err != nil {
 		return nil, nil, err
@@ -202,7 +208,7 @@ func (cp Proxy) Tx(hash string) (*sdk.TxResponse, *tx.Tx, error) {
 // Txs queries for all the transactions in a block. Transactions are returned
 // in the sdk.TxResponse format which internally contains an sdk.Tx. An error is
 // returned if any query fails.
-func (cp Proxy) Txs(block *tmctypes.ResultBlock) ([]*types.Tx, error) {
+func (cp *Proxy) Txs(block *tmctypes.ResultBlock) ([]*types.Tx, error) {
 	txResponses := make([]*types.Tx, len(block.Block.Txs))
 	for i, tmTx := range block.Block.Txs {
 		txResponse, txObj, err := cp.Tx(fmt.Sprintf("%X", tmTx.Hash()))

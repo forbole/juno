@@ -3,6 +3,8 @@ package main
 import (
 	"os"
 
+	"github.com/desmos-labs/juno/modules"
+
 	"github.com/cosmos/cosmos-sdk/simapp"
 
 	"github.com/desmos-labs/juno/cmd"
@@ -15,7 +17,13 @@ func main() {
 	// registrar.RegisterModules(staking.Module{}, consensus.Module{}, ...)
 
 	// Build the exec
-	exec := cmd.BuildDefaultExecutor("juno", config.DefaultSetup, simapp.MakeTestEncodingConfig, stddb.Builder)
+	exec := cmd.BuildDefaultExecutor(
+		"juno",
+		&modules.EmptyRegistrar{},
+		config.DefaultSetup,
+		simapp.MakeTestEncodingConfig,
+		stddb.Builder,
+	)
 
 	// Run the commands and panic on any error
 	err := exec.Execute()

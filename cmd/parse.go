@@ -18,7 +18,6 @@ import (
 
 	"github.com/desmos-labs/juno/client"
 	"github.com/desmos-labs/juno/modules"
-	"github.com/desmos-labs/juno/modules/registrar"
 	"github.com/desmos-labs/juno/types"
 	"github.com/desmos-labs/juno/worker"
 
@@ -39,15 +38,18 @@ var (
 )
 
 // ParseCmd returns the command that should be run when we want to start parsing a chain state.
-// The given codec.Codec is used to parse data, while the db.Builder is going to be used to build the database
-// instance used to store the parsed data.
-func ParseCmd(cdcBuilder config.EncodingConfigBuilder, setupCfg config.SdkConfigSetup, buildDb db.Builder) *cobra.Command {
+func ParseCmd(
+	registrar modules.Registrar,
+	encodingConfigBuilder config.EncodingConfigBuilder, setupCfg config.SdkConfigSetup, buildDb db.Builder,
+) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "parse [config-file]",
 		Short: "Start parsing a blockchain using the provided config file",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cdc, cp, database, registeredModules, err := SetupParsing(args, cdcBuilder, setupCfg, buildDb)
+			cdc, cp, database, registeredModules, err := SetupParsing(
+				args, registrar, encodingConfigBuilder, setupCfg, buildDb,
+			)
 			if err != nil {
 				return err
 			}
@@ -62,7 +64,8 @@ func ParseCmd(cdcBuilder config.EncodingConfigBuilder, setupCfg config.SdkConfig
 // SetupParsing setups all the things that should be later passed to StartParsing in order
 // to parse the chain data properly.
 func SetupParsing(
-	args []string, buildEncodingConfig config.EncodingConfigBuilder, setupCfg config.SdkConfigSetup, buildDb db.Builder,
+	args []string, registrar modules.Registrar,
+	buildEncodingConfig config.EncodingConfigBuilder, setupCfg config.SdkConfigSetup, buildDb db.Builder,
 ) (*params.EncodingConfig, *client.Proxy, db.Database, []modules.Module, error) {
 	// Setup the logger
 	err := setupLogging()
@@ -84,9 +87,6 @@ func SetupParsing(
 	setupCfg(cfg, sdkConfig)
 	sdkConfig.Seal()
 
-	// Get the modules
-	registeredModules := registrar.GetModules(cfg.CosmosConfig.Modules)
-
 	// Get the database
 	database, err := buildDb(cfg, &encodingConfig)
 	if err != nil {
@@ -101,6 +101,10 @@ func SetupParsing(
 
 	// nolint:errcheck
 	defer cp.Stop()
+
+	// Get the modules
+	mods := registrar.BuildModules(cfg, &encodingConfig, sdkConfig, database, cp)
+	registeredModules := modules.GetModules(mods, cfg.CosmosConfig.Modules)
 
 	// Run all the additional operations
 	for _, module := range registeredModules {

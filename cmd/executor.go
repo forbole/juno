@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/desmos-labs/juno/modules"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/cli"
@@ -29,22 +31,26 @@ them to compose more aggregate and complex queries.`, name),
 // BuildDefaultExecutor allows to build an Executor containing a root command that
 // has the provided name and description and the default version and parse sub-commands implementations.
 //
-// The provided setupCfg method will be used to customize the SDK configuration. If you don't want any customization
+// registrar will be used to register custom modules. Be sure to provide an implementation that returns all
+// the modules that you want to use. If you don't want any custom module, use modules.EmptyRegistrar.
+//
+// setupCfg method will be used to customize the SDK configuration. If you don't want any customization
 // you can use the config.DefaultSetup variable.
 //
-// The provided cdcBuilder is used to provide a codec that will later be used to deserialize the
+// encodingConfigBuilder is used to provide a codec that will later be used to deserialize the
 // transaction messages. Make sure you register all the types you need properly.
 //
-// The provided dbBuilder is used to provide the database that will be used to save the data. If you don't have any
+// dbBuilder is used to provide the database that will be used to save the data. If you don't have any
 // particular need, you can use the Create variable to build a default database instance.
 func BuildDefaultExecutor(
-	name string, setupCfg config.SdkConfigSetup, cdcBuilder config.EncodingConfigBuilder, dbBuilder db.Builder,
+	name string, registrar modules.Registrar,
+	setupCfg config.SdkConfigSetup, encodingConfigBuilder config.EncodingConfigBuilder, dbBuilder db.Builder,
 ) cli.Executor {
 	rootCmd := RootCmd(name)
 
 	rootCmd.AddCommand(
 		VersionCmd(),
-		ParseCmd(cdcBuilder, setupCfg, dbBuilder),
+		ParseCmd(registrar, encodingConfigBuilder, setupCfg, dbBuilder),
 	)
 
 	return PrepareMainCmd(rootCmd)

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/desmos-labs/juno/config"
+
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 	"github.com/lib/pq"
 
@@ -12,21 +14,10 @@ import (
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 
-	"github.com/desmos-labs/juno/config"
 	"github.com/desmos-labs/juno/db"
 	"github.com/desmos-labs/juno/db/utils"
 	"github.com/desmos-labs/juno/types"
 )
-
-// type check to ensure interface is properly implemented
-var _ db.Database = Database{}
-
-// Database defines a wrapper around a SQL database and implements functionality
-// for data aggregation and exporting.
-type Database struct {
-	sql            *sql.DB
-	encodingConfig *params.EncodingConfig
-}
 
 // OpenDB opens a database connection with the given database connection info
 // from config. It returns a database connection handle or an error if the
@@ -59,8 +50,18 @@ func Builder(cfg *config.PostgreSQLConfig, encodingConfig *params.EncodingConfig
 	return &Database{sql: postgresDb, encodingConfig: encodingConfig}, nil
 }
 
+// type check to ensure interface is properly implemented
+var _ db.Database = &Database{}
+
+// Database defines a wrapper around a SQL database and implements functionality
+// for data aggregation and exporting.
+type Database struct {
+	sql            *sql.DB
+	encodingConfig *params.EncodingConfig
+}
+
 // LastBlockHeight returns the latest block stored.
-func (db Database) LastBlockHeight() (int64, error) {
+func (db *Database) LastBlockHeight() (int64, error) {
 	var height int64
 	err := db.sql.QueryRow("SELECT coalesce(MAX(height),0) AS height FROM block;").Scan(&height)
 	return height, err
@@ -68,7 +69,7 @@ func (db Database) LastBlockHeight() (int64, error) {
 
 // HasBlock returns true if a block by height exists. An error should never be
 // returned.
-func (db Database) HasBlock(height int64) (bool, error) {
+func (db *Database) HasBlock(height int64) (bool, error) {
 	var res bool
 	err := db.sql.QueryRow(
 		"SELECT EXISTS(SELECT 1 FROM block WHERE height = $1);",
@@ -80,7 +81,7 @@ func (db Database) HasBlock(height int64) (bool, error) {
 
 // SetBlock stores a block and returns the resulting record ID. An error is
 // returned if the operation fails.
-func (db Database) SaveBlock(block *tmctypes.ResultBlock, totalGas, preCommits uint64) error {
+func (db *Database) SaveBlock(block *tmctypes.ResultBlock, totalGas, preCommits uint64) error {
 	sqlStatement := `
 	INSERT INTO block (height, hash, num_txs, total_gas, proposer_address, pre_commits, timestamp)
 	VALUES ($1, $2, $3, $4, $5, $6, $7);
@@ -95,7 +96,7 @@ func (db Database) SaveBlock(block *tmctypes.ResultBlock, totalGas, preCommits u
 
 // SetTx stores a transaction and returns the resulting record ID. An error is
 // returned if the operation fails.
-func (db Database) SaveTx(tx *types.Tx) error {
+func (db *Database) SaveTx(tx *types.Tx) error {
 	sqlStatement := `
 INSERT INTO transaction (hash, height, success, messages, memo, signatures, signer_infos, fee, gas_wanted, gas_used, raw_log, logs) 
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);`
@@ -146,7 +147,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);`
 
 // HasValidator returns true if a given validator by HEX address exists. An
 // error should never be returned.
-func (db Database) HasValidator(addr string) (bool, error) {
+func (db *Database) HasValidator(addr string) (bool, error) {
 	var res bool
 	stmt := `SELECT EXISTS(SELECT 1 FROM validator WHERE consensus_address = $1);`
 	err := db.sql.QueryRow(stmt, addr).Scan(&res)
@@ -155,7 +156,7 @@ func (db Database) HasValidator(addr string) (bool, error) {
 
 // SetValidator stores a validator if it does not already exist. An error is
 // returned if the operation fails.
-func (db Database) SaveValidator(addr, pk string) error {
+func (db *Database) SaveValidator(addr, pk string) error {
 	stmt := `INSERT INTO validator (consensus_address, consensus_pubkey) VALUES ($1, $2) ON CONFLICT DO NOTHING;`
 	_, err := db.sql.Exec(stmt, addr, pk)
 	return err
@@ -163,7 +164,7 @@ func (db Database) SaveValidator(addr, pk string) error {
 
 // SetPreCommit stores a validator's pre-commit and returns the resulting record
 // ID. An error is returned if the operation fails.
-func (db Database) SaveCommitSig(height int64, pc tmtypes.CommitSig, votingPower, proposerPriority int64) error {
+func (db *Database) SaveCommitSig(height int64, pc tmtypes.CommitSig, votingPower, proposerPriority int64) error {
 	sqlStatement := `INSERT INTO pre_commit (validator_address, height, timestamp, voting_power, proposer_priority)
 					 VALUES ($1, $2, $3, $4, $5);`
 
