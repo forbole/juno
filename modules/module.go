@@ -3,7 +3,8 @@ package modules
 import (
 	"encoding/json"
 
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 
 	"github.com/go-co-op/gocron"
@@ -70,7 +71,7 @@ type Module interface {
 	// NOTE. The returned error will be logged using the logging.LogMsgError method. All other modules' handlers
 	// will still be called.
 	HandleMsg(
-		index int, msg *codectypes.Any, tx *types.Tx, encodingConfig *params.EncodingConfig, cp *client.Proxy, db db.Database,
+		index int, msg sdk.Msg, tx *types.Tx, encodingConfig *params.EncodingConfig, cp *client.Proxy, db db.Database,
 	) error
 }
 

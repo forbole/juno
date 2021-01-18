@@ -265,9 +265,15 @@ func (w Worker) ExportTxs(txs []*types.Tx) error {
 
 		// Handle all the messages contained inside the transaction
 		for i, msg := range tx.Body.Messages {
+			var stdMsg sdk.Msg
+			err = w.encodingConfig.Marshaler.UnpackAny(msg, &stdMsg)
+			if err != nil {
+				return err
+			}
+
 			// Call the handlers
 			for _, module := range w.modules {
-				err := module.HandleMsg(i, msg, tx, w.encodingConfig, w.cp, w.db)
+				err = module.HandleMsg(i, stdMsg, tx, w.encodingConfig, w.cp, w.db)
 				if err != nil {
 					logging.LogMsgError(err)
 				}
