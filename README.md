@@ -68,35 +68,6 @@ user = "<db-user>"
 password = "<db-password>"
 ```
 
-### Working with MongoDB
-#### Config
-```toml
-[cosmos]
-prefix = "desmos"
-modules = []
-
-[rpc]
-address = "<rpc-ip/host>:<rpc-port>"
-
-[grpc]
-address = "<grpc-ip/host>:<grpc-port>"
-insecure = true
-
-[api]
-address = "<client-ip/host>:<client-port>"
-
-[cosmos]
-prefix = "desmos"
-modules = []
-
-[database]
-type = "postgresql"
-
-[database.config]
-name = "<db-name>"
-uri = "<mongodb-uri>"
-```
-
 ## Usage
 Juno internally runs a single worker that consumes from a single queue. The queue contains block heights to aggregate and export to a database. Juno will start a new block even listener where for each new block, it will enqueue the height. A worker listens for new heights and queries for various data related to the block height to persist. For each block height, Juno will persist the block, the validators that committed/signed the block, all the pre-commits for the block and the transactions in the block.
 

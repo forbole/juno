@@ -1,7 +1,7 @@
 package config
 
 import (
-	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/simapp/params"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -28,5 +28,5 @@ func DefaultSetup(cfg *Config, sdkConfig *sdk.Config) {
 
 // -----------------------------------------------------------------
 
-// CodecBuilder represents a function that is used to return the proper application codec.
-type CodecBuilder func() (codec.Marshaler, *codec.LegacyAmino)
+// EncodingConfigBuilder represents a function that is used to return the proper encoding config.
+type EncodingConfigBuilder func() params.EncodingConfig

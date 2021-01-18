@@ -2,41 +2,21 @@ package types
 
 import (
 	"fmt"
-
-	"github.com/cosmos/cosmos-sdk/x/auth/legacy/legacytx"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/tx"
 )
 
 // Tx represents an already existing blockchain transaction
 type Tx struct {
-	legacytx.StdTx
-	sdk.TxResponse
-	Signatures []Signature
-	Logs       sdk.ABCIMessageLogs
+	*tx.Tx
+	*sdk.TxResponse
 }
 
 // NewTx allows to create a new Tx instance from the given txResponse
-func NewTx(txResponse sdk.TxResponse) (*Tx, error) {
-	stdTx, ok := txResponse.Tx.GetCachedValue().(legacytx.StdTx)
-	if !ok {
-		return nil, fmt.Errorf("unsupported tx type: %T", txResponse.Tx)
-	}
-
-	// Convert Tendermint signatures into a more human-readable format
-	sigs := make([]Signature, len(stdTx.Signatures))
-	for i, sig := range stdTx.Signatures {
-		sigs[i] = Signature{
-			StdSignature: sig,
-			Address:      sdk.AccAddress(sig.Address()).String(),
-		}
-	}
-
+func NewTx(txResponse *sdk.TxResponse, tx *tx.Tx) (*Tx, error) {
 	return &Tx{
+		Tx:         tx,
 		TxResponse: txResponse,
-		StdTx:      stdTx,
-		Signatures: sigs,
-		Logs:       txResponse.Logs,
 	}, nil
 }
 
@@ -67,11 +47,5 @@ func (tx Tx) FindAttributeByKey(event sdk.StringEvent, attrKey string) (string, 
 
 // Successful tells whether this tx is successful or not
 func (tx Tx) Successful() bool {
-	return tx.Code == 0
-}
-
-// Signature wraps auth.StdSignature adding the address of the signer
-type Signature struct {
-	legacytx.StdSignature
-	Address string `json:"address,omitempty"`
+	return tx.TxResponse.Code == 0
 }

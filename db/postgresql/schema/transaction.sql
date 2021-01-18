@@ -1,14 +1,21 @@
 CREATE TABLE transaction
 (
-    timestamp  TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-    gas_wanted INTEGER                              DEFAULT 0,
-    gas_used   INTEGER                              DEFAULT 0,
-    height     BIGINT                      NOT NULL REFERENCES block (height),
-    hash       TEXT                        NOT NULL UNIQUE PRIMARY KEY,
-    messages   JSONB                       NOT NULL DEFAULT '[]'::JSONB,
-    fee        JSONB                       NOT NULL DEFAULT '{}'::JSONB,
-    signatures JSONB                       NOT NULL DEFAULT '[]'::JSONB,
-    raw_log    TEXT,
-    success    BOOLEAN                     NOT NULL DEFAULT true,
-    memo       TEXT
+    hash         TEXT    NOT NULL UNIQUE PRIMARY KEY,
+    height       BIGINT  NOT NULL REFERENCES block (height),
+    success      BOOLEAN NOT NULL,
+
+    /* Body */
+    messages     JSONB   NOT NULL DEFAULT '[]'::JSONB,
+    memo         TEXT,
+    signatures   TEXT[]  NOT NULL,
+
+    /* AuthInfo */
+    signer_infos JSONB   NOT NULL DEFAULT '[]'::JSONB,
+    fee          JSONB   NOT NULL DEFAULT '{}'::JSONB,
+
+    /* Tx response */
+    gas_wanted   INTEGER          DEFAULT 0,
+    gas_used     INTEGER          DEFAULT 0,
+    raw_log      TEXT,
+    logs         JSONB
 );

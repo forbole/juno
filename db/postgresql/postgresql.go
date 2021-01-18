@@ -2,10 +2,11 @@ package postgresql
 
 import (
 	"database/sql"
-	"encoding/base64"
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/simapp/params"
+	"github.com/lib/pq"
+	"strings"
 
-	"github.com/cosmos/cosmos-sdk/codec"
 	_ "github.com/lib/pq" // nolint
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -14,8 +15,6 @@ import (
 	"github.com/desmos-labs/juno/db"
 	"github.com/desmos-labs/juno/db/utils"
 	"github.com/desmos-labs/juno/types"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // type check to ensure interface is properly implemented
@@ -24,14 +23,14 @@ var _ db.Database = Database{}
 // Database defines a wrapper around a SQL database and implements functionality
 // for data aggregation and exporting.
 type Database struct {
-	Sql   *sql.DB
-	Codec *codec.LegacyAmino
+	sql            *sql.DB
+	encodingConfig *params.EncodingConfig
 }
 
 // OpenDB opens a database connection with the given database connection info
 // from config. It returns a database connection handle or an error if the
 // connection fails.
-func Builder(cfg *config.PostgreSQLConfig, codec *codec.LegacyAmino) (db.Database, error) {
+func Builder(cfg *config.PostgreSQLConfig, encodingConfig *params.EncodingConfig) (db.Database, error) {
 	sslMode := "disable"
 	if cfg.SSLMode != "" {
 		sslMode = cfg.SSLMode
@@ -56,13 +55,13 @@ func Builder(cfg *config.PostgreSQLConfig, codec *codec.LegacyAmino) (db.Databas
 		return nil, err
 	}
 
-	return &Database{Sql: postgresDb, Codec: codec}, nil
+	return &Database{sql: postgresDb, encodingConfig: encodingConfig}, nil
 }
 
 // LastBlockHeight returns the latest block stored.
 func (db Database) LastBlockHeight() (int64, error) {
 	var height int64
-	err := db.Sql.QueryRow("SELECT coalesce(MAX(height),0) AS height FROM block;").Scan(&height)
+	err := db.sql.QueryRow("SELECT coalesce(MAX(height),0) AS height FROM block;").Scan(&height)
 	return height, err
 }
 
@@ -70,7 +69,7 @@ func (db Database) LastBlockHeight() (int64, error) {
 // returned.
 func (db Database) HasBlock(height int64) (bool, error) {
 	var res bool
-	err := db.Sql.QueryRow(
+	err := db.sql.QueryRow(
 		"SELECT EXISTS(SELECT 1 FROM block WHERE height = $1);",
 		height,
 	).Scan(&res)
@@ -86,7 +85,7 @@ func (db Database) SaveBlock(block *tmctypes.ResultBlock, totalGas, preCommits u
 	VALUES ($1, $2, $3, $4, $5, $6, $7);
 	`
 
-	_, err := db.Sql.Exec(sqlStatement,
+	_, err := db.sql.Exec(sqlStatement,
 		block.Block.Height, block.Block.Hash().String(), len(block.Block.Txs),
 		totalGas, utils.ConvertValidatorAddressToBech32String(block.Block.ProposerAddress), preCommits, block.Block.Time,
 	)
@@ -96,50 +95,50 @@ func (db Database) SaveBlock(block *tmctypes.ResultBlock, totalGas, preCommits u
 // SetTx stores a transaction and returns the resulting record ID. An error is
 // returned if the operation fails.
 func (db Database) SaveTx(tx *types.Tx) error {
-	stdTx := tx.StdTx
-
 	sqlStatement := `
-INSERT INTO transaction (timestamp, gas_wanted, gas_used, height, hash, messages, fee, signatures, memo, raw_log, success)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);`
+INSERT INTO transaction (hash, height, success, messages, memo, signatures, signer_infos, fee, gas_wanted, gas_used, raw_log, logs) 
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);`
 
-	msgsBz, err := db.Codec.MarshalJSON(stdTx.GetMsgs())
-	if err != nil {
-		return fmt.Errorf("failed to JSON encode tx messages: %s", err)
+	var sigs = make([]string, len(tx.Signatures))
+	for index, sig := range sigs {
+		sigs[index] = sig
 	}
 
-	feeBz, err := db.Codec.MarshalJSON(stdTx.Fee)
+	var msgs = make([]string, len(tx.Body.Messages))
+	for index, msg := range tx.Body.Messages {
+		bz, err := db.encodingConfig.Marshaler.MarshalJSON(msg)
+		if err != nil {
+			return err
+		}
+		msgs[index] = string(bz)
+	}
+	msgsBz := fmt.Sprintf("[%s]", strings.Join(msgs, ","))
+
+	feeBz, err := db.encodingConfig.Marshaler.MarshalJSON(tx.AuthInfo.Fee)
 	if err != nil {
 		return fmt.Errorf("failed to JSON encode tx fee: %s", err)
 	}
 
-	// convert Tendermint signatures into a more human-readable format
-	sigs := make([]signature, len(stdTx.Signatures))
-	for i, sig := range stdTx.Signatures {
-		addr, err := sdk.AccAddressFromHex(sig.Address().String())
+	var sigInfos = make([]string, len(tx.AuthInfo.SignerInfos))
+	for index, info := range tx.AuthInfo.SignerInfos {
+		bz, err := db.encodingConfig.Marshaler.MarshalJSON(info)
 		if err != nil {
-			return fmt.Errorf("failed to convert account address %s: %s\n", sig.Address(), err)
+			return err
 		}
-
-		pubkey, err := sdk.Bech32ifyPubKey(sdk.Bech32PubKeyTypeAccPub, sig.PubKey) // nolint: typecheck
-		if err != nil {
-			return fmt.Errorf("failed to convert account public key %X: %s\n", sig.PubKey.Bytes(), err)
-		}
-
-		sigs[i] = signature{
-			Address:   addr.String(),
-			Signature: base64.StdEncoding.EncodeToString(sig.Signature),
-			Pubkey:    pubkey,
-		}
+		sigInfos[index] = string(bz)
 	}
+	sigInfoBz := fmt.Sprintf("[%s]", strings.Join(sigInfos, ","))
 
-	sigsBz, err := db.Codec.MarshalJSON(sigs)
+	logsBz, err := db.encodingConfig.Amino.MarshalJSON(tx.Logs)
 	if err != nil {
-		return fmt.Errorf("failed to JSON encode tx signatures: %s", err)
+		return err
 	}
 
-	_, err = db.Sql.Exec(sqlStatement,
-		tx.Timestamp, tx.GasWanted, tx.GasUsed, tx.Height, tx.TxHash,
-		string(msgsBz), string(feeBz), string(sigsBz), stdTx.GetMemo(), tx.RawLog, tx.Successful(),
+	_, err = db.sql.Exec(sqlStatement,
+		tx.TxHash, tx.Height, tx.Successful(),
+		msgsBz, tx.Body.Memo, pq.Array(sigs),
+		sigInfoBz, string(feeBz),
+		tx.GasWanted, tx.GasUsed, tx.RawLog, string(logsBz),
 	)
 	return err
 }
@@ -149,7 +148,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);`
 func (db Database) HasValidator(addr string) (bool, error) {
 	var res bool
 	stmt := `SELECT EXISTS(SELECT 1 FROM validator WHERE consensus_address = $1);`
-	err := db.Sql.QueryRow(stmt, addr).Scan(&res)
+	err := db.sql.QueryRow(stmt, addr).Scan(&res)
 	return res, err
 }
 
@@ -157,7 +156,7 @@ func (db Database) HasValidator(addr string) (bool, error) {
 // returned if the operation fails.
 func (db Database) SaveValidator(addr, pk string) error {
 	stmt := `INSERT INTO validator (consensus_address, consensus_pubkey) VALUES ($1, $2) ON CONFLICT DO NOTHING;`
-	_, err := db.Sql.Exec(stmt, addr, pk)
+	_, err := db.sql.Exec(stmt, addr, pk)
 	return err
 }
 
@@ -168,12 +167,6 @@ func (db Database) SaveCommitSig(height int64, pc tmtypes.CommitSig, votingPower
 					 VALUES ($1, $2, $3, $4, $5);`
 
 	address := utils.ConvertValidatorAddressToBech32String(pc.ValidatorAddress)
-	_, err := db.Sql.Exec(sqlStatement, address, height, pc.Timestamp, votingPower, proposerPriority)
+	_, err := db.sql.Exec(sqlStatement, address, height, pc.Timestamp, votingPower, proposerPriority)
 	return err
-}
-
-type signature struct {
-	Address   string `json:"address,omitempty"`
-	Pubkey    string `json:"pubkey,omitempty"`
-	Signature string `json:"signature,omitempty"`
 }
