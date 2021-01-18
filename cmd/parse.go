@@ -2,12 +2,13 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/simapp/params"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/cosmos/cosmos-sdk/simapp/params"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/go-co-op/gocron"

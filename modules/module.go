@@ -2,6 +2,7 @@ package modules
 
 import (
 	"encoding/json"
+
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 

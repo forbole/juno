@@ -3,9 +3,10 @@ package postgresql
 import (
 	"database/sql"
 	"fmt"
+	"strings"
+
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 	"github.com/lib/pq"
-	"strings"
 
 	_ "github.com/lib/pq" // nolint
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
