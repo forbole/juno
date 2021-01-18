@@ -1,7 +1,7 @@
 package db
 
 import (
-	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/simapp/params"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 
@@ -36,8 +36,8 @@ type Database interface {
 
 	// SetPreCommit stores a validator's pre-commit.
 	// An error is returned if the operation fails.
-	SaveCommitSig(commitSig tmtypes.CommitSig, votingPower, proposerPriority int64) error
+	SaveCommitSig(height int64, commitSig tmtypes.CommitSig, votingPower, proposerPriority int64) error
 }
 
 // Create represents a method that allows to build any database from a given codec and configuration
-type Builder func(cfg *config.Config, cdc *codec.LegacyAmino) (Database, error)
+type Builder func(cfg *config.Config, encodingConfig *params.EncodingConfig) (Database, error)

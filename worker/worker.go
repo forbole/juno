@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/cosmos/cosmos-sdk/simapp/params"
+
 	"github.com/desmos-labs/juno/db/utils"
 
 	"github.com/desmos-labs/juno/logging"
 	"github.com/desmos-labs/juno/modules"
 
-	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/rs/zerolog/log"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -23,16 +24,24 @@ import (
 // Worker defines a job consumer that is responsible for getting and
 // aggregating block and associated data and exporting it to a database.
 type Worker struct {
-	queue   types.Queue
-	cdc     *codec.LegacyAmino
-	cp      *client.Proxy
-	db      db.Database
-	modules []modules.Module
+	queue          types.Queue
+	encodingConfig *params.EncodingConfig
+	cp             *client.Proxy
+	db             db.Database
+	modules        []modules.Module
 }
 
 // NewWorker allows to create a new Worker implementation.
-func NewWorker(cdc *codec.LegacyAmino, q types.Queue, cp *client.Proxy, db db.Database, modules []modules.Module) Worker {
-	return Worker{cdc: cdc, cp: cp, queue: q, db: db, modules: modules}
+func NewWorker(
+	encodingConfig *params.EncodingConfig, q types.Queue, cp *client.Proxy, db db.Database, modules []modules.Module,
+) Worker {
+	return Worker{
+		encodingConfig: encodingConfig,
+		cp:             cp,
+		queue:          q,
+		db:             db,
+		modules:        modules,
+	}
 }
 
 // Start starts a worker by listening for new jobs (block heights) from the
@@ -88,28 +97,18 @@ func (w Worker) process(height int64) error {
 		return err
 	}
 
-	// Convert the transaction to a more easy-to-handle type
-	var txData = make([]*types.Tx, len(txs))
-	for index, tx := range txs {
-		convTx, err := types.NewTx(tx)
-		if err != nil {
-			return fmt.Errorf("error converting transaction: %s", err.Error())
-		}
-		txData[index] = convTx
-	}
-
 	vals, err := w.cp.Validators(block.Block.LastCommit.Height)
 	if err != nil {
 		log.Error().Err(err).Int64("height", height).Msg("failed to get validators for block")
 		return err
 	}
 
-	err = w.ExportPreCommits(block.Block.LastCommit, vals)
+	err = w.ExportPreCommit(block.Block.LastCommit, vals)
 	if err != nil {
 		return err
 	}
 
-	return w.ExportBlock(block, txData, vals)
+	return w.ExportBlock(block, txs, vals)
 }
 
 // HandleGenesis accepts a GenesisDoc and calls all the registered genesis handlers
@@ -122,7 +121,7 @@ func (w Worker) HandleGenesis(genesis *tmtypes.GenesisDoc) error {
 
 	// Call the block handlers
 	for _, module := range w.modules {
-		if err := module.HandleGenesis(genesis, appState, w.cdc, w.cp, w.db); err != nil {
+		if err := module.HandleGenesis(genesis, appState, w.encodingConfig, w.cp, w.db); err != nil {
 			logging.LogGenesisError(err)
 		}
 	}
@@ -130,10 +129,10 @@ func (w Worker) HandleGenesis(genesis *tmtypes.GenesisDoc) error {
 	return nil
 }
 
-// ExportPreCommits accepts a block commitment and a corresponding set of
+// ExportPreCommit accepts a block commitment and a corresponding set of
 // validators for the commitment and persists them to the database. An error is
 // returned if any write fails or if there is any missing aggregated data.
-func (w Worker) ExportPreCommits(commit *tmtypes.Commit, vals *tmctypes.ResultValidators) error {
+func (w Worker) ExportPreCommit(commit *tmtypes.Commit, vals *tmctypes.ResultValidators) error {
 	// persist all validators and pre-commits
 	for _, commitSig := range commit.Signatures {
 		// Avoid empty commits
@@ -160,7 +159,7 @@ func (w Worker) ExportPreCommits(commit *tmtypes.Commit, vals *tmctypes.ResultVa
 			return err
 		}
 
-		err = w.db.SaveCommitSig(commitSig, val.VotingPower, val.ProposerPriority)
+		err = w.db.SaveCommitSig(commit.Height, commitSig, val.VotingPower, val.ProposerPriority)
 		if err != nil {
 			log.Error().
 				Err(err).
@@ -234,7 +233,7 @@ func (w Worker) ExportBlock(b *tmctypes.ResultBlock, txs []*types.Tx, vals *tmct
 
 	// Call the block handlers
 	for _, module := range w.modules {
-		err := module.HandleBlock(b, txs, vals, w.cdc, w.cp, w.db)
+		err := module.HandleBlock(b, txs, vals, w.encodingConfig, w.cp, w.db)
 		if err != nil {
 			logging.LogBlockError(err)
 		}
@@ -258,17 +257,17 @@ func (w Worker) ExportTxs(txs []*types.Tx) error {
 
 		// Call the tx handlers
 		for _, module := range w.modules {
-			err := module.HandleTx(tx, w.cdc, w.cp, w.db)
+			err := module.HandleTx(tx, w.encodingConfig, w.cp, w.db)
 			if err != nil {
 				logging.LogTxError(err)
 			}
 		}
 
 		// Handle all the messages contained inside the transaction
-		for i, msg := range tx.Msgs {
+		for i, msg := range tx.Body.Messages {
 			// Call the handlers
 			for _, module := range w.modules {
-				err := module.HandleMsg(i, msg, tx, w.cdc, w.cp, w.db)
+				err := module.HandleMsg(i, msg, tx, w.encodingConfig, w.cp, w.db)
 				if err != nil {
 					logging.LogMsgError(err)
 				}

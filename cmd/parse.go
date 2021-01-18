@@ -8,6 +8,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/simapp/params"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/go-co-op/gocron"
 	"github.com/rs/zerolog/log"
@@ -19,8 +21,6 @@ import (
 	"github.com/desmos-labs/juno/modules/registrar"
 	"github.com/desmos-labs/juno/types"
 	"github.com/desmos-labs/juno/worker"
-
-	"github.com/cosmos/cosmos-sdk/codec"
 
 	"github.com/desmos-labs/juno/config"
 	"github.com/desmos-labs/juno/db"
@@ -41,7 +41,7 @@ var (
 // ParseCmd returns the command that should be run when we want to start parsing a chain state.
 // The given codec.Codec is used to parse data, while the db.Builder is going to be used to build the database
 // instance used to store the parsed data.
-func ParseCmd(cdcBuilder config.CodecBuilder, setupCfg config.SdkConfigSetup, buildDb db.Builder) *cobra.Command {
+func ParseCmd(cdcBuilder config.EncodingConfigBuilder, setupCfg config.SdkConfigSetup, buildDb db.Builder) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "parse [config-file]",
 		Short: "Start parsing a blockchain using the provided config file",
@@ -62,8 +62,8 @@ func ParseCmd(cdcBuilder config.CodecBuilder, setupCfg config.SdkConfigSetup, bu
 // SetupParsing setups all the things that should be later passed to StartParsing in order
 // to parse the chain data properly.
 func SetupParsing(
-	args []string, cdcBuilder config.CodecBuilder, setupCfg config.SdkConfigSetup, buildDb db.Builder,
-) (*codec.LegacyAmino, *client.Proxy, db.Database, []modules.Module, error) {
+	args []string, buildEncodingConfig config.EncodingConfigBuilder, setupCfg config.SdkConfigSetup, buildDb db.Builder,
+) (*params.EncodingConfig, *client.Proxy, db.Database, []modules.Module, error) {
 	// Setup the logger
 	err := setupLogging()
 	if err != nil {
@@ -77,7 +77,7 @@ func SetupParsing(
 	}
 
 	// Build the codec
-	_, cdc := cdcBuilder()
+	encodingConfig := buildEncodingConfig()
 
 	// Setup the SDK configuration
 	sdkConfig := sdk.GetConfig()
@@ -88,13 +88,13 @@ func SetupParsing(
 	registeredModules := registrar.GetModules(cfg.CosmosConfig.Modules)
 
 	// Get the database
-	database, err := buildDb(cfg, cdc)
+	database, err := buildDb(cfg, &encodingConfig)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
 
 	// Init the client
-	cp, err := client.New(cfg, cdc)
+	cp, err := client.New(cfg, &encodingConfig)
 	if err != nil {
 		return nil, nil, nil, nil, fmt.Errorf("failed to start client: %s", err)
 	}
@@ -104,13 +104,13 @@ func SetupParsing(
 
 	// Run all the additional operations
 	for _, module := range registeredModules {
-		err := module.RunAdditionalOperations(cfg, cdc, cp, database)
+		err := module.RunAdditionalOperations(cfg, &encodingConfig, cp, database)
 		if err != nil {
 			return nil, nil, nil, nil, err
 		}
 	}
 
-	return cdc, cp, database, registeredModules, nil
+	return &encodingConfig, cp, database, registeredModules, nil
 }
 
 // SetupFlags setups all the flags for the parse command
@@ -151,11 +151,11 @@ func setupLogging() error {
 }
 
 // parseCmdHandler represents the function that should be called when the parse command is executed
-func StartParsing(cdc *codec.LegacyAmino, cp *client.Proxy, db db.Database, modules []modules.Module) error {
+func StartParsing(encodingConfig *params.EncodingConfig, cp *client.Proxy, db db.Database, modules []modules.Module) error {
 	// Start periodic operations
 	scheduler := gocron.NewScheduler(time.UTC)
 	for _, module := range modules {
-		err := module.RegisterPeriodicOperations(scheduler, cdc, cp, db)
+		err := module.RegisterPeriodicOperations(scheduler, encodingConfig, cp, db)
 		if err != nil {
 			return err
 		}
@@ -169,7 +169,7 @@ func StartParsing(cdc *codec.LegacyAmino, cp *client.Proxy, db db.Database, modu
 	workerCount := viper.GetInt64(FlagWorkerCount)
 	workers := make([]worker.Worker, workerCount, workerCount)
 	for i := range workers {
-		workers[i] = worker.NewWorker(cdc, exportQueue, cp, db, modules)
+		workers[i] = worker.NewWorker(encodingConfig, exportQueue, cp, db, modules)
 	}
 
 	waitGroup.Add(1)

@@ -38,7 +38,7 @@ them to compose more aggregate and complex queries.`, name),
 // The provided dbBuilder is used to provide the database that will be used to save the data. If you don't have any
 // particular need, you can use the Create variable to build a default database instance.
 func BuildDefaultExecutor(
-	name string, setupCfg config.SdkConfigSetup, cdcBuilder config.CodecBuilder, dbBuilder db.Builder,
+	name string, setupCfg config.SdkConfigSetup, cdcBuilder config.EncodingConfigBuilder, dbBuilder db.Builder,
 ) cli.Executor {
 	rootCmd := RootCmd(name)
 

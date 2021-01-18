@@ -8,10 +8,14 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/simapp/params"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/tx"
+
+	"github.com/desmos-labs/juno/types"
+
 	"google.golang.org/grpc"
 
-	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 	httpclient "github.com/tendermint/tendermint/rpc/client/http"
@@ -23,15 +27,17 @@ import (
 // Proxy implements a wrapper around both a Tendermint RPC client and a
 // CosmosConfig Sdk REST client that allows for essential data queries.
 type Proxy struct {
-	ctx         context.Context
-	legacyAmino *codec.LegacyAmino
+	ctx            context.Context
+	encodingConfig *params.EncodingConfig
 
-	rpcClient     rpcclient.Client
-	apiEndpoint   string
-	grpConnection *grpc.ClientConn
+	rpcClient   rpcclient.Client
+	apiEndpoint string
+
+	grpConnection   *grpc.ClientConn
+	txServiceClient tx.ServiceClient
 }
 
-func New(cfg *config.Config, legacyAmino *codec.LegacyAmino) (*Proxy, error) {
+func New(cfg *config.Config, encodingConfig *params.EncodingConfig) (*Proxy, error) {
 	rpcClient, err := httpclient.New(cfg.RPCConfig.Address, "/websocket")
 	if err != nil {
 		return nil, err
@@ -52,11 +58,12 @@ func New(cfg *config.Config, legacyAmino *codec.LegacyAmino) (*Proxy, error) {
 	}
 
 	return &Proxy{
-		legacyAmino:   legacyAmino,
-		ctx:           context.Background(),
-		rpcClient:     rpcClient,
-		apiEndpoint:   cfg.APIConfig.Address,
-		grpConnection: grpcConnection,
+		encodingConfig:  encodingConfig,
+		ctx:             context.Background(),
+		rpcClient:       rpcClient,
+		apiEndpoint:     cfg.APIConfig.Address,
+		grpConnection:   grpcConnection,
+		txServiceClient: tx.NewServiceClient(grpcConnection),
 	}, nil
 }
 
@@ -160,7 +167,7 @@ func (cp Proxy) QueryLCD(endpoint string, ptr interface{}) error {
 		return err
 	}
 
-	if err := cp.legacyAmino.UnmarshalJSON(bz, ptr); err != nil {
+	if err := cp.encodingConfig.Amino.UnmarshalJSON(bz, ptr); err != nil {
 		return err
 	}
 
@@ -178,33 +185,37 @@ func (cp Proxy) QueryLCDWithHeight(endpoint string, ptr interface{}) (int64, err
 		return -1, err
 	}
 
-	return result.Height, cp.legacyAmino.UnmarshalJSON(result.Result, ptr)
+	return result.Height, cp.encodingConfig.Amino.UnmarshalJSON(result.Result, ptr)
 }
 
 // Tx queries for a transaction from the REST client and decodes it into a sdk.Tx
 // if the transaction exists. An error is returned if the tx doesn't exist or
 // decoding fails.
-func (cp Proxy) Tx(hash string) (sdk.TxResponse, error) {
-	var response sdk.TxResponse
-	if err := cp.QueryLCD(fmt.Sprintf("txs/%s", hash), &response); err != nil {
-		return sdk.TxResponse{}, err
+func (cp Proxy) Tx(hash string) (*sdk.TxResponse, *tx.Tx, error) {
+	res, err := cp.txServiceClient.GetTx(context.Background(), &tx.GetTxRequest{Hash: hash})
+	if err != nil {
+		return nil, nil, err
 	}
-
-	return response, nil
+	return res.TxResponse, res.Tx, nil
 }
 
 // Txs queries for all the transactions in a block. Transactions are returned
 // in the sdk.TxResponse format which internally contains an sdk.Tx. An error is
 // returned if any query fails.
-func (cp Proxy) Txs(block *tmctypes.ResultBlock) ([]sdk.TxResponse, error) {
-	txResponses := make([]sdk.TxResponse, len(block.Block.Txs))
+func (cp Proxy) Txs(block *tmctypes.ResultBlock) ([]*types.Tx, error) {
+	txResponses := make([]*types.Tx, len(block.Block.Txs))
 	for i, tmTx := range block.Block.Txs {
-		txResponse, err := cp.Tx(fmt.Sprintf("%X", tmTx.Hash()))
+		txResponse, txObj, err := cp.Tx(fmt.Sprintf("%X", tmTx.Hash()))
 		if err != nil {
 			return nil, err
 		}
 
-		txResponses[i] = txResponse
+		convTx, err := types.NewTx(txResponse, txObj)
+		if err != nil {
+			return nil, fmt.Errorf("error converting transaction: %s", err.Error())
+		}
+
+		txResponses[i] = convTx
 	}
 
 	return txResponses, nil

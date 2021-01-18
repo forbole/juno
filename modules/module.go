@@ -3,8 +3,9 @@ package modules
 import (
 	"encoding/json"
 
-	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+	"github.com/cosmos/cosmos-sdk/simapp/params"
+
 	"github.com/go-co-op/gocron"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -25,14 +26,14 @@ type Module interface {
 	// external sources.
 	// NOTE. This method will only be run ONCE before starting the parsing of the blocks.
 	RunAdditionalOperations(
-		cfg *config.Config, cdc *codec.LegacyAmino, cp *client.Proxy, db db.Database,
+		cfg *config.Config, encodingConfig *params.EncodingConfig, cp *client.Proxy, db db.Database,
 	) error
 
 	// RegisterPeriodicOperations allows to register all the operations that will be run on a periodic basis.
 	// The given scheduler can be used to define the periodicity of each task.
 	// NOTE. This method will only be run ONCE during the module initialization.
 	RegisterPeriodicOperations(
-		scheduler *gocron.Scheduler, cdc *codec.LegacyAmino, cp *client.Proxy, db db.Database,
+		scheduler *gocron.Scheduler, encodingConfig *params.EncodingConfig, cp *client.Proxy, db db.Database,
 	) error
 
 	// HandleGenesis allows to handle the genesis state.
@@ -41,7 +42,7 @@ type Module interface {
 	// will still be called.
 	HandleGenesis(
 		doc *tmtypes.GenesisDoc, appState map[string]json.RawMessage,
-		cdc *codec.LegacyAmino, cp *client.Proxy, db db.Database,
+		encodingConfig *params.EncodingConfig, cp *client.Proxy, db db.Database,
 	) error
 
 	// HandleBlock allows to handle a single block.
@@ -52,21 +53,25 @@ type Module interface {
 	// will still be called.
 	HandleBlock(
 		block *tmctypes.ResultBlock, txs []*types.Tx, vals *tmctypes.ResultValidators,
-		cdc *codec.LegacyAmino, cp *client.Proxy, db db.Database,
+		encodingConfig *params.EncodingConfig, cp *client.Proxy, db db.Database,
 	) error
 
 	// HandleTx handles a single transaction.
 	// For each message present inside the transaction, HandleMsg will be called as well.
 	// NOTE. The returned error will be logged using the logging.LogTxError method. All other modules' handlers
 	// will still be called.
-	HandleTx(tx *types.Tx, cdc *codec.LegacyAmino, cp *client.Proxy, db db.Database) error
+	HandleTx(
+		tx *types.Tx, encodingConfig *params.EncodingConfig, cp *client.Proxy, db db.Database,
+	) error
 
 	// HandleTx handles a single transaction.
 	// For convenience of usa, the index of the message inside the transaction and the transaction itself
 	// are passed as well.
 	// NOTE. The returned error will be logged using the logging.LogMsgError method. All other modules' handlers
 	// will still be called.
-	HandleMsg(index int, msg sdk.Msg, tx *types.Tx, cdc *codec.LegacyAmino, cp *client.Proxy, db db.Database) error
+	HandleMsg(
+		index int, msg *codectypes.Any, tx *types.Tx, encodingConfig *params.EncodingConfig, cp *client.Proxy, db db.Database,
+	) error
 }
 
 // Modules represents a slice of Module objects
