@@ -108,7 +108,7 @@ func SetupParsing(
 
 	// Run all the additional operations
 	for _, module := range registeredModules {
-		err := module.RunAdditionalOperations(cfg, &encodingConfig, cp, database)
+		err := module.RunAdditionalOperations()
 		if err != nil {
 			return nil, nil, nil, nil, err
 		}
@@ -159,7 +159,7 @@ func StartParsing(encodingConfig *params.EncodingConfig, cp *client.Proxy, db db
 	// Start periodic operations
 	scheduler := gocron.NewScheduler(time.UTC)
 	for _, module := range modules {
-		err := module.RegisterPeriodicOperations(scheduler, encodingConfig, cp, db)
+		err := module.RegisterPeriodicOperations(scheduler)
 		if err != nil {
 			return err
 		}

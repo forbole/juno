@@ -121,7 +121,7 @@ func (w Worker) HandleGenesis(genesis *tmtypes.GenesisDoc) error {
 
 	// Call the block handlers
 	for _, module := range w.modules {
-		if err := module.HandleGenesis(genesis, appState, w.encodingConfig, w.cp, w.db); err != nil {
+		if err := module.HandleGenesis(genesis, appState); err != nil {
 			logging.LogGenesisError(err)
 		}
 	}
@@ -233,7 +233,7 @@ func (w Worker) ExportBlock(b *tmctypes.ResultBlock, txs []*types.Tx, vals *tmct
 
 	// Call the block handlers
 	for _, module := range w.modules {
-		err := module.HandleBlock(b, txs, vals, w.encodingConfig, w.cp, w.db)
+		err := module.HandleBlock(b, txs, vals)
 		if err != nil {
 			logging.LogBlockError(err)
 		}
@@ -257,7 +257,7 @@ func (w Worker) ExportTxs(txs []*types.Tx) error {
 
 		// Call the tx handlers
 		for _, module := range w.modules {
-			err := module.HandleTx(tx, w.encodingConfig, w.cp, w.db)
+			err := module.HandleTx(tx)
 			if err != nil {
 				logging.LogTxError(err)
 			}
@@ -273,7 +273,7 @@ func (w Worker) ExportTxs(txs []*types.Tx) error {
 
 			// Call the handlers
 			for _, module := range w.modules {
-				err = module.HandleMsg(i, stdMsg, tx, w.encodingConfig, w.cp, w.db)
+				err = module.HandleMsg(i, stdMsg, tx)
 				if err != nil {
 					logging.LogMsgError(err)
 				}
