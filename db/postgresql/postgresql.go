@@ -47,7 +47,7 @@ func Builder(cfg *config.PostgreSQLConfig, encodingConfig *params.EncodingConfig
 		return nil, err
 	}
 
-	return &Database{sql: postgresDb, encodingConfig: encodingConfig}, nil
+	return &Database{Sql: postgresDb, EncodingConfig: encodingConfig}, nil
 }
 
 // type check to ensure interface is properly implemented
@@ -56,14 +56,14 @@ var _ db.Database = &Database{}
 // Database defines a wrapper around a SQL database and implements functionality
 // for data aggregation and exporting.
 type Database struct {
-	sql            *sql.DB
-	encodingConfig *params.EncodingConfig
+	Sql            *sql.DB
+	EncodingConfig *params.EncodingConfig
 }
 
 // LastBlockHeight returns the latest block stored.
 func (db *Database) LastBlockHeight() (int64, error) {
 	var height int64
-	err := db.sql.QueryRow("SELECT coalesce(MAX(height),0) AS height FROM block;").Scan(&height)
+	err := db.Sql.QueryRow("SELECT coalesce(MAX(height),0) AS height FROM block;").Scan(&height)
 	return height, err
 }
 
@@ -71,7 +71,7 @@ func (db *Database) LastBlockHeight() (int64, error) {
 // returned.
 func (db *Database) HasBlock(height int64) (bool, error) {
 	var res bool
-	err := db.sql.QueryRow(
+	err := db.Sql.QueryRow(
 		"SELECT EXISTS(SELECT 1 FROM block WHERE height = $1);",
 		height,
 	).Scan(&res)
@@ -87,7 +87,7 @@ func (db *Database) SaveBlock(block *tmctypes.ResultBlock, totalGas, preCommits 
 	VALUES ($1, $2, $3, $4, $5, $6, $7);
 	`
 
-	_, err := db.sql.Exec(sqlStatement,
+	_, err := db.Sql.Exec(sqlStatement,
 		block.Block.Height, block.Block.Hash().String(), len(block.Block.Txs),
 		totalGas, utils.ConvertValidatorAddressToBech32String(block.Block.ProposerAddress), preCommits, block.Block.Time,
 	)
@@ -108,7 +108,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);`
 
 	var msgs = make([]string, len(tx.Body.Messages))
 	for index, msg := range tx.Body.Messages {
-		bz, err := db.encodingConfig.Marshaler.MarshalJSON(msg)
+		bz, err := db.EncodingConfig.Marshaler.MarshalJSON(msg)
 		if err != nil {
 			return err
 		}
@@ -116,14 +116,14 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);`
 	}
 	msgsBz := fmt.Sprintf("[%s]", strings.Join(msgs, ","))
 
-	feeBz, err := db.encodingConfig.Marshaler.MarshalJSON(tx.AuthInfo.Fee)
+	feeBz, err := db.EncodingConfig.Marshaler.MarshalJSON(tx.AuthInfo.Fee)
 	if err != nil {
 		return fmt.Errorf("failed to JSON encode tx fee: %s", err)
 	}
 
 	var sigInfos = make([]string, len(tx.AuthInfo.SignerInfos))
 	for index, info := range tx.AuthInfo.SignerInfos {
-		bz, err := db.encodingConfig.Marshaler.MarshalJSON(info)
+		bz, err := db.EncodingConfig.Marshaler.MarshalJSON(info)
 		if err != nil {
 			return err
 		}
@@ -131,12 +131,12 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);`
 	}
 	sigInfoBz := fmt.Sprintf("[%s]", strings.Join(sigInfos, ","))
 
-	logsBz, err := db.encodingConfig.Amino.MarshalJSON(tx.Logs)
+	logsBz, err := db.EncodingConfig.Amino.MarshalJSON(tx.Logs)
 	if err != nil {
 		return err
 	}
 
-	_, err = db.sql.Exec(sqlStatement,
+	_, err = db.Sql.Exec(sqlStatement,
 		tx.TxHash, tx.Height, tx.Successful(),
 		msgsBz, tx.Body.Memo, pq.Array(sigs),
 		sigInfoBz, string(feeBz),
@@ -150,7 +150,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);`
 func (db *Database) HasValidator(addr string) (bool, error) {
 	var res bool
 	stmt := `SELECT EXISTS(SELECT 1 FROM validator WHERE consensus_address = $1);`
-	err := db.sql.QueryRow(stmt, addr).Scan(&res)
+	err := db.Sql.QueryRow(stmt, addr).Scan(&res)
 	return res, err
 }
 
@@ -158,7 +158,7 @@ func (db *Database) HasValidator(addr string) (bool, error) {
 // returned if the operation fails.
 func (db *Database) SaveValidator(addr, pk string) error {
 	stmt := `INSERT INTO validator (consensus_address, consensus_pubkey) VALUES ($1, $2) ON CONFLICT DO NOTHING;`
-	_, err := db.sql.Exec(stmt, addr, pk)
+	_, err := db.Sql.Exec(stmt, addr, pk)
 	return err
 }
 
@@ -169,6 +169,6 @@ func (db *Database) SaveCommitSig(height int64, pc tmtypes.CommitSig, votingPowe
 					 VALUES ($1, $2, $3, $4, $5);`
 
 	address := utils.ConvertValidatorAddressToBech32String(pc.ValidatorAddress)
-	_, err := db.sql.Exec(sqlStatement, address, height, pc.Timestamp, votingPower, proposerPriority)
+	_, err := db.Sql.Exec(sqlStatement, address, height, pc.Timestamp, votingPower, proposerPriority)
 	return err
 }
