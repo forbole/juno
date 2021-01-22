@@ -103,6 +103,14 @@ func SetupParsing(
 	mods := registrar.BuildModules(cfg, &encodingConfig, sdkConfig, database, cp)
 	registeredModules := modules.GetModules(mods, cfg.CosmosConfig.Modules)
 
+	// Run all the additional operations
+	for _, module := range registeredModules {
+		err := module.RunAdditionalOperations()
+		if err != nil {
+			return nil, nil, nil, nil, err
+		}
+	}
+
 	return &encodingConfig, cp, database, registeredModules, nil
 }
 
@@ -145,11 +153,6 @@ func setupLogging() error {
 
 // parseCmdHandler represents the function that should be called when the parse command is executed
 func StartParsing(encodingConfig *params.EncodingConfig, cp *client.Proxy, db db.Database, modules []modules.Module) error {
-	// Run all the additional operations
-	for _, module := range modules {
-		go module.RunAdditionalOperations()
-	}
-
 	// Start periodic operations
 	scheduler := gocron.NewScheduler(time.UTC)
 	for _, module := range modules {
@@ -171,6 +174,11 @@ func StartParsing(encodingConfig *params.EncodingConfig, cp *client.Proxy, db db
 	}
 
 	waitGroup.Add(1)
+
+	// Run all the async operations
+	for _, module := range modules {
+		go module.RunAsyncOperations()
+	}
 
 	// Start each blocking worker in a go-routine where the worker consumes jobs
 	// off of the export queue.

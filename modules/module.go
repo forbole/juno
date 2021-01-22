@@ -17,11 +17,16 @@ type Module interface {
 	// Name returns the module name
 	Name() string
 
-	// RunAdditionalOperations runs all the additional operations required to the module.
+	// RunAdditionalOperations runs all the additional operations required by the module.
 	// This is the perfect place where to initialize all the operations that subscribe to websockets or other
 	// external sources.
 	// NOTE. This method will only be run ONCE before starting the parsing of the blocks.
 	RunAdditionalOperations() error
+
+	// RunAsyncOperations runs all the async operations associated with a module.
+	// This method will be run on a separate goroutine, that will stop only when the user stops the entire process.
+	// For this reason, this method cannot return an error, and all raised errors should be signaled by panicking.
+	RunAsyncOperations()
 
 	// RegisterPeriodicOperations allows to register all the operations that will be run on a periodic basis.
 	// The given scheduler can be used to define the periodicity of each task.
