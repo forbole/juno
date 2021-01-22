@@ -58,7 +58,7 @@ prefix = "desmos"
 modules = []
 
 [database]
-type = "mongodb"
+type = "postgresql"
 
 [database.config]
 host = "<db-host>"
