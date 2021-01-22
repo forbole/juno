@@ -99,9 +99,6 @@ func SetupParsing(
 		return nil, nil, nil, nil, fmt.Errorf("failed to start client: %s", err)
 	}
 
-	// nolint:errcheck
-	defer cp.Stop()
-
 	// Get the modules
 	mods := registrar.BuildModules(cfg, &encodingConfig, sdkConfig, database, cp)
 	registeredModules := modules.GetModules(mods, cfg.CosmosConfig.Modules)
@@ -184,7 +181,7 @@ func StartParsing(encodingConfig *params.EncodingConfig, cp *client.Proxy, db db
 	}
 
 	// Listen for and trap any OS signal to gracefully shutdown and exit
-	trapSignal()
+	trapSignal(cp)
 
 	if viper.GetBool(FlagParseOldBlocks) {
 		go enqueueMissingBlocks(exportQueue, cp)
@@ -240,7 +237,7 @@ func startNewBlockListener(exportQueue types.Queue, cp *client.Proxy) {
 
 // trapSignal will listen for any OS signal and invoke Done on the main
 // WaitGroup allowing the main process to gracefully exit.
-func trapSignal() {
+func trapSignal(cp *client.Proxy) {
 	var sigCh = make(chan os.Signal)
 
 	signal.Notify(sigCh, syscall.SIGTERM)
@@ -249,6 +246,7 @@ func trapSignal() {
 	go func() {
 		sig := <-sigCh
 		log.Info().Str("signal", sig.String()).Msg("caught signal; shutting down...")
+		defer cp.Stop()
 		defer waitGroup.Done()
 	}()
 }
