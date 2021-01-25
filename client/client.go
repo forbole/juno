@@ -35,12 +35,7 @@ func New(cfg *config.Config, encodingConfig *params.EncodingConfig) (*Proxy, err
 		return nil, err
 	}
 
-	var grpcOpts []grpc.DialOption
-	if cfg.GrpcConfig.Insecure {
-		grpcOpts = append(grpcOpts, grpc.WithInsecure())
-	}
-
-	grpcConnection, err := grpc.Dial(cfg.GrpcConfig.Address, grpcOpts...)
+	grpcConnection, err := CreateGrpcConnection(cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -66,11 +61,6 @@ type Proxy struct {
 
 	grpConnection   *grpc.ClientConn
 	txServiceClient tx.ServiceClient
-}
-
-// GrpcConnection returns the underlying gRPC connection
-func (cp *Proxy) GrpcConnection() *grpc.ClientConn {
-	return cp.grpConnection
 }
 
 // LatestHeight returns the latest block height on the active chain. An error
