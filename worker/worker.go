@@ -133,7 +133,15 @@ func (w Worker) HandleGenesis(genesis *tmtypes.GenesisDoc) error {
 // validators for the commitment and persists them to the database. An error is
 // returned if any write fails or if there is any missing aggregated data.
 func (w Worker) ExportPreCommit(commit *tmtypes.Commit, vals *tmctypes.ResultValidators) error {
-	// persist all validators and pre-commits
+	// Save all validators
+	for _, validator := range vals.Validators {
+		err := w.SaveValidator(validator)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Save all precommits
 	for _, commitSig := range commit.Signatures {
 		// Avoid empty commits
 		if commitSig.Signature == nil {
@@ -154,7 +162,7 @@ func (w Worker) ExportPreCommit(commit *tmtypes.Commit, vals *tmctypes.ResultVal
 			return err
 		}
 
-		err := w.ExportValidator(val)
+		err := w.SaveValidator(val)
 		if err != nil {
 			return err
 		}
@@ -174,10 +182,10 @@ func (w Worker) ExportPreCommit(commit *tmtypes.Commit, vals *tmctypes.ResultVal
 	return nil
 }
 
-// ExportValidator persists a Tendermint validator with an address and a
+// SaveValidator persists a Tendermint validator with an address and a
 // consensus public key. An error is returned if the public key cannot be Bech32
 // encoded or if the DB write fails.
-func (w Worker) ExportValidator(val *tmtypes.Validator) error {
+func (w Worker) SaveValidator(val *tmtypes.Validator) error {
 	valAddr := sdk.ConsAddress(val.Address).String()
 
 	consPubKey, err := utils.ConvertValidatorPubKeyToBech32String(val.PubKey)
@@ -219,7 +227,7 @@ func (w Worker) ExportBlock(b *tmctypes.ResultBlock, txs []*types.Tx, vals *tmct
 		return err
 	}
 
-	err := w.ExportValidator(val)
+	err := w.SaveValidator(val)
 	if err != nil {
 		return err
 	}
