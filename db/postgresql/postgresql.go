@@ -83,9 +83,8 @@ func (db *Database) HasBlock(height int64) (bool, error) {
 // returned if the operation fails.
 func (db *Database) SaveBlock(block *tmctypes.ResultBlock, totalGas, preCommits uint64) error {
 	sqlStatement := `
-	INSERT INTO block (height, hash, num_txs, total_gas, proposer_address, pre_commits, timestamp)
-	VALUES ($1, $2, $3, $4, $5, $6, $7);
-	`
+INSERT INTO block (height, hash, num_txs, total_gas, proposer_address, pre_commits, timestamp)
+VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT DO NOTHING`
 
 	_, err := db.Sql.Exec(sqlStatement,
 		block.Block.Height, block.Block.Hash().String(), len(block.Block.Txs),
@@ -98,8 +97,9 @@ func (db *Database) SaveBlock(block *tmctypes.ResultBlock, totalGas, preCommits 
 // returned if the operation fails.
 func (db *Database) SaveTx(tx *types.Tx) error {
 	sqlStatement := `
-INSERT INTO transaction (hash, height, success, messages, memo, signatures, signer_infos, fee, gas_wanted, gas_used, raw_log, logs) 
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);`
+INSERT INTO transaction 
+    (hash, height, success, messages, memo, signatures, signer_infos, fee, gas_wanted, gas_used, raw_log, logs) 
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT DO NOTHING`
 
 	var sigs = make([]string, len(tx.Signatures))
 	for index, sig := range sigs {
