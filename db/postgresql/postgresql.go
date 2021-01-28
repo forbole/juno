@@ -81,14 +81,14 @@ func (db *Database) HasBlock(height int64) (bool, error) {
 
 // SetBlock stores a block and returns the resulting record ID. An error is
 // returned if the operation fails.
-func (db *Database) SaveBlock(block *tmctypes.ResultBlock, totalGas, preCommits uint64) error {
+func (db *Database) SaveBlock(block *tmctypes.ResultBlock, totalGas uint64) error {
 	sqlStatement := `
-INSERT INTO block (height, hash, num_txs, total_gas, proposer_address, pre_commits, timestamp)
-VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT DO NOTHING`
+INSERT INTO block (height, hash, num_txs, total_gas, proposer_address, timestamp)
+VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING`
 
 	_, err := db.Sql.Exec(sqlStatement,
 		block.Block.Height, block.Block.Hash().String(), len(block.Block.Txs),
-		totalGas, utils.ConvertValidatorAddressToBech32String(block.Block.ProposerAddress), preCommits, block.Block.Time,
+		totalGas, utils.ConvertValidatorAddressToBech32String(block.Block.ProposerAddress), block.Block.Time,
 	)
 	return err
 }

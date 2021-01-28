@@ -207,9 +207,6 @@ func (w Worker) SaveValidator(val *tmtypes.Validator) error {
 // and persists them to the database along with attributable metadata. An error
 // is returned if the write fails.
 func (w Worker) ExportBlock(b *tmctypes.ResultBlock, txs []*types.Tx, vals *tmctypes.ResultValidators) error {
-	totalGas := sumGasTxs(txs)
-	preCommits := uint64(len(b.Block.LastCommit.Signatures))
-
 	// Set the block's proposer if it does not already exist. This may occur if
 	// the proposer has never signed before.
 	proposerAddr := sdk.ConsAddress(b.Block.ProposerAddress)
@@ -233,7 +230,7 @@ func (w Worker) ExportBlock(b *tmctypes.ResultBlock, txs []*types.Tx, vals *tmct
 	}
 
 	// Save the block
-	err = w.db.SaveBlock(b, totalGas, preCommits)
+	err = w.db.SaveBlock(b, sumGasTxs(txs))
 	if err != nil {
 		log.Error().Err(err).Int64("height", b.Block.Height).Msg("failed to persist block")
 		return err

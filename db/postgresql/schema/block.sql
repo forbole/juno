@@ -5,6 +5,5 @@ CREATE TABLE block
     num_txs          INTEGER DEFAULT 0,
     total_gas        INTEGER DEFAULT 0,
     proposer_address TEXT                        NOT NULL REFERENCES validator (consensus_address),
-    pre_commits      INTEGER                     NOT NULL,
     timestamp        TIMESTAMP WITHOUT TIME ZONE NOT NULL
 );
