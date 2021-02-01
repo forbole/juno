@@ -50,3 +50,23 @@ func (tx Tx) FindAttributeByKey(event sdk.StringEvent, attrKey string) (string, 
 func (tx Tx) Successful() bool {
 	return tx.TxResponse.Code == 0
 }
+
+// -------------------------------------------------------------------------------------------------------------------
+
+type Message struct {
+	TxHash    string
+	Index     int
+	Type      string
+	Value     string
+	Addresses []string
+}
+
+func NewMessage(txHash string, index int, msgType string, value string, addresses []string) *Message {
+	return &Message{
+		TxHash:    txHash,
+		Index:     index,
+		Type:      msgType,
+		Value:     value,
+		Addresses: addresses,
+	}
+}

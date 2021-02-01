@@ -6,8 +6,6 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 
-	"github.com/desmos-labs/juno/db/utils"
-
 	"github.com/desmos-labs/juno/logging"
 	"github.com/desmos-labs/juno/modules"
 
@@ -188,7 +186,7 @@ func (w Worker) ExportPreCommit(commit *tmtypes.Commit, vals *tmctypes.ResultVal
 func (w Worker) SaveValidator(val *tmtypes.Validator) error {
 	valAddr := sdk.ConsAddress(val.Address).String()
 
-	consPubKey, err := utils.ConvertValidatorPubKeyToBech32String(val.PubKey)
+	consPubKey, err := types.ConvertValidatorPubKeyToBech32String(val.PubKey)
 	if err != nil {
 		log.Error().Err(err).Str("validator", valAddr).Msg("failed to convert validator public key")
 		return err

@@ -6,6 +6,7 @@ require (
 	github.com/BurntSushi/toml v0.3.1
 	github.com/cosmos/cosmos-sdk v0.40.1
 	github.com/go-co-op/gocron v0.3.3
+	github.com/gogo/protobuf v1.3.3
 	github.com/lib/pq v1.9.0
 	github.com/rs/zerolog v1.20.0
 	github.com/spf13/cobra v1.1.1

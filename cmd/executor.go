@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/desmos-labs/juno/modules"
+	"github.com/desmos-labs/juno/modules/registrar"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -43,7 +43,7 @@ them to compose more aggregate and complex queries.`, name),
 // dbBuilder is used to provide the database that will be used to save the data. If you don't have any
 // particular need, you can use the Create variable to build a default database instance.
 func BuildDefaultExecutor(
-	name string, registrar modules.Registrar,
+	name string, registrar registrar.Registrar,
 	setupCfg config.SdkConfigSetup, encodingConfigBuilder config.EncodingConfigBuilder, dbBuilder db.Builder,
 ) cli.Executor {
 	rootCmd := RootCmd(name)

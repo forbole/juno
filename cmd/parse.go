@@ -8,6 +8,8 @@ import (
 	"syscall"
 	"time"
 
+	modsregistrar "github.com/desmos-labs/juno/modules/registrar"
+
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -39,7 +41,7 @@ var (
 
 // ParseCmd returns the command that should be run when we want to start parsing a chain state.
 func ParseCmd(
-	registrar modules.Registrar,
+	registrar modsregistrar.Registrar,
 	encodingConfigBuilder config.EncodingConfigBuilder, setupCfg config.SdkConfigSetup, buildDb db.Builder,
 ) *cobra.Command {
 	cmd := &cobra.Command{
@@ -64,7 +66,7 @@ func ParseCmd(
 // SetupParsing setups all the things that should be later passed to StartParsing in order
 // to parse the chain data properly.
 func SetupParsing(
-	args []string, registrar modules.Registrar,
+	args []string, registrar modsregistrar.Registrar,
 	buildEncodingConfig config.EncodingConfigBuilder, setupCfg config.SdkConfigSetup, buildDb db.Builder,
 ) (*params.EncodingConfig, *client.Proxy, db.Database, []modules.Module, error) {
 	// Setup the logger
@@ -101,7 +103,7 @@ func SetupParsing(
 
 	// Get the modules
 	mods := registrar.BuildModules(cfg, &encodingConfig, sdkConfig, database, cp)
-	registeredModules := modules.GetModules(mods, cfg.CosmosConfig.Modules)
+	registeredModules := modsregistrar.GetModules(mods, cfg.CosmosConfig.Modules)
 
 	// Run all the additional operations
 	for _, module := range registeredModules {
@@ -254,7 +256,7 @@ func trapSignal(cp *client.Proxy) {
 	go func() {
 		sig := <-sigCh
 		log.Info().Str("signal", sig.String()).Msg("caught signal; shutting down...")
-		defer cp.Stop()
+		defer cp.Stop() // nolint: errcheck
 		defer waitGroup.Done()
 	}()
 }
