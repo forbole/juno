@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/simapp/params"
@@ -16,7 +14,6 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/cosmos/cosmos-sdk/types/rest"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 	httpclient "github.com/tendermint/tendermint/rpc/client/http"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -24,9 +21,21 @@ import (
 	"github.com/desmos-labs/juno/config"
 )
 
-// New allows to build a new Proxy instance
-func New(cfg *config.Config, encodingConfig *params.EncodingConfig) (*Proxy, error) {
-	rpcClient, err := httpclient.New(cfg.RPCConfig.Address, "/websocket")
+// Proxy implements a wrapper around both a Tendermint RPC client and a
+// Cosmos Sdk REST client that allows for essential data queries.
+type Proxy struct {
+	ctx            context.Context
+	encodingConfig *params.EncodingConfig
+
+	rpcClient rpcclient.Client
+
+	grpConnection   *grpc.ClientConn
+	txServiceClient tx.ServiceClient
+}
+
+// NewClientProxy allows to build a new Proxy instance
+func NewClientProxy(cfg *config.Config, encodingConfig *params.EncodingConfig) (*Proxy, error) {
+	rpcClient, err := httpclient.New(cfg.RPC.Address, "/websocket")
 	if err != nil {
 		return nil, err
 	}
@@ -44,23 +53,9 @@ func New(cfg *config.Config, encodingConfig *params.EncodingConfig) (*Proxy, err
 		encodingConfig:  encodingConfig,
 		ctx:             context.Background(),
 		rpcClient:       rpcClient,
-		apiEndpoint:     cfg.APIConfig.Address,
 		grpConnection:   grpcConnection,
 		txServiceClient: tx.NewServiceClient(grpcConnection),
 	}, nil
-}
-
-// Proxy implements a wrapper around both a Tendermint RPC client and a
-// CosmosConfig Sdk REST client that allows for essential data queries.
-type Proxy struct {
-	ctx            context.Context
-	encodingConfig *params.EncodingConfig
-
-	rpcClient   rpcclient.Client
-	apiEndpoint string
-
-	grpConnection   *grpc.ClientConn
-	txServiceClient tx.ServiceClient
 }
 
 // LatestHeight returns the latest block height on the active chain. An error
@@ -146,42 +141,6 @@ func (cp *Proxy) SubscribeEvents(subscriber, query string) (<-chan tmctypes.Resu
 // the context and handle any errors appropriately.
 func (cp *Proxy) SubscribeNewBlocks(subscriber string) (<-chan tmctypes.ResultEvent, context.CancelFunc, error) {
 	return cp.SubscribeEvents(subscriber, "tm.event = 'NewBlock'")
-}
-
-// QueryLCD queries the LCD at the given endpoint, and deserializes the result into the given pointer.
-// If an error is raised, returns the error.
-func (cp *Proxy) QueryLCD(endpoint string, ptr interface{}) error {
-	resp, err := http.Get(fmt.Sprintf("%s/%s", cp.apiEndpoint, endpoint))
-	if err != nil {
-		return err
-	}
-
-	defer resp.Body.Close()
-
-	bz, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
-	if err := cp.encodingConfig.Amino.UnmarshalJSON(bz, ptr); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// QueryLCDWithHeight should be used when the endpoint of the LCD returns the height of the
-// request inside the result. It queries such endpoint, deserializes the result and further the
-// result data into the given pointer. It returns the retrieved height as well as any error that
-// might have been raised.
-func (cp *Proxy) QueryLCDWithHeight(endpoint string, ptr interface{}) (int64, error) {
-	var result rest.ResponseWithHeight
-	err := cp.QueryLCD(endpoint, &result)
-	if err != nil {
-		return -1, err
-	}
-
-	return result.Height, cp.encodingConfig.Amino.UnmarshalJSON(result.Result, ptr)
 }
 
 // Tx queries for a transaction from the REST client and decodes it into a sdk.Tx

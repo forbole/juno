@@ -3,13 +3,14 @@ package main
 import (
 	"os"
 
+	"github.com/desmos-labs/juno/types"
+
 	"github.com/desmos-labs/juno/modules/messages"
 	"github.com/desmos-labs/juno/modules/registrar"
 
 	"github.com/cosmos/cosmos-sdk/simapp"
 
 	"github.com/desmos-labs/juno/cmd"
-	"github.com/desmos-labs/juno/config"
 	stddb "github.com/desmos-labs/juno/db/builder"
 )
 
@@ -20,7 +21,7 @@ func main() {
 		registrar.NewDefaultRegistrar(
 			messages.CosmosMessageAddressesParser,
 		),
-		config.DefaultSetup,
+		types.DefaultSetup,
 		simapp.MakeTestEncodingConfig,
 		stddb.Builder,
 	)

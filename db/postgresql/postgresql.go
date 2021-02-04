@@ -21,7 +21,7 @@ import (
 // OpenDB opens a database connection with the given database connection info
 // from config. It returns a database connection handle or an error if the
 // connection fails.
-func Builder(cfg *config.PostgreSQLConfig, encodingConfig *params.EncodingConfig) (db.Database, error) {
+func Builder(cfg *config.DatabaseConfig, encodingConfig *params.EncodingConfig) (db.Database, error) {
 	sslMode := "disable"
 	if cfg.SSLMode != "" {
 		sslMode = cfg.SSLMode
