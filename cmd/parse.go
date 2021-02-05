@@ -34,12 +34,14 @@ var (
 
 // ParseCmd returns the command that should be run when we want to start parsing a chain state.
 func ParseCmd(
+	name string,
 	registrar modsregistrar.Registrar, encodingConfigBuilder types.EncodingConfigBuilder,
 	setupCfg types.SdkConfigSetup, buildDb db.Builder,
 ) *cobra.Command {
 	return &cobra.Command{
-		Use:   "parse",
-		Short: "Start parsing the blockchain data",
+		Use:     "parse",
+		Short:   "Start parsing the blockchain data",
+		PreRunE: concatCobraCmdFuncs(readConfig(name), setupLogging),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cdc, cp, database, registeredModules, err := SetupParsing(
 				registrar, encodingConfigBuilder, setupCfg, buildDb,

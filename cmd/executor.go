@@ -42,7 +42,7 @@ func BuildDefaultExecutor(
 	rootCmd.AddCommand(
 		VersionCmd(),
 		InitCmd(name),
-		ParseCmd(registrar, encodingConfigBuilder, setupCfg, dbBuilder),
+		ParseCmd(name, registrar, encodingConfigBuilder, setupCfg, dbBuilder),
 	)
 
 	return PrepareRootCmd(name, rootCmd)
@@ -66,8 +66,6 @@ them to compose more aggregate and complex queries.`, name),
 func PrepareRootCmd(name string, cmd *cobra.Command) cli.Executor {
 	cmd.PersistentPreRunE = concatCobraCmdFuncs(
 		bindFlagsLoadViper,
-		readConfig(name),
-		setupLogging,
 		cmd.PersistentPreRunE,
 	)
 	return cli.Executor{Command: cmd, Exit: os.Exit}
@@ -132,8 +130,7 @@ func setupLogging(_ *cobra.Command, _ []string) error {
 	zerolog.SetGlobalLevel(logLvl)
 
 	// Init logging format
-	logFormat := viper.GetString(config.Cfg.Logging.LogFormat)
-	switch logFormat {
+	switch config.Cfg.Logging.LogFormat {
 	case LogFormatJSON:
 		// JSON is the default logging format
 		break
@@ -143,7 +140,7 @@ func setupLogging(_ *cobra.Command, _ []string) error {
 		break
 
 	default:
-		return fmt.Errorf("invalid logging format: %s", logFormat)
+		return fmt.Errorf("invalid logging format: %s", config.Cfg.Logging.LogFormat)
 	}
 	return err
 }
