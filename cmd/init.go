@@ -44,7 +44,7 @@ func InitCmd(name string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "init",
 		Short: fmt.Sprintf("Initializes the configuration files for %s", name),
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 
 			// Create the config path if not present
 			folderPath := config.GetConfigFolderPath(name)
