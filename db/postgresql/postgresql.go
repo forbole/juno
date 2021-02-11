@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/rs/zerolog/log"
+
 	"github.com/desmos-labs/juno/config"
 
 	"github.com/cosmos/cosmos-sdk/simapp/params"
@@ -21,7 +23,7 @@ import (
 // OpenDB opens a database connection with the given database connection info
 // from config. It returns a database connection handle or an error if the
 // connection fails.
-func Builder(cfg *config.PostgreSQLConfig, encodingConfig *params.EncodingConfig) (db.Database, error) {
+func Builder(cfg *config.DatabaseConfig, encodingConfig *params.EncodingConfig) (db.Database, error) {
 	sslMode := "disable"
 	if cfg.SSLMode != "" {
 		sslMode = cfg.SSLMode
@@ -171,4 +173,12 @@ VALUES ($1, $2, $3, $4, $5)`
 
 	_, err := db.Sql.Exec(stmt, msg.TxHash, msg.Index, msg.Type, msg.Value, pq.Array(msg.Addresses))
 	return err
+}
+
+// Close implements db.Database
+func (db *Database) Close() {
+	err := db.Sql.Close()
+	if err != nil {
+		log.Error().Str("module", "psql database").Err(err).Msg("error while closing connection")
+	}
 }

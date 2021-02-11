@@ -18,6 +18,10 @@ var (
 	Commit = ""
 )
 
+const (
+	flagFormat = "format"
+)
+
 // VersionCmd returns the command that allows to show the version information
 func VersionCmd() *cobra.Command {
 	versionCmd := &cobra.Command{
@@ -40,7 +44,7 @@ func VersionCmd() *cobra.Command {
 				err error
 			)
 
-			versionFormat := viper.GetString(FlagFormat)
+			versionFormat := viper.GetString(flagFormat)
 			switch versionFormat {
 			case "json":
 				bz, err = json.Marshal(verInfo)
@@ -58,7 +62,7 @@ func VersionCmd() *cobra.Command {
 		},
 	}
 
-	versionCmd.Flags().String(FlagFormat, "text", "Print the version in the given format (text | json)")
+	versionCmd.Flags().String(flagFormat, "text", "Print the version in the given format (text | json)")
 
 	return versionCmd
 }

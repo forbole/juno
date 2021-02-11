@@ -1,8 +1,8 @@
 package types
 
-// Queue is a simple type alias for a (buffered) channel of block heights.
-type Queue chan int64
+// HeightQueue is a simple type alias for a (buffered) channel of block heights.
+type HeightQueue chan int64
 
-func NewQueue(size int) Queue {
+func NewQueue(size int) HeightQueue {
 	return make(chan int64, size)
 }

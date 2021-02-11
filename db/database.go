@@ -41,6 +41,9 @@ type Database interface {
 	// SaveMessage stores a single message.
 	// An error is returned if the operation fails.
 	SaveMessage(msg *types.Message) error
+
+	// Close closes the connection to the database
+	Close()
 }
 
 // Create represents a method that allows to build any database from a given codec and configuration

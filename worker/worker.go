@@ -22,7 +22,7 @@ import (
 // Worker defines a job consumer that is responsible for getting and
 // aggregating block and associated data and exporting it to a database.
 type Worker struct {
-	queue          types.Queue
+	queue          types.HeightQueue
 	encodingConfig *params.EncodingConfig
 	cp             *client.Proxy
 	db             db.Database
@@ -31,7 +31,7 @@ type Worker struct {
 
 // NewWorker allows to create a new Worker implementation.
 func NewWorker(
-	encodingConfig *params.EncodingConfig, q types.Queue, cp *client.Proxy, db db.Database, modules []modules.Module,
+	encodingConfig *params.EncodingConfig, q types.HeightQueue, cp *client.Proxy, db db.Database, modules []modules.Module,
 ) Worker {
 	return Worker{
 		encodingConfig: encodingConfig,
@@ -112,15 +112,19 @@ func (w Worker) process(height int64) error {
 // HandleGenesis accepts a GenesisDoc and calls all the registered genesis handlers
 // in the order in which they have been registered.
 func (w Worker) HandleGenesis(genesis *tmtypes.GenesisDoc) error {
+	log.Info().Str("module", "worker").Msg("handling genesis")
+
 	var appState map[string]json.RawMessage
 	if err := json.Unmarshal(genesis.AppState, &appState); err != nil {
 		return fmt.Errorf("error unmarshalling genesis doc %s: %s", appState, err.Error())
 	}
 
-	// Call the block handlers
+	// Call the genesis handlers
 	for _, module := range w.modules {
-		if err := module.HandleGenesis(genesis, appState); err != nil {
-			logging.LogGenesisError(err)
+		if module, ok := module.(modules.GenesisModule); ok {
+			if err := module.HandleGenesis(genesis, appState); err != nil {
+				logging.LogGenesisError(err)
+			}
 		}
 	}
 
@@ -236,9 +240,11 @@ func (w Worker) ExportBlock(b *tmctypes.ResultBlock, txs []*types.Tx, vals *tmct
 
 	// Call the block handlers
 	for _, module := range w.modules {
-		err := module.HandleBlock(b, txs, vals)
-		if err != nil {
-			logging.LogBlockError(err)
+		if module, ok := module.(modules.BlockModule); ok {
+			err := module.HandleBlock(b, txs, vals)
+			if err != nil {
+				logging.LogBlockError(err)
+			}
 		}
 	}
 
@@ -260,9 +266,11 @@ func (w Worker) ExportTxs(txs []*types.Tx) error {
 
 		// Call the tx handlers
 		for _, module := range w.modules {
-			err := module.HandleTx(tx)
-			if err != nil {
-				logging.LogTxError(err)
+			if module, ok := module.(modules.TransactionModule); ok {
+				err := module.HandleTx(tx)
+				if err != nil {
+					logging.LogTxError(err)
+				}
 			}
 		}
 
@@ -276,9 +284,11 @@ func (w Worker) ExportTxs(txs []*types.Tx) error {
 
 			// Call the handlers
 			for _, module := range w.modules {
-				err = module.HandleMsg(i, stdMsg, tx)
-				if err != nil {
-					logging.LogMsgError(err)
+				if module, ok := module.(modules.MessageModule); ok {
+					err = module.HandleMsg(i, stdMsg, tx)
+					if err != nil {
+						logging.LogMsgError(err)
+					}
 				}
 			}
 		}
