@@ -48,6 +48,10 @@ func Builder(cfg *config.DatabaseConfig, encodingConfig *params.EncodingConfig) 
 		return nil, err
 	}
 
+	// Set max open connections
+	postgresDb.SetMaxOpenConns(cfg.MaxOpenConnections)
+	postgresDb.SetMaxIdleConns(cfg.MaxIdleConnections)
+
 	return &Database{Sql: postgresDb, EncodingConfig: encodingConfig}, nil
 }
 

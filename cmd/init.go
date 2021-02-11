@@ -5,8 +5,6 @@ import (
 	"os"
 
 	"github.com/rs/zerolog"
-	"github.com/spf13/viper"
-
 	"github.com/spf13/cobra"
 
 	"github.com/desmos-labs/juno/config"
@@ -18,20 +16,26 @@ const (
 
 	flagReplace = "replace"
 
-	flagRPCAddress         = "rpc-address"
-	flagGRPCAddress        = "grpc-address"
-	flagGRPCInsecure       = "grpc-insecure"
-	flagCosmosPrefix       = "cosmos-prefix"
-	flagCosmosModules      = "cosmos-modules"
-	flagDatabaseName       = "database-name"
-	flagDatabaseHost       = "database-host"
-	flagDatabasePort       = "database-port"
-	flagDatabaseUser       = "database-user"
-	flagDatabasePassword   = "database-password"
-	flagDatabaseSSLMode    = "database-ssl-mode"
-	flagDatabaseSchema     = "database-schema"
-	flagLoggingLevel       = "logging-level"
-	flagLoggingFormat      = "logging-format"
+	flagRPCAddress   = "rpc-address"
+	flagGRPCAddress  = "grpc-address"
+	flagGRPCInsecure = "grpc-insecure"
+
+	flagCosmosPrefix  = "cosmos-prefix"
+	flagCosmosModules = "cosmos-modules"
+
+	flagDatabaseName               = "database-name"
+	flagDatabaseHost               = "database-host"
+	flagDatabasePort               = "database-port"
+	flagDatabaseUser               = "database-user"
+	flagDatabasePassword           = "database-password"
+	flagDatabaseSSLMode            = "database-ssl-mode"
+	flagDatabaseSchema             = "database-schema"
+	flagDatabaseMaxOpenConnections = "max-open-connections"
+	flagDatabaseMaxIdleConnections = "max-idle-connections"
+
+	flagLoggingLevel  = "logging-level"
+	flagLoggingFormat = "logging-format"
+
 	flagParsingWorkers     = "parsing-workers"
 	flagParsingNewBlocks   = "parsing-new-blocks"
 	flagParsingOldBlocks   = "parsing-old-blocks"
@@ -71,7 +75,7 @@ func InitCmd(name string) *cobra.Command {
 					configFilePath, flagReplace)
 			}
 
-			return config.Write(readConfigFromFlags(), configFilePath)
+			return config.Write(readConfigFromFlags(cmd), configFilePath)
 		},
 	}
 
@@ -92,6 +96,8 @@ func InitCmd(name string) *cobra.Command {
 	cmd.Flags().String(flagDatabasePassword, "password", "Password to use when authenticating inside the database")
 	cmd.Flags().String(flagDatabaseSSLMode, "", "SSL mode to use when connecting to the database")
 	cmd.Flags().String(flagDatabaseSchema, "public", "Database schema to use")
+	cmd.Flags().Int(flagDatabaseMaxOpenConnections, 0, "Max open connections (a value less than or equal to 0 means unlimited)")
+	cmd.Flags().Int(flagDatabaseMaxIdleConnections, 0, "Max connections in the idle state (a value less than or equal to 0 means unlimited)")
 
 	cmd.Flags().String(flagLoggingLevel, zerolog.DebugLevel.String(), "Logging level to be used")
 	cmd.Flags().String(flagLoggingFormat, LogFormatText, "Logging format to be used")
@@ -105,38 +111,56 @@ func InitCmd(name string) *cobra.Command {
 	return cmd
 }
 
-func readConfigFromFlags() *config.Config {
+func readConfigFromFlags(cmd *cobra.Command) *config.Config {
+	rpcAddr, _ := cmd.Flags().GetString(flagRPCAddress)
+
+	grpcAddr, _ := cmd.Flags().GetString(flagGRPCAddress)
+	grpcInsecure, _ := cmd.Flags().GetBool(flagGRPCInsecure)
+
+	cosmosPrefix, _ := cmd.Flags().GetString(flagCosmosPrefix)
+	cosmosModules, _ := cmd.Flags().GetStringSlice(flagCosmosModules)
+
+	dbName, _ := cmd.Flags().GetString(flagDatabaseName)
+	dbHost, _ := cmd.Flags().GetString(flagDatabaseHost)
+	dbPort, _ := cmd.Flags().GetInt64(flagDatabasePort)
+	dbUser, _ := cmd.Flags().GetString(flagDatabaseUser)
+	dbPassword, _ := cmd.Flags().GetString(flagDatabasePassword)
+	dbSSLMode, _ := cmd.Flags().GetString(flagDatabaseSSLMode)
+	dbSchema, _ := cmd.Flags().GetString(flagDatabaseSchema)
+	dbMaxOpenConnections, _ := cmd.Flags().GetInt(flagDatabaseMaxOpenConnections)
+	dbMaxIdleConnections, _ := cmd.Flags().GetInt(flagDatabaseMaxIdleConnections)
+
+	loggingLevel, _ := cmd.Flags().GetString(flagLoggingLevel)
+	loggingFormat, _ := cmd.Flags().GetString(flagLoggingFormat)
+
+	parsingWorkers, _ := cmd.Flags().GetInt64(flagParsingWorkers)
+	parsingNewBlocks, _ := cmd.Flags().GetBool(flagParsingNewBlocks)
+	parsingOldBlocks, _ := cmd.Flags().GetBool(flagParsingOldBlocks)
+	parsingStartHeight, _ := cmd.Flags().GetInt64(flagParsingStartHeight)
+	parsingFastSync, _ := cmd.Flags().GetBool(flagParsingFastSync)
+
 	cfg := config.NewConfig(
-		config.NewRPCConfig(
-			viper.GetString(flagRPCAddress),
-		),
-		config.NewGrpcConfig(
-			viper.GetString(flagGRPCAddress),
-			viper.GetBool(flagGRPCInsecure),
-		),
-		config.NewCosmosConfig(
-			viper.GetString(flagCosmosPrefix),
-			viper.GetStringSlice(flagCosmosModules),
-		),
+		config.NewRPCConfig(rpcAddr),
+		config.NewGrpcConfig(grpcAddr, grpcInsecure),
+		config.NewCosmosConfig(cosmosPrefix, cosmosModules),
 		config.NewDatabaseConfig(
-			viper.GetString(flagDatabaseName),
-			viper.GetString(flagDatabaseHost),
-			viper.GetInt64(flagDatabasePort),
-			viper.GetString(flagDatabaseUser),
-			viper.GetString(flagDatabasePassword),
-			viper.GetString(flagDatabaseSSLMode),
-			viper.GetString(flagDatabaseSchema),
+			dbName,
+			dbHost,
+			dbPort,
+			dbUser,
+			dbPassword,
+			dbSSLMode,
+			dbSchema,
+			dbMaxOpenConnections,
+			dbMaxIdleConnections,
 		),
-		config.NewLoggingConfig(
-			viper.GetString(flagLoggingLevel),
-			viper.GetString(flagLoggingFormat),
-		),
+		config.NewLoggingConfig(loggingLevel, loggingFormat),
 		config.NewParsingConfig(
-			viper.GetInt64(flagParsingWorkers),
-			viper.GetBool(flagParsingNewBlocks),
-			viper.GetBool(flagParsingOldBlocks),
-			viper.GetInt64(flagParsingStartHeight),
-			viper.GetBool(flagParsingFastSync),
+			parsingWorkers,
+			parsingNewBlocks,
+			parsingOldBlocks,
+			parsingStartHeight,
+			parsingFastSync,
 		),
 	)
 	return cfg

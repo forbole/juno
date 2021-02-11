@@ -70,26 +70,32 @@ func NewCosmosConfig(prefix string, modules []string) *CosmosConfig {
 
 // DatabaseConfig represents a generic database configuration
 type DatabaseConfig struct {
-	Name     string `toml:"name"`
-	Host     string `toml:"host"`
-	Port     int64  `toml:"port"`
-	User     string `toml:"user"`
-	Password string `toml:"password"`
-	SSLMode  string `toml:"ssl_mode"`
-	Schema   string `toml:"schema"`
+	Name               string `toml:"name"`
+	Host               string `toml:"host"`
+	Port               int64  `toml:"port"`
+	User               string `toml:"user"`
+	Password           string `toml:"password"`
+	SSLMode            string `toml:"ssl_mode"`
+	Schema             string `toml:"schema"`
+	MaxOpenConnections int    `toml:"max_open_connections"`
+	MaxIdleConnections int    `toml:"max_idle_connections"`
 }
 
 func NewDatabaseConfig(
-	name, host string, port int64, user string, password string, sslMode string, schema string,
+	name, host string, port int64, user string, password string,
+	sslMode string, schema string,
+	maxOpenConnections int, maxIdleConnections int,
 ) *DatabaseConfig {
 	return &DatabaseConfig{
-		Name:     name,
-		Host:     host,
-		Port:     port,
-		User:     user,
-		Password: password,
-		SSLMode:  sslMode,
-		Schema:   schema,
+		Name:               name,
+		Host:               host,
+		Port:               port,
+		User:               user,
+		Password:           password,
+		SSLMode:            sslMode,
+		Schema:             schema,
+		MaxOpenConnections: maxOpenConnections,
+		MaxIdleConnections: maxIdleConnections,
 	}
 }
 
