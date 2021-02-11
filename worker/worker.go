@@ -112,6 +112,8 @@ func (w Worker) process(height int64) error {
 // HandleGenesis accepts a GenesisDoc and calls all the registered genesis handlers
 // in the order in which they have been registered.
 func (w Worker) HandleGenesis(genesis *tmtypes.GenesisDoc) error {
+	log.Info().Str("module", "worker").Msg("handling genesis")
+
 	var appState map[string]json.RawMessage
 	if err := json.Unmarshal(genesis.AppState, &appState); err != nil {
 		return fmt.Errorf("error unmarshalling genesis doc %s: %s", appState, err.Error())

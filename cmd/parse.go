@@ -147,7 +147,7 @@ func StartParsing(
 	}
 
 	// Listen for and trap any OS signal to gracefully shutdown and exit
-	trapSignal(cp)
+	trapSignal(cp, db)
 
 	if cfg.ParseOldBlocks {
 		go enqueueMissingBlocks(registeredModules, exportQueue, cp)
@@ -176,7 +176,8 @@ func enqueueMissingBlocks(registeredModules []modules.Module, exportQueue types.
 
 	startHeight := cfg.StartHeight
 	if cfg.FastSync {
-		log.Debug().Msg("fast sync is enabled, ignoring all previous blocks")
+		log.Info().Int64("latest_block_height", latestBlockHeight).
+			Msg("fast sync is enabled, ignoring all previous blocks")
 		for _, module := range registeredModules {
 			if mod, ok := module.(modules.FastSyncModule); ok {
 				err := mod.DownloadState(latestBlockHeight)
@@ -189,7 +190,8 @@ func enqueueMissingBlocks(registeredModules []modules.Module, exportQueue types.
 			}
 		}
 	} else {
-		log.Debug().Int64("latest_block_height", latestBlockHeight).Msg("syncing missing blocks...")
+		log.Info().Int64("latest_block_height", latestBlockHeight).
+			Msg("syncing missing blocks...")
 		for i := startHeight; i <= latestBlockHeight; i++ {
 			log.Debug().Int64("height", i).Msg("enqueueing missing block")
 			exportQueue <- i
@@ -221,7 +223,7 @@ func startNewBlockListener(exportQueue types.HeightQueue, cp *client.Proxy) {
 
 // trapSignal will listen for any OS signal and invoke Done on the main
 // WaitGroup allowing the main process to gracefully exit.
-func trapSignal(cp *client.Proxy) {
+func trapSignal(cp *client.Proxy, db db.Database) {
 	var sigCh = make(chan os.Signal)
 
 	signal.Notify(sigCh, syscall.SIGTERM)
@@ -230,7 +232,8 @@ func trapSignal(cp *client.Proxy) {
 	go func() {
 		sig := <-sigCh
 		log.Info().Str("signal", sig.String()).Msg("caught signal; shutting down...")
-		defer cp.Stop() // nolint: errcheck
+		defer cp.Stop()
+		defer db.Close()
 		defer waitGroup.Done()
 	}()
 }

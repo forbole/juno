@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/rs/zerolog/log"
+
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/tx"
@@ -121,8 +123,11 @@ func (cp *Proxy) Genesis() (*tmctypes.ResultGenesis, error) {
 }
 
 // Stop defers the node stop execution to the RPC client.
-func (cp *Proxy) Stop() error {
-	return cp.rpcClient.Stop()
+func (cp *Proxy) Stop() {
+	err := cp.rpcClient.Stop()
+	if err != nil {
+		log.Fatal().Str("module", "client proxy").Err(err).Msg("error while stopping proxy")
+	}
 }
 
 // SubscribeEvents subscribes to new events with the given query through the RPC
