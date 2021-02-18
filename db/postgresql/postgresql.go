@@ -162,7 +162,7 @@ func (db *Database) SaveValidator(addr, pk string) error {
 func (db *Database) SaveCommitSig(height int64, pc tmtypes.CommitSig, votingPower, proposerPriority int64) error {
 	sqlStatement := `
 INSERT INTO pre_commit (validator_address, height, timestamp, voting_power, proposer_priority)
-VALUES ($1, $2, $3, $4, $5);`
+VALUES ($1, $2, $3, $4, $5) ON CONFLICT (validator_address, height) DO NOTHING;`
 
 	address := types.ConvertValidatorAddressToBech32String(pc.ValidatorAddress)
 	_, err := db.Sql.Exec(sqlStatement, address, height, pc.Timestamp, votingPower, proposerPriority)
