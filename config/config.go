@@ -13,6 +13,7 @@ type Config struct {
 	Database *DatabaseConfig `toml:"database"`
 	Logging  *LoggingConfig  `toml:"logging"`
 	Parsing  *ParsingConfig  `toml:"parsing"`
+	Pruning  *PruningConfig  `toml:"pruning"`
 }
 
 // NewConfig builds a new Config instance
@@ -117,18 +118,29 @@ type ParsingConfig struct {
 	Workers        int64 `toml:"workers"`
 	ParseNewBlocks bool  `toml:"listen_new_blocks"`
 	ParseOldBlocks bool  `toml:"parse_old_blocks"`
-	FastSync       bool  `toml:"fast_sync"`
+	ParseGenesis   bool  `toml:"parse_genesis"`
 	StartHeight    int64 `toml:"start_height"`
+	FastSync       bool  `toml:"fast_sync"`
 }
 
 func NewParsingConfig(
-	workers int64, parseNewBlocks, parseOldBlocks bool, startHeight int64, fastSync bool,
+	workers int64,
+	parseNewBlocks, parseOldBlocks bool,
+	parseGenesis bool, startHeight int64, fastSync bool,
 ) *ParsingConfig {
 	return &ParsingConfig{
 		Workers:        workers,
 		ParseOldBlocks: parseOldBlocks,
 		ParseNewBlocks: parseNewBlocks,
+		ParseGenesis:   parseGenesis,
 		StartHeight:    startHeight,
 		FastSync:       fastSync,
 	}
+}
+
+// PruningConfig contains the configuration of the pruning strategy
+type PruningConfig struct {
+	KeepRecent int64 `toml:"keep_recent"`
+	KeepEvery  int64 `toml:"keep_every"`
+	Interval   int64 `toml:"interval"`
 }

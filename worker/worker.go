@@ -46,8 +46,6 @@ func NewWorker(
 // given worker queue. Any failed job is logged and re-enqueued.
 func (w Worker) Start() {
 	for i := range w.queue {
-		log.Debug().Int64("height", i).Msg("processing block")
-
 		if err := w.process(i); err != nil {
 			// re-enqueue any failed job
 			// TODO: Implement exponential backoff or max retries for a block height.
@@ -74,7 +72,7 @@ func (w Worker) process(height int64) error {
 	}
 
 	if height == 1 {
-		log.Debug().Msg("Getting genesis")
+		log.Debug().Msg("getting genesis")
 		response, err := w.cp.Genesis()
 		if err != nil {
 			return err
@@ -82,6 +80,8 @@ func (w Worker) process(height int64) error {
 
 		return w.HandleGenesis(response.Genesis)
 	}
+
+	log.Debug().Int64("height", height).Msg("processing block")
 
 	block, err := w.cp.Block(height)
 	if err != nil {
@@ -112,7 +112,7 @@ func (w Worker) process(height int64) error {
 // HandleGenesis accepts a GenesisDoc and calls all the registered genesis handlers
 // in the order in which they have been registered.
 func (w Worker) HandleGenesis(genesis *tmtypes.GenesisDoc) error {
-	log.Info().Str("module", "worker").Msg("handling genesis")
+	log.Debug().Str("module", "worker").Msg("handling genesis")
 
 	var appState map[string]json.RawMessage
 	if err := json.Unmarshal(genesis.AppState, &appState); err != nil {

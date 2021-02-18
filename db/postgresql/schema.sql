@@ -4,7 +4,6 @@ CREATE TABLE validator
     consensus_pubkey  TEXT NOT NULL UNIQUE /* Validator consensus public key */
 );
 
-
 CREATE TABLE pre_commit
 (
     validator_address TEXT                        NOT NULL REFERENCES validator (consensus_address),
@@ -13,7 +12,6 @@ CREATE TABLE pre_commit
     voting_power      BIGINT                      NOT NULL,
     proposer_priority INTEGER                     NOT NULL
 );
-
 CREATE INDEX pre_commit_validator_address_index ON pre_commit (validator_address);
 CREATE INDEX pre_commit_height_index ON pre_commit (height);
 
@@ -26,7 +24,6 @@ CREATE TABLE block
     proposer_address TEXT                        NOT NULL REFERENCES validator (consensus_address),
     timestamp        TIMESTAMP WITHOUT TIME ZONE NOT NULL
 );
-
 CREATE INDEX block_hash_index ON block (hash);
 CREATE INDEX block_proposer_address_index ON block (proposer_address);
 
@@ -51,7 +48,6 @@ CREATE TABLE transaction
     raw_log      TEXT,
     logs         JSONB
 );
-
 CREATE INDEX transaction_hash_index ON transaction (hash);
 CREATE INDEX transaction_height_index ON transaction (height);
 
@@ -63,5 +59,9 @@ CREATE TABLE message
     value                       JSONB  NOT NULL,
     involved_accounts_addresses TEXT[] NULL
 );
-
 CREATE INDEX message_transaction_hash_index ON message (transaction_hash);
+
+CREATE TABLE pruning
+(
+    last_pruned_height BIGINT NOT NULL
+)

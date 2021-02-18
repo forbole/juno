@@ -5,6 +5,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/rs/zerolog/log"
 
+	"github.com/desmos-labs/juno/modules/pruning"
+
 	"github.com/desmos-labs/juno/modules"
 	"github.com/desmos-labs/juno/modules/messages"
 
@@ -47,9 +49,10 @@ func NewDefaultRegistrar(parser messages.MessageAddressesParser) *DefaultRegistr
 
 // BuildModules implements Registrar
 func (r *DefaultRegistrar) BuildModules(
-	_ *config.Config, encodingCfg *params.EncodingConfig, _ *sdk.Config, db db.Database, _ *client.Proxy,
+	cfg *config.Config, encodingCfg *params.EncodingConfig, _ *sdk.Config, db db.Database, _ *client.Proxy,
 ) modules.Modules {
 	return modules.Modules{
+		pruning.NewModule(cfg.Pruning, db),
 		messages.NewModule(r.parser, encodingCfg.Marshaler, db),
 	}
 }

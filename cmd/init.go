@@ -36,11 +36,12 @@ const (
 	flagLoggingLevel  = "logging-level"
 	flagLoggingFormat = "logging-format"
 
-	flagParsingWorkers     = "parsing-workers"
-	flagParsingNewBlocks   = "parsing-new-blocks"
-	flagParsingOldBlocks   = "parsing-old-blocks"
-	flagParsingStartHeight = "parsing-start-height"
-	flagParsingFastSync    = "parsing-fast-sync"
+	flagParsingWorkers      = "parsing-workers"
+	flagParsingNewBlocks    = "parsing-new-blocks"
+	flagParsingOldBlocks    = "parsing-old-blocks"
+	flagParsingParseGenesis = "parsing-parse-genesis"
+	flagParsingStartHeight  = "parsing-start-height"
+	flagParsingFastSync     = "parsing-fast-sync"
 )
 
 // InitCmd returns the command that should be run in order to properly initialize BDJuno
@@ -105,6 +106,7 @@ func InitCmd(name string) *cobra.Command {
 	cmd.Flags().Int64(flagParsingWorkers, 1, "Number of workers to use")
 	cmd.Flags().Bool(flagParsingNewBlocks, true, "Whether or not to parse new blocks")
 	cmd.Flags().Bool(flagParsingOldBlocks, true, "Whether or not to parse old blocks")
+	cmd.Flags().Bool(flagParsingParseGenesis, true, "Whether or not to parse the genesis")
 	cmd.Flags().Int64(flagParsingStartHeight, 1, "Starting height when parsing new blocks")
 	cmd.Flags().Bool(flagParsingFastSync, true, "Whether to use fast sync or not when parsing old blocks")
 
@@ -136,6 +138,7 @@ func readConfigFromFlags(cmd *cobra.Command) *config.Config {
 	parsingWorkers, _ := cmd.Flags().GetInt64(flagParsingWorkers)
 	parsingNewBlocks, _ := cmd.Flags().GetBool(flagParsingNewBlocks)
 	parsingOldBlocks, _ := cmd.Flags().GetBool(flagParsingOldBlocks)
+	parsingParseGenesis, _ := cmd.Flags().GetBool(flagParsingParseGenesis)
 	parsingStartHeight, _ := cmd.Flags().GetInt64(flagParsingStartHeight)
 	parsingFastSync, _ := cmd.Flags().GetBool(flagParsingFastSync)
 
@@ -159,6 +162,7 @@ func readConfigFromFlags(cmd *cobra.Command) *config.Config {
 			parsingWorkers,
 			parsingNewBlocks,
 			parsingOldBlocks,
+			parsingParseGenesis,
 			parsingStartHeight,
 			parsingFastSync,
 		),

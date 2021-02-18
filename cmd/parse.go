@@ -149,6 +149,11 @@ func StartParsing(
 	// Listen for and trap any OS signal to gracefully shutdown and exit
 	trapSignal(cp, db)
 
+	if cfg.ParseGenesis {
+		// Add the genesis to the queue if requested
+		exportQueue <- 1
+	}
+
 	if cfg.ParseOldBlocks {
 		go enqueueMissingBlocks(registeredModules, exportQueue, cp)
 	}
@@ -174,7 +179,6 @@ func enqueueMissingBlocks(registeredModules []modules.Module, exportQueue types.
 		log.Fatal().Err(fmt.Errorf("failed to get last block from RPC client: %s", err))
 	}
 
-	startHeight := cfg.StartHeight
 	if cfg.FastSync {
 		log.Info().Int64("latest_block_height", latestBlockHeight).
 			Msg("fast sync is enabled, ignoring all previous blocks")
@@ -192,7 +196,7 @@ func enqueueMissingBlocks(registeredModules []modules.Module, exportQueue types.
 	} else {
 		log.Info().Int64("latest_block_height", latestBlockHeight).
 			Msg("syncing missing blocks...")
-		for i := startHeight; i <= latestBlockHeight; i++ {
+		for i := cfg.StartHeight; i <= latestBlockHeight; i++ {
 			log.Debug().Int64("height", i).Msg("enqueueing missing block")
 			exportQueue <- i
 		}
