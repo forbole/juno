@@ -213,6 +213,12 @@ func (w Worker) ExportBlock(b *tmctypes.ResultBlock, txs []*types.Tx, vals *tmct
 	// the proposer has never signed before.
 	proposerAddr := sdk.ConsAddress(b.Block.ProposerAddress)
 
+	data, err := w.cp.ConsensusState()
+	if err != nil {
+		return err
+	}
+	log.Debug().RawJSON("vote", data.Votes)
+
 	val := findValidatorByAddr(proposerAddr.String(), vals)
 	if val == nil {
 		err := fmt.Errorf("failed to find validator")
@@ -226,7 +232,7 @@ func (w Worker) ExportBlock(b *tmctypes.ResultBlock, txs []*types.Tx, vals *tmct
 		return err
 	}
 
-	err := w.SaveValidator(val)
+	err = w.SaveValidator(val)
 	if err != nil {
 		return err
 	}

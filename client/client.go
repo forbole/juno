@@ -4,9 +4,8 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"time"
-
 	"github.com/rs/zerolog/log"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -16,9 +15,12 @@ import (
 
 	"google.golang.org/grpc"
 
+	tmjson "github.com/tendermint/tendermint/libs/json"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 	httpclient "github.com/tendermint/tendermint/rpc/client/http"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+
+	constypes "github.com/tendermint/tendermint/consensus/types"
 
 	"github.com/desmos-labs/juno/config"
 )
@@ -77,10 +79,6 @@ func (cp *Proxy) Block(height int64) (*tmctypes.ResultBlock, error) {
 	return cp.rpcClient.Block(cp.ctx, &height)
 }
 
-func (cp *Proxy) BlockResults(height int64) (*tmctypes.ResultBlockResults, error) {
-	return cp.rpcClient.BlockResults(cp.ctx, &height)
-}
-
 // TendermintTx queries for a transaction by hash. An error is returned if the
 // query fails.
 func (cp *Proxy) TendermintTx(hash string) (*tmctypes.ResultTx, error) {
@@ -122,12 +120,19 @@ func (cp *Proxy) Genesis() (*tmctypes.ResultGenesis, error) {
 	return cp.rpcClient.Genesis(cp.ctx)
 }
 
-// Stop defers the node stop execution to the RPC client.
-func (cp *Proxy) Stop() {
-	err := cp.rpcClient.Stop()
+// ConsensusState returns the consensus state of the chain
+func (cp *Proxy) ConsensusState() (*constypes.RoundStateSimple, error) {
+	state, err := cp.rpcClient.ConsensusState(context.Background())
 	if err != nil {
-		log.Fatal().Str("module", "client proxy").Err(err).Msg("error while stopping proxy")
+		return nil, err
 	}
+
+	var data constypes.RoundStateSimple
+	err = tmjson.Unmarshal(state.RoundState, &data)
+	if err != nil {
+		return nil, err
+	}
+	return &data, nil
 }
 
 // SubscribeEvents subscribes to new events with the given query through the RPC
@@ -179,4 +184,12 @@ func (cp *Proxy) Txs(block *tmctypes.ResultBlock) ([]*types.Tx, error) {
 	}
 
 	return txResponses, nil
+}
+
+// Stop defers the node stop execution to the RPC client.
+func (cp *Proxy) Stop() {
+	err := cp.rpcClient.Stop()
+	if err != nil {
+		log.Fatal().Str("module", "client proxy").Err(err).Msg("error while stopping proxy")
+	}
 }
