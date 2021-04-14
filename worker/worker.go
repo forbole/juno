@@ -75,6 +75,7 @@ func (w Worker) process(height int64) error {
 		log.Debug().Msg("getting genesis")
 		response, err := w.cp.Genesis()
 		if err != nil {
+			log.Error().Err(err).Msg("failed to get genesis")
 			return err
 		}
 
