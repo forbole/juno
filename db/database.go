@@ -29,7 +29,7 @@ type Database interface {
 	// An error is returned if the operation fails.
 	HasValidator(address string) (bool, error)
 
-	// SetValidator stores a validator if it does not already exist.
+	// SaveValidator stores a validator if it does not already exist.
 	// An error is returned if the operation fails.
 	// The address should be the consensus address of the validator.
 	SaveValidator(address, publicKey string) error
@@ -58,5 +58,5 @@ type PruningDb interface {
 	GetLastPruned() (int64, error)
 }
 
-// Create represents a method that allows to build any database from a given codec and configuration
+// Builder represents a method that allows to build any database from a given codec and configuration
 type Builder func(cfg *config.Config, encodingConfig *params.EncodingConfig) (Database, error)
