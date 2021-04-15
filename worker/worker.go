@@ -14,6 +14,8 @@ import (
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 
+	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
+
 	"github.com/desmos-labs/juno/client"
 	"github.com/desmos-labs/juno/db"
 	"github.com/desmos-labs/juno/types"
@@ -120,6 +122,26 @@ func (w Worker) HandleGenesis(genesis *tmtypes.GenesisDoc) error {
 		return fmt.Errorf("error unmarshalling genesis doc %s: %s", appState, err.Error())
 	}
 
+	// Store a new block with height 1
+	// Since the genesis has no proposer, we simply take the first validator and use its address as the proposer
+	// Also, the number of transactions will be the length of the genesis transactions slice
+	var genUtilState genutiltypes.GenesisState
+	if err := json.Unmarshal(appState[genutiltypes.ModuleName], &genUtilState); err != nil {
+		return fmt.Errorf("error unmarshaling gentuil genesis state: %s", err)
+	}
+
+	err := w.db.SaveBlock(types.NewBlock(
+		genesis.InitialHeight,
+		genesis.AppHash.String(),
+		len(genUtilState.GenTxs),
+		0,
+		"",
+		genesis.GenesisTime,
+	))
+	if err != nil {
+		return fmt.Errorf("error while saving genesis block: %s", err)
+	}
+
 	// Call the genesis handlers
 	for _, module := range w.modules {
 		if module, ok := module.(modules.GenesisModule); ok {
@@ -170,7 +192,13 @@ func (w Worker) ExportPreCommit(commit *tmtypes.Commit, vals *tmctypes.ResultVal
 			return err
 		}
 
-		err = w.db.SaveCommitSig(commit.Height, commitSig, val.VotingPower, val.ProposerPriority)
+		err = w.db.SaveCommitSig(types.NewCommitSig(
+			types.ConvertValidatorAddressToBech32String(commitSig.ValidatorAddress),
+			val.VotingPower,
+			val.ProposerPriority,
+			commit.Height,
+			commitSig.Timestamp,
+		))
 		if err != nil {
 			log.Error().
 				Err(err).
@@ -239,7 +267,7 @@ func (w Worker) ExportBlock(b *tmctypes.ResultBlock, txs []*types.Tx, vals *tmct
 	}
 
 	// Save the block
-	err = w.db.SaveBlock(b, sumGasTxs(txs))
+	err = w.db.SaveBlock(types.NewBlockFromTmBlock(b, sumGasTxs(txs)))
 	if err != nil {
 		log.Error().Err(err).Int64("height", b.Block.Height).Msg("failed to persist block")
 		return err

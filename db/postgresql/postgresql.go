@@ -13,14 +13,12 @@ import (
 	"github.com/lib/pq"
 
 	_ "github.com/lib/pq" // nolint
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
-	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/desmos-labs/juno/db"
 	"github.com/desmos-labs/juno/types"
 )
 
-// OpenDB opens a database connection with the given database connection info
+// Builder creates a database connection with the given database connection info
 // from config. It returns a database connection handle or an error if the
 // connection fails.
 func Builder(cfg *config.DatabaseConfig, encodingConfig *params.EncodingConfig) (db.Database, error) {
@@ -80,14 +78,14 @@ func (db *Database) HasBlock(height int64) (bool, error) {
 }
 
 // SaveBlock implements db.Database
-func (db *Database) SaveBlock(block *tmctypes.ResultBlock, totalGas uint64) error {
+func (db *Database) SaveBlock(block *types.Block) error {
 	sqlStatement := `
 INSERT INTO block (height, hash, num_txs, total_gas, proposer_address, timestamp)
 VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING`
 
+	proposerAddress := sql.NullString{Valid: len(block.ProposerAddress) != 0, String: block.ProposerAddress}
 	_, err := db.Sql.Exec(sqlStatement,
-		block.Block.Height, block.Block.Hash().String(), len(block.Block.Txs),
-		totalGas, types.ConvertValidatorAddressToBech32String(block.Block.ProposerAddress), block.Block.Time,
+		block.Height, block.Hash, block.TxNum, block.TotalGas, proposerAddress, block.Timestamp,
 	)
 	return err
 }
@@ -159,13 +157,12 @@ func (db *Database) SaveValidator(addr, pk string) error {
 }
 
 // SaveCommitSig implements db.Database
-func (db *Database) SaveCommitSig(height int64, pc tmtypes.CommitSig, votingPower, proposerPriority int64) error {
+func (db *Database) SaveCommitSig(pc *types.CommitSig) error {
 	sqlStatement := `
 INSERT INTO pre_commit (validator_address, height, timestamp, voting_power, proposer_priority)
 VALUES ($1, $2, $3, $4, $5) ON CONFLICT (validator_address, timestamp) DO NOTHING;`
 
-	address := types.ConvertValidatorAddressToBech32String(pc.ValidatorAddress)
-	_, err := db.Sql.Exec(sqlStatement, address, height, pc.Timestamp, votingPower, proposerPriority)
+	_, err := db.Sql.Exec(sqlStatement, pc.ValidatorAddress, pc.Height, pc.Timestamp, pc.VotingPower, pc.ProposerPriority)
 	return err
 }
 

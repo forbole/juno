@@ -2,8 +2,6 @@ package db
 
 import (
 	"github.com/cosmos/cosmos-sdk/simapp/params"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
-	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/desmos-labs/juno/config"
 	"github.com/desmos-labs/juno/types"
@@ -19,7 +17,7 @@ type Database interface {
 	// and the transactions contained inside that block.
 	// An error is returned if the operation fails.
 	// NOTE. For each transaction inside txs, SaveTx will be called as well.
-	SaveBlock(block *tmctypes.ResultBlock, totalGas uint64) error
+	SaveBlock(block *types.Block) error
 
 	// SaveTx will be called to save each transaction contained inside a block.
 	// An error is returned if the operation fails.
@@ -36,7 +34,7 @@ type Database interface {
 
 	// SaveCommitSig stores a validator's commit signature.
 	// An error is returned if the operation fails.
-	SaveCommitSig(height int64, commitSig tmtypes.CommitSig, votingPower, proposerPriority int64) error
+	SaveCommitSig(commitSig *types.CommitSig) error
 
 	// SaveMessage stores a single message.
 	// An error is returned if the operation fails.
