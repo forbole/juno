@@ -2,12 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/desmos-labs/juno/types"
 	"os"
 
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
-
-	"github.com/desmos-labs/juno/config"
 )
 
 const (
@@ -53,7 +52,7 @@ func InitCmd() *cobra.Command {
 			name := cmd.Root().Name()
 
 			// Create the config path if not present
-			folderPath := config.GetConfigFolderPath(name)
+			folderPath := types.GetConfigFolderPath(name)
 			if _, err := os.Stat(folderPath); os.IsNotExist(err) {
 				err = os.MkdirAll(folderPath, os.ModePerm)
 				if err != nil {
@@ -67,7 +66,7 @@ func InitCmd() *cobra.Command {
 			}
 
 			// Get the config file
-			configFilePath := config.GetConfigFilePath(name)
+			configFilePath := types.GetConfigFilePath(name)
 			file, _ := os.Stat(configFilePath)
 
 			// Check if the file exists and replace is false
@@ -77,7 +76,7 @@ func InitCmd() *cobra.Command {
 					configFilePath, flagReplace)
 			}
 
-			return config.Write(readConfigFromFlags(cmd), configFilePath)
+			return types.Write(readConfigFromFlags(cmd), configFilePath)
 		},
 	}
 
@@ -114,7 +113,7 @@ func InitCmd() *cobra.Command {
 	return cmd
 }
 
-func readConfigFromFlags(cmd *cobra.Command) *config.Config {
+func readConfigFromFlags(cmd *cobra.Command) *types.Config {
 	rpcAddr, _ := cmd.Flags().GetString(flagRPCAddress)
 
 	grpcAddr, _ := cmd.Flags().GetString(flagGRPCAddress)
@@ -143,11 +142,11 @@ func readConfigFromFlags(cmd *cobra.Command) *config.Config {
 	parsingStartHeight, _ := cmd.Flags().GetInt64(flagParsingStartHeight)
 	parsingFastSync, _ := cmd.Flags().GetBool(flagParsingFastSync)
 
-	cfg := config.NewConfig(
-		config.NewRPCConfig(rpcAddr),
-		config.NewGrpcConfig(grpcAddr, grpcInsecure),
-		config.NewCosmosConfig(cosmosPrefix, cosmosModules),
-		config.NewDatabaseConfig(
+	cfg := types.NewConfig(
+		types.NewRPCConfig(rpcAddr),
+		types.NewGrpcConfig(grpcAddr, grpcInsecure),
+		types.NewCosmosConfig(cosmosPrefix, cosmosModules),
+		types.NewDatabaseConfig(
 			dbName,
 			dbHost,
 			dbPort,
@@ -158,8 +157,8 @@ func readConfigFromFlags(cmd *cobra.Command) *config.Config {
 			dbMaxOpenConnections,
 			dbMaxIdleConnections,
 		),
-		config.NewLoggingConfig(loggingLevel, loggingFormat),
-		config.NewParsingConfig(
+		types.NewLoggingConfig(loggingLevel, loggingFormat),
+		types.NewParsingConfig(
 			parsingWorkers,
 			parsingNewBlocks,
 			parsingOldBlocks,

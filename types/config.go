@@ -1,4 +1,4 @@
-package config
+package types
 
 var (
 	// Cfg represents the configuration to be used during the execution

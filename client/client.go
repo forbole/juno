@@ -22,8 +22,6 @@ import (
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	constypes "github.com/tendermint/tendermint/consensus/types"
-
-	"github.com/desmos-labs/juno/config"
 )
 
 // Proxy implements a wrapper around both a Tendermint RPC client and a
@@ -39,7 +37,7 @@ type Proxy struct {
 }
 
 // NewClientProxy allows to build a new Proxy instance
-func NewClientProxy(cfg *config.Config, encodingConfig *params.EncodingConfig) (*Proxy, error) {
+func NewClientProxy(cfg *types.Config, encodingConfig *params.EncodingConfig) (*Proxy, error) {
 	rpcClient, err := httpclient.New(cfg.RPC.Address, "/websocket")
 	if err != nil {
 		return nil, err

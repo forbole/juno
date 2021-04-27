@@ -1,4 +1,4 @@
-package config
+package types
 
 import (
 	"fmt"
@@ -15,15 +15,17 @@ var (
 	HomeDir, _ = os.UserHomeDir()
 )
 
+// GetConfigFolderPath returns the path to the config folder given the executable name
 func GetConfigFolderPath(name string) string {
 	return path.Join(HomeDir, fmt.Sprintf(".%s", name))
 }
 
+// GetConfigFilePath returns the path to the configuration file given the executable name
 func GetConfigFilePath(name string) string {
 	return path.Join(GetConfigFolderPath(name), "config.toml")
 }
 
-// SetupConfig takes the path to a configuration file and returns the properly parsed configuration
+// Read takes the path to a configuration file and returns the properly parsed configuration
 func Read(configPath string) (*Config, error) {
 	if configPath == "" {
 		return nil, fmt.Errorf("empty configuration path")

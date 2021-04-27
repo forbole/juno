@@ -3,6 +3,7 @@ package registrar
 import (
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/desmos-labs/juno/types"
 	"github.com/rs/zerolog/log"
 
 	"github.com/desmos-labs/juno/modules/pruning"
@@ -11,14 +12,13 @@ import (
 	"github.com/desmos-labs/juno/modules/messages"
 
 	"github.com/desmos-labs/juno/client"
-	"github.com/desmos-labs/juno/config"
 	"github.com/desmos-labs/juno/db"
 )
 
 // Registrar represents a modules registrar. This allows to build a list of modules that can later be used by
 // specifying their names inside the TOML configuration file.
 type Registrar interface {
-	BuildModules(*config.Config, *params.EncodingConfig, *sdk.Config, db.Database, *client.Proxy) modules.Modules
+	BuildModules(*types.Config, *params.EncodingConfig, *sdk.Config, db.Database, *client.Proxy) modules.Modules
 }
 
 // ------------------------------------------------------------------------------------------------------------------
@@ -28,7 +28,7 @@ type EmptyRegistrar struct{}
 
 // BuildModules implements Registrar
 func (*EmptyRegistrar) BuildModules(
-	*config.Config, *params.EncodingConfig, *sdk.Config, db.Database, *client.Proxy,
+	*types.Config, *params.EncodingConfig, *sdk.Config, db.Database, *client.Proxy,
 ) modules.Modules {
 	return nil
 }
@@ -49,7 +49,7 @@ func NewDefaultRegistrar(parser messages.MessageAddressesParser) *DefaultRegistr
 
 // BuildModules implements Registrar
 func (r *DefaultRegistrar) BuildModules(
-	cfg *config.Config, encodingCfg *params.EncodingConfig, _ *sdk.Config, db db.Database, _ *client.Proxy,
+	cfg *types.Config, encodingCfg *params.EncodingConfig, _ *sdk.Config, db db.Database, _ *client.Proxy,
 ) modules.Modules {
 	return modules.Modules{
 		pruning.NewModule(cfg.Pruning, db),

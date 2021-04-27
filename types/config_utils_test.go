@@ -1,17 +1,16 @@
-package config_test
+package types_test
 
 import (
+	"github.com/desmos-labs/juno/types"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/desmos-labs/juno/config"
 )
 
 func TestParseConfigString_PostgreSQL(t *testing.T) {
 	tomlString := `
-rpc_node = "http://rpc.morpheus.desmos.network:26657"
-client_node = "http://lcd.morpheus.desmos.network:1317"
+rpc_node = "https://rpc.morpheus.desmos.network:26657"
+client_node = "https://lcd.morpheus.desmos.network:1317"
 
 [database]
 name = "desmos"
@@ -21,7 +20,7 @@ user = "user"
 password = "password"
 `
 
-	cfg, err := config.ParseString([]byte(tomlString))
+	cfg, err := types.ParseString([]byte(tomlString))
 	require.NoError(t, err)
 
 	require.Equal(t, "desmos", cfg.Database.Name)

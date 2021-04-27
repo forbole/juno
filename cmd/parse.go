@@ -22,7 +22,6 @@ import (
 	"github.com/desmos-labs/juno/types"
 	"github.com/desmos-labs/juno/worker"
 
-	"github.com/desmos-labs/juno/config"
 	"github.com/desmos-labs/juno/db"
 
 	"github.com/spf13/cobra"
@@ -35,8 +34,10 @@ var (
 // ParseCmd returns the command that should be run when we want to start parsing a chain state.
 func ParseCmd(
 	name string,
-	registrar modsregistrar.Registrar, encodingConfigBuilder types.EncodingConfigBuilder,
-	setupCfg types.SdkConfigSetup, buildDb db.Builder,
+	registrar modsregistrar.Registrar,
+	encodingConfigBuilder types.EncodingConfigBuilder,
+	setupCfg types.SdkConfigSetup,
+	buildDb db.Builder,
 ) *cobra.Command {
 	return &cobra.Command{
 		Use:     "parse",
@@ -62,7 +63,7 @@ func SetupParsing(
 	setupCfg types.SdkConfigSetup, buildDb db.Builder,
 ) (*params.EncodingConfig, *client.Proxy, db.Database, []modules.Module, error) {
 	// Get the global config
-	cfg := config.Cfg
+	cfg := types.Cfg
 
 	// Build the codec
 	encodingConfig := buildEncodingConfig()
@@ -106,7 +107,7 @@ func StartParsing(
 	encodingConfig *params.EncodingConfig, cp *client.Proxy, db db.Database, registeredModules []modules.Module,
 ) error {
 	// Get the config
-	cfg := config.Cfg.Parsing
+	cfg := types.Cfg.Parsing
 
 	// Start periodic operations
 	scheduler := gocron.NewScheduler(time.UTC)
@@ -171,7 +172,7 @@ func StartParsing(
 // at the startHeight up until the latest known height.
 func enqueueMissingBlocks(registeredModules []modules.Module, exportQueue types.HeightQueue, cp *client.Proxy) {
 	// Get the config
-	cfg := config.Cfg.Parsing
+	cfg := types.Cfg.Parsing
 
 	// Get the latest height
 	latestBlockHeight, err := cp.LatestHeight()

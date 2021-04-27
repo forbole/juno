@@ -7,7 +7,6 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"github.com/desmos-labs/juno/config"
 	"github.com/desmos-labs/juno/types"
 
 	"github.com/desmos-labs/juno/modules/registrar"
@@ -102,20 +101,20 @@ func bindFlagsLoadViper(cmd *cobra.Command, _ []string) error {
 // readConfig parses the configuration file
 func readConfig(name string) cobraCmdFunc {
 	return func(_ *cobra.Command, _ []string) error {
-		file := config.GetConfigFilePath(name)
+		file := types.GetConfigFilePath(name)
 
 		// Make sure the path exists
 		if _, err := os.Stat(file); os.IsNotExist(err) {
 			return fmt.Errorf("%s file does not exist. Make sure you have run %s init", file, name)
 		}
 
-		cfg, err := config.Read(file)
+		cfg, err := types.Read(file)
 		if err != nil {
 			return err
 		}
 
 		// Set the global configuration
-		config.Cfg = cfg
+		types.Cfg = cfg
 		return nil
 	}
 }
@@ -123,14 +122,14 @@ func readConfig(name string) cobraCmdFunc {
 // setupLogging setups the logging for the entire project
 func setupLogging(_ *cobra.Command, _ []string) error {
 	// Init logging level
-	logLvl, err := zerolog.ParseLevel(config.Cfg.Logging.LogLevel)
+	logLvl, err := zerolog.ParseLevel(types.Cfg.Logging.LogLevel)
 	if err != nil {
 		return err
 	}
 	zerolog.SetGlobalLevel(logLvl)
 
 	// Init logging format
-	switch config.Cfg.Logging.LogFormat {
+	switch types.Cfg.Logging.LogFormat {
 	case LogFormatJSON:
 		// JSON is the default logging format
 		break
@@ -140,7 +139,7 @@ func setupLogging(_ *cobra.Command, _ []string) error {
 		break
 
 	default:
-		return fmt.Errorf("invalid logging format: %s", config.Cfg.Logging.LogFormat)
+		return fmt.Errorf("invalid logging format: %s", types.Cfg.Logging.LogFormat)
 	}
 	return err
 }

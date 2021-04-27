@@ -6,7 +6,6 @@ import (
 	"github.com/rs/zerolog/log"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 
-	"github.com/desmos-labs/juno/config"
 	"github.com/desmos-labs/juno/db"
 	"github.com/desmos-labs/juno/modules"
 	"github.com/desmos-labs/juno/types"
@@ -16,12 +15,12 @@ var _ modules.Module = &Module{}
 
 // Module represents the pruning module allowing to clean the database periodically
 type Module struct {
-	cfg *config.PruningConfig
+	cfg *types.PruningConfig
 	db  db.Database
 }
 
 // NewModule builds a new Module instance
-func NewModule(cfg *config.PruningConfig, db db.Database) *Module {
+func NewModule(cfg *types.PruningConfig, db db.Database) *Module {
 	return &Module{
 		cfg: cfg,
 		db:  db,

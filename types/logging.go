@@ -1,4 +1,4 @@
-package logging
+package types
 
 import "github.com/rs/zerolog/log"
 

@@ -1,13 +1,12 @@
 package client
 
 import (
+	"github.com/desmos-labs/juno/types"
 	"google.golang.org/grpc"
-
-	"github.com/desmos-labs/juno/config"
 )
 
 // CreateGrpcConnection creates a new gRPC client connection from the given configuration
-func CreateGrpcConnection(cfg *config.Config) (*grpc.ClientConn, error) {
+func CreateGrpcConnection(cfg *types.Config) (*grpc.ClientConn, error) {
 	var grpcOpts []grpc.DialOption
 	if cfg.Grpc.Insecure {
 		grpcOpts = append(grpcOpts, grpc.WithInsecure())

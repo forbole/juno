@@ -7,8 +7,6 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/desmos-labs/juno/config"
-
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 	"github.com/lib/pq"
 
@@ -21,7 +19,7 @@ import (
 // Builder creates a database connection with the given database connection info
 // from config. It returns a database connection handle or an error if the
 // connection fails.
-func Builder(cfg *config.DatabaseConfig, encodingConfig *params.EncodingConfig) (db.Database, error) {
+func Builder(cfg *types.DatabaseConfig, encodingConfig *params.EncodingConfig) (db.Database, error) {
 	sslMode := "disable"
 	if cfg.SSLMode != "" {
 		sslMode = cfg.SSLMode

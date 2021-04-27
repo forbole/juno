@@ -6,7 +6,6 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 
-	"github.com/desmos-labs/juno/logging"
 	"github.com/desmos-labs/juno/modules"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -146,7 +145,7 @@ func (w Worker) HandleGenesis(genesis *tmtypes.GenesisDoc) error {
 	for _, module := range w.modules {
 		if module, ok := module.(modules.GenesisModule); ok {
 			if err := module.HandleGenesis(genesis, appState); err != nil {
-				logging.LogGenesisError(err)
+				types.LogGenesisError(err)
 			}
 		}
 	}
@@ -278,7 +277,7 @@ func (w Worker) ExportBlock(b *tmctypes.ResultBlock, txs []*types.Tx, vals *tmct
 		if module, ok := module.(modules.BlockModule); ok {
 			err := module.HandleBlock(b, txs, vals)
 			if err != nil {
-				logging.LogBlockError(err)
+				types.LogBlockError(err)
 			}
 		}
 	}
@@ -304,7 +303,7 @@ func (w Worker) ExportTxs(txs []*types.Tx) error {
 			if module, ok := module.(modules.TransactionModule); ok {
 				err := module.HandleTx(tx)
 				if err != nil {
-					logging.LogTxError(err)
+					types.LogTxError(err)
 				}
 			}
 		}
@@ -322,7 +321,7 @@ func (w Worker) ExportTxs(txs []*types.Tx) error {
 				if module, ok := module.(modules.MessageModule); ok {
 					err = module.HandleMsg(i, stdMsg, tx)
 					if err != nil {
-						logging.LogMsgError(err)
+						types.LogMsgError(err)
 					}
 				}
 			}
