@@ -50,7 +50,7 @@ func InitCmd() *cobra.Command {
 		Use:   "init",
 		Short: "Initializes the configuration files",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			name := cmd.Parent().Name()
+			name := cmd.Root().Name()
 
 			// Create the config path if not present
 			folderPath := config.GetConfigFolderPath(name)
