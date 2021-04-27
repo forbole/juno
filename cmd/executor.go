@@ -25,7 +25,7 @@ import (
 // the modules that you want to use. If you don't want any custom module, use modules.EmptyRegistrar.
 //
 // setupCfg method will be used to customize the SDK configuration. If you don't want any customization
-// you can use the config.DefaultSetup variable.
+// you can use the config.DefaultConfigSetup variable.
 //
 // encodingConfigBuilder is used to provide a codec that will later be used to deserialize the
 // transaction messages. Make sure you register all the types you need properly.
@@ -34,14 +34,17 @@ import (
 // particular need, you can use the Create variable to build a default database instance.
 func BuildDefaultExecutor(
 	name string, registrar registrar.Registrar,
-	setupCfg types.SdkConfigSetup, encodingConfigBuilder types.EncodingConfigBuilder, dbBuilder db.Builder,
+	cfgParser types.ConfigParser,
+	setupCfg types.SdkConfigSetup,
+	encodingConfigBuilder types.EncodingConfigBuilder,
+	dbBuilder db.Builder,
 ) cli.Executor {
 	rootCmd := RootCmd(name)
 
 	rootCmd.AddCommand(
 		VersionCmd(),
 		InitCmd(),
-		ParseCmd(name, registrar, encodingConfigBuilder, setupCfg, dbBuilder),
+		ParseCmd(name, registrar, cfgParser, encodingConfigBuilder, setupCfg, dbBuilder),
 	)
 
 	return PrepareRootCmd(rootCmd)
@@ -98,8 +101,9 @@ func bindFlagsLoadViper(cmd *cobra.Command, _ []string) error {
 	return nil
 }
 
-// readConfig parses the configuration file
-func readConfig(name string) cobraCmdFunc {
+// readConfig parses the configuration file for the executable having the give name using
+// the provided configuration parser
+func readConfig(name string, configParser types.ConfigParser) cobraCmdFunc {
 	return func(_ *cobra.Command, _ []string) error {
 		file := types.GetConfigFilePath(name)
 
@@ -108,7 +112,7 @@ func readConfig(name string) cobraCmdFunc {
 			return fmt.Errorf("%s file does not exist. Make sure you have run %s init", file, name)
 		}
 
-		cfg, err := types.Read(file)
+		cfg, err := types.Read(file, configParser)
 		if err != nil {
 			return err
 		}

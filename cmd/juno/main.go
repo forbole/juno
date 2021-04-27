@@ -21,7 +21,8 @@ func main() {
 		registrar.NewDefaultRegistrar(
 			messages.CosmosMessageAddressesParser,
 		),
-		types.DefaultSetup,
+		types.DefaultConfigParser,
+		types.DefaultConfigSetup,
 		simapp.MakeTestEncodingConfig,
 		stddb.Builder,
 	)

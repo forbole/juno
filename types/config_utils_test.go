@@ -20,7 +20,7 @@ user = "user"
 password = "password"
 `
 
-	cfg, err := types.ParseString([]byte(tomlString))
+	cfg, err := types.DefaultConfigParser([]byte(tomlString))
 	require.NoError(t, err)
 
 	require.Equal(t, "desmos", cfg.Database.Name)

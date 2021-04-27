@@ -32,9 +32,17 @@ var (
 )
 
 // ParseCmd returns the command that should be run when we want to start parsing a chain state.
+//
+// The following default functions can be used if you do not want to change the behavior:
+// - registrar: registrar.DefaultRegistrar
+// - configParser: types.DefaultConfigParser
+// - encodingConfigBuilder: simapp.MakeTestEncodingConfig
+// - setupCfg: types.DefaultConfigSetup
+// - buildDb: db.Builder
 func ParseCmd(
 	name string,
 	registrar modsregistrar.Registrar,
+	configParser types.ConfigParser,
 	encodingConfigBuilder types.EncodingConfigBuilder,
 	setupCfg types.SdkConfigSetup,
 	buildDb db.Builder,
@@ -42,7 +50,7 @@ func ParseCmd(
 	return &cobra.Command{
 		Use:     "parse",
 		Short:   "Start parsing the blockchain data",
-		PreRunE: concatCobraCmdFuncs(readConfig(name), setupLogging),
+		PreRunE: concatCobraCmdFuncs(readConfig(name, configParser), setupLogging),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cdc, cp, database, registeredModules, err := SetupParsing(
 				registrar, encodingConfigBuilder, setupCfg, buildDb,
@@ -102,7 +110,7 @@ func SetupParsing(
 	return &encodingConfig, cp, database, registeredModules, nil
 }
 
-// parseCmdHandler represents the function that should be called when the parse command is executed
+// StartParsing represents the function that should be called when the parse command is executed
 func StartParsing(
 	encodingConfig *params.EncodingConfig, cp *client.Proxy, db db.Database, registeredModules []modules.Module,
 ) error {

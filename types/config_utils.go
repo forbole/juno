@@ -26,7 +26,7 @@ func GetConfigFilePath(name string) string {
 }
 
 // Read takes the path to a configuration file and returns the properly parsed configuration
-func Read(configPath string) (*Config, error) {
+func Read(configPath string, parser ConfigParser) (*Config, error) {
 	if configPath == "" {
 		return nil, fmt.Errorf("empty configuration path")
 	}
@@ -38,12 +38,12 @@ func Read(configPath string) (*Config, error) {
 		return nil, fmt.Errorf("failed to read config: %s", err)
 	}
 
-	return ParseString(configData)
+	return parser(configData)
 }
 
-// ParseString attempts to read and parse a Juno config from the given string bytes.
+// DefaultConfigParser attempts to read and parse a Juno config from the given string bytes.
 // An error reading or parsing the config results in a panic.
-func ParseString(configData []byte) (*Config, error) {
+func DefaultConfigParser(configData []byte) (*Config, error) {
 	var cfg Config
 
 	err := toml.Unmarshal(configData, &cfg)

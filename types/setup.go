@@ -9,9 +9,9 @@ import (
 // This should be used to set custom Bech32 addresses prefixes and other app-related configurations.
 type SdkConfigSetup func(config *Config, sdkConfig *sdk.Config)
 
-// DefaultSetup represents a handy implementation of SdkConfigSetup that simply setups the prefix
+// DefaultConfigSetup represents a handy implementation of SdkConfigSetup that simply setups the prefix
 // inside the configuration
-func DefaultSetup(cfg *Config, sdkConfig *sdk.Config) {
+func DefaultConfigSetup(cfg *Config, sdkConfig *sdk.Config) {
 	prefix := cfg.Cosmos.Prefix
 	sdkConfig.SetBech32PrefixForAccount(
 		prefix,
