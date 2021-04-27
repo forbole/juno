@@ -45,11 +45,12 @@ const (
 )
 
 // InitCmd returns the command that should be run in order to properly initialize BDJuno
-func InitCmd(name string) *cobra.Command {
+func InitCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "init",
-		Short: fmt.Sprintf("Initializes the configuration files for %s", name),
+		Short: "Initializes the configuration files",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			name := cmd.Parent().Name()
 
 			// Create the config path if not present
 			folderPath := config.GetConfigFolderPath(name)
@@ -90,7 +91,7 @@ func InitCmd(name string) *cobra.Command {
 	cmd.Flags().String(flagCosmosPrefix, "cosmos", "Bech32 prefix to use for addresses")
 	cmd.Flags().StringSlice(flagCosmosModules, []string{}, "List of modules to use")
 
-	cmd.Flags().String(flagDatabaseName, name, "Name of the database to use")
+	cmd.Flags().String(flagDatabaseName, "database-name", "Name of the database to use")
 	cmd.Flags().String(flagDatabaseHost, "localhost", "Database host")
 	cmd.Flags().Int64(flagDatabasePort, 5432, "Database port to use")
 	cmd.Flags().String(flagDatabaseUser, "user", "User to use when authenticating inside the database")

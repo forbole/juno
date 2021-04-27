@@ -41,11 +41,11 @@ func BuildDefaultExecutor(
 
 	rootCmd.AddCommand(
 		VersionCmd(),
-		InitCmd(name),
+		InitCmd(),
 		ParseCmd(name, registrar, encodingConfigBuilder, setupCfg, dbBuilder),
 	)
 
-	return PrepareRootCmd(name, rootCmd)
+	return PrepareRootCmd(rootCmd)
 }
 
 // RootCmd allows to build the default root command having the given name
@@ -63,7 +63,7 @@ them to compose more aggregate and complex queries.`, name),
 }
 
 // PrepareRootCmd is meant to prepare the given command binding all the viper flags
-func PrepareRootCmd(name string, cmd *cobra.Command) cli.Executor {
+func PrepareRootCmd(cmd *cobra.Command) cli.Executor {
 	cmd.PersistentPreRunE = concatCobraCmdFuncs(
 		bindFlagsLoadViper,
 		cmd.PersistentPreRunE,
