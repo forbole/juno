@@ -31,15 +31,13 @@ type Worker struct {
 }
 
 // NewWorker allows to create a new Worker implementation.
-func NewWorker(
-	encodingConfig *params.EncodingConfig, q types.HeightQueue, cp *client.Proxy, db db.Database, modules []modules.Module,
-) Worker {
+func NewWorker(config *Config) Worker {
 	return Worker{
-		encodingConfig: encodingConfig,
-		cp:             cp,
-		queue:          q,
-		db:             db,
-		modules:        modules,
+		encodingConfig: config.EncodingConfig,
+		cp:             config.ClientProxy,
+		queue:          config.Queue,
+		db:             config.Database,
+		modules:        config.Modules,
 	}
 }
 

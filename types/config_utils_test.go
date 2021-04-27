@@ -1,8 +1,9 @@
 package types_test
 
 import (
-	"github.com/desmos-labs/juno/types"
 	"testing"
+
+	"github.com/desmos-labs/juno/types"
 
 	"github.com/stretchr/testify/require"
 )

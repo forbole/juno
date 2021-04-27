@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/desmos-labs/juno/types"
 	"os"
+
+	"github.com/desmos-labs/juno/types"
 
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"

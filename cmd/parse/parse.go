@@ -1,4 +1,4 @@
-package cmd
+package parse
 
 import (
 	"fmt"
@@ -9,8 +9,6 @@ import (
 	"time"
 
 	modsregistrar "github.com/desmos-labs/juno/modules/registrar"
-
-	"github.com/cosmos/cosmos-sdk/simapp/params"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/go-co-op/gocron"
@@ -32,69 +30,50 @@ var (
 )
 
 // ParseCmd returns the command that should be run when we want to start parsing a chain state.
-//
-// The following default functions can be used if you do not want to change the behavior:
-// - registrar: registrar.DefaultRegistrar
-// - configParser: types.DefaultConfigParser
-// - encodingConfigBuilder: simapp.MakeTestEncodingConfig
-// - setupCfg: types.DefaultConfigSetup
-// - buildDb: db.Builder
-func ParseCmd(
-	name string,
-	registrar modsregistrar.Registrar,
-	configParser types.ConfigParser,
-	encodingConfigBuilder types.EncodingConfigBuilder,
-	setupCfg types.SdkConfigSetup,
-	buildDb db.Builder,
-) *cobra.Command {
+func ParseCmd(cfg *Config) *cobra.Command {
 	return &cobra.Command{
 		Use:     "parse",
 		Short:   "Start parsing the blockchain data",
-		PreRunE: concatCobraCmdFuncs(readConfig(name, configParser), setupLogging),
+		PreRunE: types.ConcatCobraCmdFuncs(ReadConfig(cfg), setupLogging),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cdc, cp, database, registeredModules, err := SetupParsing(
-				registrar, encodingConfigBuilder, setupCfg, buildDb,
-			)
+			parserData, err := SetupParsing(cfg)
 			if err != nil {
 				return err
 			}
 
-			return StartParsing(cdc, cp, database, registeredModules)
+			return StartParsing(parserData)
 		},
 	}
 }
 
 // SetupParsing setups all the things that should be later passed to StartParsing in order
 // to parse the chain data properly.
-func SetupParsing(
-	registrar modsregistrar.Registrar, buildEncodingConfig types.EncodingConfigBuilder,
-	setupCfg types.SdkConfigSetup, buildDb db.Builder,
-) (*params.EncodingConfig, *client.Proxy, db.Database, []modules.Module, error) {
+func SetupParsing(parseConfig *Config) (*ParserData, error) {
 	// Get the global config
 	cfg := types.Cfg
 
 	// Build the codec
-	encodingConfig := buildEncodingConfig()
+	encodingConfig := parseConfig.GetEncodingConfigBuilder()()
 
 	// Setup the SDK configuration
 	sdkConfig := sdk.GetConfig()
-	setupCfg(cfg, sdkConfig)
+	parseConfig.GetSetupConfig()(cfg, sdkConfig)
 	sdkConfig.Seal()
 
 	// Get the database
-	database, err := buildDb(cfg, &encodingConfig)
+	database, err := parseConfig.GetDBBuilder()(cfg, &encodingConfig)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, err
 	}
 
 	// Init the client
 	cp, err := client.NewClientProxy(cfg, &encodingConfig)
 	if err != nil {
-		return nil, nil, nil, nil, fmt.Errorf("failed to start client: %s", err)
+		return nil, fmt.Errorf("failed to start client: %s", err)
 	}
 
 	// Get the modules
-	mods := registrar.BuildModules(cfg, &encodingConfig, sdkConfig, database, cp)
+	mods := parseConfig.GetRegistrar().BuildModules(cfg, &encodingConfig, sdkConfig, database, cp)
 	registeredModules := modsregistrar.GetModules(mods, cfg.Cosmos.Modules)
 
 	// Run all the additional operations
@@ -102,24 +81,22 @@ func SetupParsing(
 		if module, ok := module.(modules.AdditionalOperationsModule); ok {
 			err := module.RunAdditionalOperations()
 			if err != nil {
-				return nil, nil, nil, nil, err
+				return nil, err
 			}
 		}
 	}
 
-	return &encodingConfig, cp, database, registeredModules, nil
+	return NewParserData(&encodingConfig, cp, database, registeredModules), nil
 }
 
 // StartParsing represents the function that should be called when the parse command is executed
-func StartParsing(
-	encodingConfig *params.EncodingConfig, cp *client.Proxy, db db.Database, registeredModules []modules.Module,
-) error {
+func StartParsing(data *ParserData) error {
 	// Get the config
 	cfg := types.Cfg.Parsing
 
 	// Start periodic operations
 	scheduler := gocron.NewScheduler(time.UTC)
-	for _, module := range registeredModules {
+	for _, module := range data.Modules {
 		if module, ok := module.(modules.PeriodicOperationsModule); ok {
 			err := module.RegisterPeriodicOperations(scheduler)
 			if err != nil {
@@ -133,15 +110,16 @@ func StartParsing(
 	exportQueue := types.NewQueue(25)
 
 	// Create workers
+	config := worker.NewConfig(exportQueue, data.EncodingConfig, data.Proxy, data.Database, data.Modules)
 	workers := make([]worker.Worker, cfg.Workers, cfg.Workers)
 	for i := range workers {
-		workers[i] = worker.NewWorker(encodingConfig, exportQueue, cp, db, registeredModules)
+		workers[i] = worker.NewWorker(config)
 	}
 
 	waitGroup.Add(1)
 
 	// Run all the async operations
-	for _, module := range registeredModules {
+	for _, module := range data.Modules {
 		if module, ok := module.(modules.AsyncOperationsModule); ok {
 			go module.RunAsyncOperations()
 		}
@@ -156,7 +134,7 @@ func StartParsing(
 	}
 
 	// Listen for and trap any OS signal to gracefully shutdown and exit
-	trapSignal(cp, db)
+	trapSignal(data.Proxy, data.Database)
 
 	if cfg.ParseGenesis {
 		// Add the genesis to the queue if requested
@@ -164,11 +142,11 @@ func StartParsing(
 	}
 
 	if cfg.ParseOldBlocks {
-		go enqueueMissingBlocks(registeredModules, exportQueue, cp)
+		go enqueueMissingBlocks(exportQueue, data)
 	}
 
 	if cfg.ParseNewBlocks {
-		go startNewBlockListener(exportQueue, cp)
+		go startNewBlockListener(exportQueue, data)
 	}
 
 	// Block main process (signal capture will call WaitGroup's Done)
@@ -178,12 +156,12 @@ func StartParsing(
 
 // enqueueMissingBlocks enqueues jobs (block heights) for missed blocks starting
 // at the startHeight up until the latest known height.
-func enqueueMissingBlocks(registeredModules []modules.Module, exportQueue types.HeightQueue, cp *client.Proxy) {
+func enqueueMissingBlocks(exportQueue types.HeightQueue, data *ParserData) {
 	// Get the config
 	cfg := types.Cfg.Parsing
 
 	// Get the latest height
-	latestBlockHeight, err := cp.LatestHeight()
+	latestBlockHeight, err := data.Proxy.LatestHeight()
 	if err != nil {
 		log.Fatal().Err(fmt.Errorf("failed to get last block from RPC client: %s", err))
 	}
@@ -191,7 +169,7 @@ func enqueueMissingBlocks(registeredModules []modules.Module, exportQueue types.
 	if cfg.FastSync {
 		log.Info().Int64("latest_block_height", latestBlockHeight).
 			Msg("fast sync is enabled, ignoring all previous blocks")
-		for _, module := range registeredModules {
+		for _, module := range data.Modules {
 			if mod, ok := module.(modules.FastSyncModule); ok {
 				err := mod.DownloadState(latestBlockHeight)
 				if err != nil {
@@ -215,8 +193,8 @@ func enqueueMissingBlocks(registeredModules []modules.Module, exportQueue types.
 // startNewBlockListener subscribes to new block events via the Tendermint RPC
 // and enqueues each new block height onto the provided queue. It blocks as new
 // blocks are incoming.
-func startNewBlockListener(exportQueue types.HeightQueue, cp *client.Proxy) {
-	eventCh, cancel, err := cp.SubscribeNewBlocks("juno-client")
+func startNewBlockListener(exportQueue types.HeightQueue, data *ParserData) {
+	eventCh, cancel, err := data.Proxy.SubscribeNewBlocks("juno-client")
 	defer cancel()
 
 	if err != nil {

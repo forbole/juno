@@ -14,7 +14,7 @@ var (
 	// Version defines the application version (defined at compile time)
 	Version = ""
 
-	// GitCommit defines the application commit hash (defined at compile time)
+	// Commit defines the application commit hash (defined at compile time)
 	Commit = ""
 )
 

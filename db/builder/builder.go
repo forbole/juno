@@ -2,6 +2,7 @@ package builder
 
 import (
 	"github.com/cosmos/cosmos-sdk/simapp/params"
+
 	"github.com/desmos-labs/juno/types"
 
 	"github.com/desmos-labs/juno/db"

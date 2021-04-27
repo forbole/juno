@@ -3,8 +3,9 @@ package registrar
 import (
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/desmos-labs/juno/types"
 	"github.com/rs/zerolog/log"
+
+	"github.com/desmos-labs/juno/types"
 
 	"github.com/desmos-labs/juno/modules/pruning"
 
@@ -22,6 +23,8 @@ type Registrar interface {
 }
 
 // ------------------------------------------------------------------------------------------------------------------
+
+var _ Registrar = &EmptyRegistrar{}
 
 // EmptyRegistrar represents a Registrar which does not register any custom module
 type EmptyRegistrar struct{}

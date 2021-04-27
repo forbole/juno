@@ -4,18 +4,12 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
+	"github.com/desmos-labs/juno/cmd/parse"
 
 	"github.com/desmos-labs/juno/types"
 
-	"github.com/desmos-labs/juno/modules/registrar"
-
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/cli"
-
-	"github.com/desmos-labs/juno/db"
 )
 
 // BuildDefaultExecutor allows to build an Executor containing a root command that
@@ -32,19 +26,13 @@ import (
 //
 // dbBuilder is used to provide the database that will be used to save the data. If you don't have any
 // particular need, you can use the Create variable to build a default database instance.
-func BuildDefaultExecutor(
-	name string, registrar registrar.Registrar,
-	cfgParser types.ConfigParser,
-	setupCfg types.SdkConfigSetup,
-	encodingConfigBuilder types.EncodingConfigBuilder,
-	dbBuilder db.Builder,
-) cli.Executor {
-	rootCmd := RootCmd(name)
+func BuildDefaultExecutor(parseConfig *parse.Config) cli.Executor {
+	rootCmd := RootCmd(parseConfig.GetName())
 
 	rootCmd.AddCommand(
 		VersionCmd(),
 		InitCmd(),
-		ParseCmd(name, registrar, cfgParser, encodingConfigBuilder, setupCfg, dbBuilder),
+		parse.ParseCmd(parseConfig),
 	)
 
 	return PrepareRootCmd(rootCmd)
@@ -66,84 +54,9 @@ them to compose more aggregate and complex queries.`, name),
 
 // PrepareRootCmd is meant to prepare the given command binding all the viper flags
 func PrepareRootCmd(cmd *cobra.Command) cli.Executor {
-	cmd.PersistentPreRunE = concatCobraCmdFuncs(
-		bindFlagsLoadViper,
+	cmd.PersistentPreRunE = types.ConcatCobraCmdFuncs(
+		types.BindFlagsLoadViper,
 		cmd.PersistentPreRunE,
 	)
 	return cli.Executor{Command: cmd, Exit: os.Exit}
-}
-
-// cobraCmdFunc represents a cobra command function
-type cobraCmdFunc func(cmd *cobra.Command, args []string) error
-
-// Returns a single function that calls each argument function in sequence
-// RunE, PreRunE, PersistentPreRunE, etc. all have this same signature
-func concatCobraCmdFuncs(fs ...cobraCmdFunc) cobraCmdFunc {
-	return func(cmd *cobra.Command, args []string) error {
-		for _, f := range fs {
-			if f != nil {
-				if err := f(cmd, args); err != nil {
-					return err
-				}
-			}
-		}
-		return nil
-	}
-}
-
-// Bind all flags and read the config into viper
-func bindFlagsLoadViper(cmd *cobra.Command, _ []string) error {
-	// cmd.Flags() includes flags from this command and all persistent flags from the parent
-	if err := viper.BindPFlags(cmd.Flags()); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// readConfig parses the configuration file for the executable having the give name using
-// the provided configuration parser
-func readConfig(name string, configParser types.ConfigParser) cobraCmdFunc {
-	return func(_ *cobra.Command, _ []string) error {
-		file := types.GetConfigFilePath(name)
-
-		// Make sure the path exists
-		if _, err := os.Stat(file); os.IsNotExist(err) {
-			return fmt.Errorf("%s file does not exist. Make sure you have run %s init", file, name)
-		}
-
-		cfg, err := types.Read(file, configParser)
-		if err != nil {
-			return err
-		}
-
-		// Set the global configuration
-		types.Cfg = cfg
-		return nil
-	}
-}
-
-// setupLogging setups the logging for the entire project
-func setupLogging(_ *cobra.Command, _ []string) error {
-	// Init logging level
-	logLvl, err := zerolog.ParseLevel(types.Cfg.Logging.LogLevel)
-	if err != nil {
-		return err
-	}
-	zerolog.SetGlobalLevel(logLvl)
-
-	// Init logging format
-	switch types.Cfg.Logging.LogFormat {
-	case LogFormatJSON:
-		// JSON is the default logging format
-		break
-
-	case LogFormatText:
-		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
-		break
-
-	default:
-		return fmt.Errorf("invalid logging format: %s", types.Cfg.Logging.LogFormat)
-	}
-	return err
 }
