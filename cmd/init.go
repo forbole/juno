@@ -114,7 +114,7 @@ func InitCmd() *cobra.Command {
 	return cmd
 }
 
-func readConfigFromFlags(cmd *cobra.Command) *types.Config {
+func readConfigFromFlags(cmd *cobra.Command) types.Config {
 	rpcAddr, _ := cmd.Flags().GetString(flagRPCAddress)
 
 	grpcAddr, _ := cmd.Flags().GetString(flagGRPCAddress)
@@ -143,7 +143,7 @@ func readConfigFromFlags(cmd *cobra.Command) *types.Config {
 	parsingStartHeight, _ := cmd.Flags().GetInt64(flagParsingStartHeight)
 	parsingFastSync, _ := cmd.Flags().GetBool(flagParsingFastSync)
 
-	cfg := types.NewConfig(
+	return types.NewConfig(
 		types.NewRPCConfig(rpcAddr),
 		types.NewGrpcConfig(grpcAddr, grpcInsecure),
 		types.NewCosmosConfig(cosmosPrefix, cosmosModules),
@@ -168,5 +168,4 @@ func readConfigFromFlags(cmd *cobra.Command) *types.Config {
 			parsingFastSync,
 		),
 	)
-	return cfg
 }

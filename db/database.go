@@ -56,4 +56,4 @@ type PruningDb interface {
 }
 
 // Builder represents a method that allows to build any database from a given codec and configuration
-type Builder func(cfg *types.Config, encodingConfig *params.EncodingConfig) (Database, error)
+type Builder func(cfg types.Config, encodingConfig *params.EncodingConfig) (Database, error)

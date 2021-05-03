@@ -74,7 +74,7 @@ func SetupParsing(parseConfig *Config) (*ParserData, error) {
 
 	// Get the modules
 	mods := parseConfig.GetRegistrar().BuildModules(cfg, &encodingConfig, sdkConfig, database, cp)
-	registeredModules := modsregistrar.GetModules(mods, cfg.Cosmos.Modules)
+	registeredModules := modsregistrar.GetModules(mods, cfg.GetCosmosConfig().Modules)
 
 	// Run all the additional operations
 	for _, module := range registeredModules {
@@ -92,7 +92,7 @@ func SetupParsing(parseConfig *Config) (*ParserData, error) {
 // StartParsing represents the function that should be called when the parse command is executed
 func StartParsing(data *ParserData) error {
 	// Get the config
-	cfg := types.Cfg.Parsing
+	cfg := types.Cfg.GetParsingConfig()
 
 	// Start periodic operations
 	scheduler := gocron.NewScheduler(time.UTC)
@@ -158,7 +158,7 @@ func StartParsing(data *ParserData) error {
 // at the startHeight up until the latest known height.
 func enqueueMissingBlocks(exportQueue types.HeightQueue, data *ParserData) {
 	// Get the config
-	cfg := types.Cfg.Parsing
+	cfg := types.Cfg.GetParsingConfig()
 
 	// Get the latest height
 	latestBlockHeight, err := data.Proxy.LatestHeight()

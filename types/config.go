@@ -1,15 +1,40 @@
 package types
 
+import "github.com/pelletier/go-toml"
+
 var (
 	// Cfg represents the configuration to be used during the execution
-	Cfg *Config
+	Cfg Config
 )
 
 // ConfigParser represents a function that allows to parse a file contents as a Config object
 type ConfigParser = func(fileContents []byte) (Config, error)
 
+// DefaultConfigParser attempts to read and parse a Juno config from the given string bytes.
+// An error reading or parsing the config results in a panic.
+func DefaultConfigParser(configData []byte) (Config, error) {
+	var cfg Config
+	err := toml.Unmarshal(configData, &cfg)
+	return cfg, err
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+// Config represents the configuration to run Juno
+type Config interface {
+	GetRPCConfig() *RPCConfig
+	GetGrpcConfig() *GrpcConfig
+	GetCosmosConfig() *CosmosConfig
+	GetDatabaseConfig() *DatabaseConfig
+	GetLoggingConfig() *LoggingConfig
+	GetParsingConfig() *ParsingConfig
+	GetPruningConfig() *PruningConfig
+}
+
+var _ Config = &config{}
+
 // Config defines all necessary juno configuration parameters.
-type Config struct {
+type config struct {
 	RPC      *RPCConfig      `toml:"rpc"`
 	Grpc     *GrpcConfig     `toml:"grpc"`
 	Cosmos   *CosmosConfig   `toml:"cosmos"`
@@ -24,8 +49,8 @@ func NewConfig(
 	rpcConfig *RPCConfig, grpConfig *GrpcConfig,
 	cosmosConfig *CosmosConfig, dbConfig *DatabaseConfig,
 	loggingConfig *LoggingConfig, parsingConfig *ParsingConfig,
-) *Config {
-	return &Config{
+) Config {
+	return &config{
 		RPC:      rpcConfig,
 		Grpc:     grpConfig,
 		Cosmos:   cosmosConfig,
@@ -34,6 +59,43 @@ func NewConfig(
 		Parsing:  parsingConfig,
 	}
 }
+
+// GetRPCConfig implements Config
+func (c *config) GetRPCConfig() *RPCConfig {
+	return c.RPC
+}
+
+// GetGrpcConfig implements Config
+func (c *config) GetGrpcConfig() *GrpcConfig {
+	return c.Grpc
+}
+
+// GetCosmosConfig implements Config
+func (c *config) GetCosmosConfig() *CosmosConfig {
+	return c.Cosmos
+}
+
+// GetDatabaseConfig implements Config
+func (c *config) GetDatabaseConfig() *DatabaseConfig {
+	return c.Database
+}
+
+// GetLoggingConfig implements Config
+func (c *config) GetLoggingConfig() *LoggingConfig {
+	return c.Logging
+}
+
+// GetParsingConfig implements Config
+func (c *config) GetParsingConfig() *ParsingConfig {
+	return c.Parsing
+}
+
+// GetPruningConfig implements Config
+func (c *config) GetPruningConfig() *PruningConfig {
+	return c.Pruning
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
 
 // GrpcConfig contains the configuration of the gRPC endpoint
 type GrpcConfig struct {
@@ -48,6 +110,8 @@ func NewGrpcConfig(address string, insecure bool) *GrpcConfig {
 	}
 }
 
+// ---------------------------------------------------------------------------------------------------------------------
+
 // RPCConfig contains the configuration of the RPC endpoint
 type RPCConfig struct {
 	Address string `toml:"address"`
@@ -58,6 +122,8 @@ func NewRPCConfig(address string) *RPCConfig {
 		Address: address,
 	}
 }
+
+// ---------------------------------------------------------------------------------------------------------------------
 
 // CosmosConfig contains the data to configure the CosmosConfig SDK
 type CosmosConfig struct {
@@ -71,6 +137,8 @@ func NewCosmosConfig(prefix string, modules []string) *CosmosConfig {
 		Modules: modules,
 	}
 }
+
+// ---------------------------------------------------------------------------------------------------------------------
 
 // DatabaseConfig represents a generic database configuration
 type DatabaseConfig struct {
@@ -103,6 +171,8 @@ func NewDatabaseConfig(
 	}
 }
 
+// ---------------------------------------------------------------------------------------------------------------------
+
 // LoggingConfig represents the configuration for the logging part
 type LoggingConfig struct {
 	LogLevel  string `toml:"level"`
@@ -115,6 +185,8 @@ func NewLoggingConfig(level, format string) *LoggingConfig {
 		LogFormat: format,
 	}
 }
+
+// ---------------------------------------------------------------------------------------------------------------------
 
 // ParsingConfig represents the configuration of the parsing
 type ParsingConfig struct {
@@ -140,6 +212,8 @@ func NewParsingConfig(
 		FastSync:       fastSync,
 	}
 }
+
+// ---------------------------------------------------------------------------------------------------------------------
 
 // PruningConfig contains the configuration of the pruning strategy
 type PruningConfig struct {

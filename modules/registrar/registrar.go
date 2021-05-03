@@ -19,7 +19,7 @@ import (
 // Registrar represents a modules registrar. This allows to build a list of modules that can later be used by
 // specifying their names inside the TOML configuration file.
 type Registrar interface {
-	BuildModules(*types.Config, *params.EncodingConfig, *sdk.Config, db.Database, *client.Proxy) modules.Modules
+	BuildModules(types.Config, *params.EncodingConfig, *sdk.Config, db.Database, *client.Proxy) modules.Modules
 }
 
 // ------------------------------------------------------------------------------------------------------------------
@@ -31,7 +31,7 @@ type EmptyRegistrar struct{}
 
 // BuildModules implements Registrar
 func (*EmptyRegistrar) BuildModules(
-	*types.Config, *params.EncodingConfig, *sdk.Config, db.Database, *client.Proxy,
+	types.Config, *params.EncodingConfig, *sdk.Config, db.Database, *client.Proxy,
 ) modules.Modules {
 	return nil
 }
@@ -52,10 +52,10 @@ func NewDefaultRegistrar(parser messages.MessageAddressesParser) *DefaultRegistr
 
 // BuildModules implements Registrar
 func (r *DefaultRegistrar) BuildModules(
-	cfg *types.Config, encodingCfg *params.EncodingConfig, _ *sdk.Config, db db.Database, _ *client.Proxy,
+	cfg types.Config, encodingCfg *params.EncodingConfig, _ *sdk.Config, db db.Database, _ *client.Proxy,
 ) modules.Modules {
 	return modules.Modules{
-		pruning.NewModule(cfg.Pruning, db),
+		pruning.NewModule(cfg.GetPruningConfig(), db),
 		messages.NewModule(r.parser, encodingCfg.Marshaler, db),
 	}
 }
