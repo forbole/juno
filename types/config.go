@@ -6,7 +6,7 @@ var (
 )
 
 // ConfigParser represents a function that allows to parse a file contents as a Config object
-type ConfigParser = func(fileContents []byte) (*Config, error)
+type ConfigParser = func(fileContents []byte) (Config, error)
 
 // Config defines all necessary juno configuration parameters.
 type Config struct {

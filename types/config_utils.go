@@ -38,20 +38,16 @@ func Read(configPath string, parser ConfigParser) (*Config, error) {
 		return nil, fmt.Errorf("failed to read config: %s", err)
 	}
 
-	return parser(configData)
+	cfg, err := parser(configData)
+	return &cfg, err
 }
 
 // DefaultConfigParser attempts to read and parse a Juno config from the given string bytes.
 // An error reading or parsing the config results in a panic.
-func DefaultConfigParser(configData []byte) (*Config, error) {
+func DefaultConfigParser(configData []byte) (Config, error) {
 	var cfg Config
-
 	err := toml.Unmarshal(configData, &cfg)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode config: %s", err)
-	}
-
-	return &cfg, nil
+	return cfg, err
 }
 
 // Write allows to write the given configuration into the file present at the given path
