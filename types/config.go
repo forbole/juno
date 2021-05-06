@@ -13,9 +13,9 @@ type ConfigParser = func(fileContents []byte) (Config, error)
 // DefaultConfigParser attempts to read and parse a Juno config from the given string bytes.
 // An error reading or parsing the config results in a panic.
 func DefaultConfigParser(configData []byte) (Config, error) {
-	var cfg Config
+	var cfg config
 	err := toml.Unmarshal(configData, &cfg)
-	return cfg, err
+	return &cfg, err
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

@@ -13,10 +13,12 @@ import (
 
 func main() {
 	// Config the runner
-	config := parse.NewConfig("juno").
-		WithRegistrar(registrar.NewDefaultRegistrar(
-			messages.CosmosMessageAddressesParser,
-		))
+	config := cmd.NewConfig("juno").
+		WithParseConfig(parse.NewConfig().
+			WithRegistrar(registrar.NewDefaultRegistrar(
+				messages.CosmosMessageAddressesParser,
+			)),
+		)
 
 	// Run the commands and panic on any error
 	exec := cmd.BuildDefaultExecutor(config)

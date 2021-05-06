@@ -14,7 +14,6 @@ import (
 
 // Config contains all the configuration for the "parse" command
 type Config struct {
-	name                  string
 	registrar             registrar.Registrar
 	configParser          types.ConfigParser
 	encodingConfigBuilder types.EncodingConfigBuilder
@@ -23,15 +22,8 @@ type Config struct {
 }
 
 // NewConfig allows to build a new Config instance
-func NewConfig(name string) *Config {
-	return &Config{
-		name: name,
-	}
-}
-
-// GetName returns the name of the command
-func (config *Config) GetName() string {
-	return config.name
+func NewConfig() *Config {
+	return &Config{}
 }
 
 // WithRegistrar sets the modules registrar to be used

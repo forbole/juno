@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/desmos-labs/juno/cmd/parse"
+	initcmd "github.com/desmos-labs/juno/cmd/init"
+	parsecmd "github.com/desmos-labs/juno/cmd/parse"
 
 	"github.com/desmos-labs/juno/types"
 
@@ -26,13 +27,13 @@ import (
 //
 // dbBuilder is used to provide the database that will be used to save the data. If you don't have any
 // particular need, you can use the Create variable to build a default database instance.
-func BuildDefaultExecutor(parseConfig *parse.Config) cli.Executor {
-	rootCmd := RootCmd(parseConfig.GetName())
+func BuildDefaultExecutor(config *Config) cli.Executor {
+	rootCmd := RootCmd(config.GetName())
 
 	rootCmd.AddCommand(
 		VersionCmd(),
-		InitCmd(),
-		parse.ParseCmd(parseConfig),
+		initcmd.InitCmd(config.GetName(), config.GetInitConfig()),
+		parsecmd.ParseCmd(config.GetName(), config.GetParseConfig()),
 	)
 
 	return PrepareRootCmd(rootCmd)

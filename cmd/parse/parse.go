@@ -8,9 +8,6 @@ import (
 	"syscall"
 	"time"
 
-	modsregistrar "github.com/desmos-labs/juno/modules/registrar"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/go-co-op/gocron"
 	"github.com/rs/zerolog/log"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -30,13 +27,13 @@ var (
 )
 
 // ParseCmd returns the command that should be run when we want to start parsing a chain state.
-func ParseCmd(cfg *Config) *cobra.Command {
+func ParseCmd(name string, cmdCfg *Config) *cobra.Command {
 	return &cobra.Command{
 		Use:     "parse",
 		Short:   "Start parsing the blockchain data",
-		PreRunE: types.ConcatCobraCmdFuncs(ReadConfig(cfg), setupLogging),
+		PreRunE: types.ConcatCobraCmdFuncs(ReadConfig(name, cmdCfg), setupLogging),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			parserData, err := SetupParsing(cfg)
+			parserData, err := SetupParsing(cmdCfg)
 			if err != nil {
 				return err
 			}
@@ -44,49 +41,6 @@ func ParseCmd(cfg *Config) *cobra.Command {
 			return StartParsing(parserData)
 		},
 	}
-}
-
-// SetupParsing setups all the things that should be later passed to StartParsing in order
-// to parse the chain data properly.
-func SetupParsing(parseConfig *Config) (*ParserData, error) {
-	// Get the global config
-	cfg := types.Cfg
-
-	// Build the codec
-	encodingConfig := parseConfig.GetEncodingConfigBuilder()()
-
-	// Setup the SDK configuration
-	sdkConfig := sdk.GetConfig()
-	parseConfig.GetSetupConfig()(cfg, sdkConfig)
-	sdkConfig.Seal()
-
-	// Get the database
-	database, err := parseConfig.GetDBBuilder()(cfg, &encodingConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	// Init the client
-	cp, err := client.NewClientProxy(cfg, &encodingConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to start client: %s", err)
-	}
-
-	// Get the modules
-	mods := parseConfig.GetRegistrar().BuildModules(cfg, &encodingConfig, sdkConfig, database, cp)
-	registeredModules := modsregistrar.GetModules(mods, cfg.GetCosmosConfig().Modules)
-
-	// Run all the additional operations
-	for _, module := range registeredModules {
-		if module, ok := module.(modules.AdditionalOperationsModule); ok {
-			err := module.RunAdditionalOperations()
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	return NewParserData(&encodingConfig, cp, database, registeredModules), nil
 }
 
 // StartParsing represents the function that should be called when the parse command is executed
