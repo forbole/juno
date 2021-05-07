@@ -6,14 +6,22 @@ import (
 	"github.com/desmos-labs/juno/types"
 )
 
-type FlagSetup = func(cmd *cobra.Command)
+// ConfigFlagSetup represents a function that will be called in order to setup all the flags for the "init" command.
+// Here you should add any flag that might be used from the user in order to set default configuration values when
+// initializing for the first time the configuration of the command.
+type ConfigFlagSetup = func(cmd *cobra.Command)
 
+// DefaultFlagSetup represents a ConfigFlagSetup that sets no flag other than the default ones.
 func DefaultFlagSetup(_ *cobra.Command) {}
 
 // --------------------------------------------------------------------------------------------------------------------
 
+// ConfigCreator represents a function that builds a Config instance from the flags that have been specified by the
+// user inside the given command.
 type ConfigCreator = func(cmd *cobra.Command) types.Config
 
+// DefaultConfigCreator represents the default configuration creator that builds a Config instance using the values
+// specified using the default flags.
 func DefaultConfigCreator(cmd *cobra.Command) types.Config {
 	rpcAddr, _ := cmd.Flags().GetString(flagRPCAddress)
 
@@ -74,8 +82,8 @@ func DefaultConfigCreator(cmd *cobra.Command) types.Config {
 
 // Config contains the configuration data for the init command
 type Config struct {
-	setupFlag    FlagSetup
-	createConfig ConfigCreator
+	setupConfigFlag ConfigFlagSetup
+	createConfig    ConfigCreator
 }
 
 // NewConfig allows to build a new Config instance
@@ -83,18 +91,19 @@ func NewConfig() *Config {
 	return &Config{}
 }
 
-// WithFlagSetup sets the given setup function as the flag setup
-func (c *Config) WithFlagSetup(setup FlagSetup) *Config {
-	c.setupFlag = setup
+// WithConfigFlagSetup sets the given setup function as the flag setup
+func (c *Config) WithConfigFlagSetup(setup ConfigFlagSetup) *Config {
+	c.setupConfigFlag = setup
 	return c
 }
 
-// GetSetupFlag return the function that should be run to setup the flags
-func (c *Config) GetSetupFlag() FlagSetup {
-	if c.setupFlag == nil {
+// GetConfigSetupFlag return the function that should be run to setup the flags that will later be used to build
+// a default instance of the configuration object
+func (c *Config) GetConfigSetupFlag() ConfigFlagSetup {
+	if c.setupConfigFlag == nil {
 		return DefaultFlagSetup
 	}
-	return c.setupFlag
+	return c.setupConfigFlag
 }
 
 // WithConfigCreator sets the given setup function as the configuration creator
@@ -103,9 +112,10 @@ func (c *Config) WithConfigCreator(creator ConfigCreator) *Config {
 	return c
 }
 
-// GetConfigCreator return the function that should be run to create a configuration
+// GetConfigCreator return the function that should be run to create a configuration from a set of
+// flags specified by the user with the "init" command
 func (c *Config) GetConfigCreator() ConfigCreator {
-	if c.setupFlag == nil {
+	if c.setupConfigFlag == nil {
 		return DefaultConfigCreator
 	}
 	return c.createConfig

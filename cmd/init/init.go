@@ -11,7 +11,6 @@ import (
 )
 
 const (
-	LogFormatJSON = "json"
 	LogFormatText = "text"
 
 	flagReplace = "replace"
@@ -113,7 +112,7 @@ func InitCmd(name string, cfg *Config) *cobra.Command {
 	command.Flags().Bool(flagParsingFastSync, true, "Whether to use fast sync or not when parsing old blocks")
 
 	// Set additional flags
-	cfg.GetSetupFlag()(command)
+	cfg.GetConfigSetupFlag()(command)
 
 	return command
 }
