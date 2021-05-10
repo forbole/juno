@@ -3,7 +3,6 @@ package types
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path"
 
 	"github.com/pelletier/go-toml"
@@ -12,17 +11,12 @@ import (
 )
 
 var (
-	HomeDir, _ = os.UserHomeDir()
+	HomePath = ""
 )
 
-// GetConfigFolderPath returns the path to the config folder given the executable name
-func GetConfigFolderPath(name string) string {
-	return path.Join(HomeDir, fmt.Sprintf(".%s", name))
-}
-
 // GetConfigFilePath returns the path to the configuration file given the executable name
-func GetConfigFilePath(name string) string {
-	return path.Join(GetConfigFolderPath(name), "config.toml")
+func GetConfigFilePath() string {
+	return path.Join(HomePath, "config.toml")
 }
 
 // Read takes the path to a configuration file and returns the properly parsed configuration

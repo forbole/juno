@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path"
 
 	initcmd "github.com/desmos-labs/juno/cmd/init"
 	parsecmd "github.com/desmos-labs/juno/cmd/parse"
@@ -11,6 +12,10 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/tendermint/tendermint/libs/cli"
+)
+
+var (
+	FlagHome = "home"
 )
 
 // BuildDefaultExecutor allows to build an Executor containing a root command that
@@ -32,11 +37,11 @@ func BuildDefaultExecutor(config *Config) cli.Executor {
 
 	rootCmd.AddCommand(
 		VersionCmd(),
-		initcmd.InitCmd(config.GetName(), config.GetInitConfig()),
-		parsecmd.ParseCmd(config.GetName(), config.GetParseConfig()),
+		initcmd.InitCmd(config.GetInitConfig()),
+		parsecmd.ParseCmd(config.GetParseConfig()),
 	)
 
-	return PrepareRootCmd(rootCmd)
+	return PrepareRootCmd(config.GetName(), rootCmd)
 }
 
 // RootCmd allows to build the default root command having the given name
@@ -54,10 +59,22 @@ them to compose more aggregate and complex queries.`, name),
 }
 
 // PrepareRootCmd is meant to prepare the given command binding all the viper flags
-func PrepareRootCmd(cmd *cobra.Command) cli.Executor {
+func PrepareRootCmd(name string, cmd *cobra.Command) cli.Executor {
 	cmd.PersistentPreRunE = types.ConcatCobraCmdFuncs(
 		types.BindFlagsLoadViper,
+		setupHome,
 		cmd.PersistentPreRunE,
 	)
+
+	home, _ := os.UserHomeDir()
+	defaultConfigPath := path.Join(home, fmt.Sprintf(".%s", name))
+	cmd.PersistentFlags().String(FlagHome, defaultConfigPath, "Set the home folder of the application, where all files will be stored")
+
 	return cli.Executor{Command: cmd, Exit: os.Exit}
+}
+
+// setupHome setups the home directory of the root command
+func setupHome(cmd *cobra.Command, _ []string) error {
+	types.HomePath, _ = cmd.Flags().GetString(FlagHome)
+	return nil
 }

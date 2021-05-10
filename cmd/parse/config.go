@@ -11,13 +11,13 @@ import (
 
 // ReadConfig parses the configuration file for the executable having the give name using
 // the provided configuration parser
-func ReadConfig(name string, cfg *Config) types.CobraCmdFunc {
+func ReadConfig(cfg *Config) types.CobraCmdFunc {
 	return func(_ *cobra.Command, _ []string) error {
-		file := types.GetConfigFilePath(name)
+		file := types.GetConfigFilePath()
 
 		// Make sure the path exists
 		if _, err := os.Stat(file); os.IsNotExist(err) {
-			return fmt.Errorf("%s file does not exist. Make sure you have run %s init", file, name)
+			return fmt.Errorf("config file does not exist. Make sure you have run the init command")
 		}
 
 		// Read the config

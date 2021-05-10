@@ -44,15 +44,14 @@ const (
 )
 
 // InitCmd returns the command that should be run in order to properly initialize BDJuno
-func InitCmd(name string, cfg *Config) *cobra.Command {
+func InitCmd(cfg *Config) *cobra.Command {
 	command := &cobra.Command{
 		Use:   "init",
 		Short: "Initializes the configuration files",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Create the config path if not present
-			folderPath := types.GetConfigFolderPath(name)
-			if _, err := os.Stat(folderPath); os.IsNotExist(err) {
-				err = os.MkdirAll(folderPath, os.ModePerm)
+			if _, err := os.Stat(types.HomePath); os.IsNotExist(err) {
+				err = os.MkdirAll(types.HomePath, os.ModePerm)
 				if err != nil {
 					return err
 				}
@@ -64,7 +63,7 @@ func InitCmd(name string, cfg *Config) *cobra.Command {
 			}
 
 			// Get the config file
-			configFilePath := types.GetConfigFilePath(name)
+			configFilePath := types.GetConfigFilePath()
 			file, _ := os.Stat(configFilePath)
 
 			// Check if the file exists and replace is false
