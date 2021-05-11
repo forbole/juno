@@ -114,12 +114,14 @@ func NewGrpcConfig(address string, insecure bool) *GrpcConfig {
 
 // RPCConfig contains the configuration of the RPC endpoint
 type RPCConfig struct {
-	Address string `toml:"address"`
+	ClientName string `toml:"client_name"`
+	Address    string `toml:"address"`
 }
 
-func NewRPCConfig(address string) *RPCConfig {
+func NewRPCConfig(clientName, address string) *RPCConfig {
 	return &RPCConfig{
-		Address: address,
+		ClientName: clientName,
+		Address:    address,
 	}
 }
 

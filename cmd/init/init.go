@@ -15,7 +15,9 @@ const (
 
 	flagReplace = "replace"
 
-	flagRPCAddress   = "rpc-address"
+	flagRPCClientName = "client-name"
+	flagRPCAddress    = "rpc-address"
+
 	flagGRPCAddress  = "grpc-address"
 	flagGRPCInsecure = "grpc-insecure"
 
@@ -82,6 +84,7 @@ func InitCmd(cfg *Config) *cobra.Command {
 	// Set default flags
 	command.Flags().Bool(flagReplace, false, "replaces any existing configuration with a new one")
 
+	command.Flags().String(flagRPCClientName, "juno", "Name of the subscriber to use when listening to events")
 	command.Flags().String(flagRPCAddress, "http://localhost:26657", "RPC address to use")
 
 	command.Flags().String(flagGRPCAddress, "localhost:9090", "gRPC address to use")

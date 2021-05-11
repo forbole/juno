@@ -23,6 +23,7 @@ type ConfigCreator = func(cmd *cobra.Command) types.Config
 // DefaultConfigCreator represents the default configuration creator that builds a Config instance using the values
 // specified using the default flags.
 func DefaultConfigCreator(cmd *cobra.Command) types.Config {
+	rpcClientName, _ := cmd.Flags().GetString(flagRPCClientName)
 	rpcAddr, _ := cmd.Flags().GetString(flagRPCAddress)
 
 	grpcAddr, _ := cmd.Flags().GetString(flagGRPCAddress)
@@ -52,7 +53,7 @@ func DefaultConfigCreator(cmd *cobra.Command) types.Config {
 	parsingFastSync, _ := cmd.Flags().GetBool(flagParsingFastSync)
 
 	return types.NewConfig(
-		types.NewRPCConfig(rpcAddr),
+		types.NewRPCConfig(rpcClientName, rpcAddr),
 		types.NewGrpcConfig(grpcAddr, grpcInsecure),
 		types.NewCosmosConfig(cosmosPrefix, cosmosModules),
 		types.NewDatabaseConfig(

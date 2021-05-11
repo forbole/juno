@@ -148,7 +148,7 @@ func enqueueMissingBlocks(exportQueue types.HeightQueue, data *ParserData) {
 // and enqueues each new block height onto the provided queue. It blocks as new
 // blocks are incoming.
 func startNewBlockListener(exportQueue types.HeightQueue, data *ParserData) {
-	eventCh, cancel, err := data.Proxy.SubscribeNewBlocks("juno-client")
+	eventCh, cancel, err := data.Proxy.SubscribeNewBlocks(types.Cfg.GetRPCConfig().ClientName + "-blocks")
 	defer cancel()
 
 	if err != nil {

@@ -108,7 +108,8 @@ type ParserData struct {
 
 // NewParserData builds a new ParserData instance
 func NewParserData(
-	encodingConfig *params.EncodingConfig, proxy *client.Proxy, db db.Database, modules []modules.Module,
+	encodingConfig *params.EncodingConfig,
+	proxy *client.Proxy, db db.Database, modules []modules.Module,
 ) *ParserData {
 	return &ParserData{
 		EncodingConfig: encodingConfig,
