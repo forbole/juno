@@ -19,24 +19,24 @@ import (
 // Builder creates a database connection with the given database connection info
 // from config. It returns a database connection handle or an error if the
 // connection fails.
-func Builder(cfg *types.DatabaseConfig, encodingConfig *params.EncodingConfig) (db.Database, error) {
+func Builder(cfg types.DatabaseConfig, encodingConfig *params.EncodingConfig) (db.Database, error) {
 	sslMode := "disable"
-	if cfg.SSLMode != "" {
-		sslMode = cfg.SSLMode
+	if cfg.GetSSLMode() != "" {
+		sslMode = cfg.GetSSLMode()
 	}
 
 	schema := "public"
-	if cfg.Schema != "" {
-		schema = cfg.Schema
+	if cfg.GetSchema() != "" {
+		schema = cfg.GetSchema()
 	}
 
 	connStr := fmt.Sprintf(
 		"host=%s port=%d dbname=%s user=%s sslmode=%s search_path=%s",
-		cfg.Host, cfg.Port, cfg.Name, cfg.User, sslMode, schema,
+		cfg.GetHost(), cfg.GetPort(), cfg.GetName(), cfg.GetUser(), sslMode, schema,
 	)
 
-	if cfg.Password != "" {
-		connStr += fmt.Sprintf(" password=%s", cfg.Password)
+	if cfg.GetPassword() != "" {
+		connStr += fmt.Sprintf(" password=%s", cfg.GetPassword())
 	}
 
 	postgresDb, err := sql.Open("postgres", connStr)
@@ -45,8 +45,8 @@ func Builder(cfg *types.DatabaseConfig, encodingConfig *params.EncodingConfig) (
 	}
 
 	// Set max open connections
-	postgresDb.SetMaxOpenConns(cfg.MaxOpenConnections)
-	postgresDb.SetMaxIdleConns(cfg.MaxIdleConnections)
+	postgresDb.SetMaxOpenConns(cfg.GetMaxOpenConnections())
+	postgresDb.SetMaxIdleConns(cfg.GetMaxIdleConnections())
 
 	return &Database{Sql: postgresDb, EncodingConfig: encodingConfig}, nil
 }

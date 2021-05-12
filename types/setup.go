@@ -12,7 +12,7 @@ type SdkConfigSetup func(config Config, sdkConfig *sdk.Config)
 // DefaultConfigSetup represents a handy implementation of SdkConfigSetup that simply setups the prefix
 // inside the configuration
 func DefaultConfigSetup(cfg Config, sdkConfig *sdk.Config) {
-	prefix := cfg.GetCosmosConfig().Prefix
+	prefix := cfg.GetCosmosConfig().GetPrefix()
 	sdkConfig.SetBech32PrefixForAccount(
 		prefix,
 		prefix+sdk.PrefixPublic,

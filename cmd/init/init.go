@@ -43,6 +43,10 @@ const (
 	flagParsingParseGenesis = "parsing-parse-genesis"
 	flagParsingStartHeight  = "parsing-start-height"
 	flagParsingFastSync     = "parsing-fast-sync"
+
+	flagPruningKeepRecent = "pruning-keep-recent"
+	flagPruningKeepEvery  = "pruning-keep-every"
+	flagPruningInterval   = "pruning-interval"
 )
 
 // InitCmd returns the command that should be run in order to properly initialize BDJuno
@@ -112,6 +116,10 @@ func InitCmd(cfg *Config) *cobra.Command {
 	command.Flags().Bool(flagParsingParseGenesis, true, "Whether or not to parse the genesis")
 	command.Flags().Int64(flagParsingStartHeight, 1, "Starting height when parsing new blocks")
 	command.Flags().Bool(flagParsingFastSync, true, "Whether to use fast sync or not when parsing old blocks")
+
+	command.Flags().Int64(flagPruningKeepRecent, 100, "Number of recent states to keep")
+	command.Flags().Int64(flagPruningKeepEvery, 500, "Keep every x amount of states forever")
+	command.Flags().Int64(flagPruningKeepEvery, 10, "Number of blocks every which to perform the pruning")
 
 	// Set additional flags
 	cfg.GetConfigSetupFlag()(command)

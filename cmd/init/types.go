@@ -52,6 +52,10 @@ func DefaultConfigCreator(cmd *cobra.Command) types.Config {
 	parsingStartHeight, _ := cmd.Flags().GetInt64(flagParsingStartHeight)
 	parsingFastSync, _ := cmd.Flags().GetBool(flagParsingFastSync)
 
+	pruningKeepEvery, _ := cmd.Flags().GetInt64(flagPruningKeepEvery)
+	pruningKeepRecent, _ := cmd.Flags().GetInt64(flagPruningKeepRecent)
+	pruningInterval, _ := cmd.Flags().GetInt64(flagPruningInterval)
+
 	return types.NewConfig(
 		types.NewRPCConfig(rpcClientName, rpcAddr),
 		types.NewGrpcConfig(grpcAddr, grpcInsecure),
@@ -75,6 +79,11 @@ func DefaultConfigCreator(cmd *cobra.Command) types.Config {
 			parsingParseGenesis,
 			parsingStartHeight,
 			parsingFastSync,
+		),
+		types.NewPruningConfig(
+			pruningKeepRecent,
+			pruningKeepEvery,
+			pruningInterval,
 		),
 	)
 }

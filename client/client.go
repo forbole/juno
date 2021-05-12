@@ -38,7 +38,7 @@ type Proxy struct {
 
 // NewClientProxy allows to build a new Proxy instance
 func NewClientProxy(cfg types.Config, encodingConfig *params.EncodingConfig) (*Proxy, error) {
-	rpcClient, err := httpclient.New(cfg.GetRPCConfig().Address, "/websocket")
+	rpcClient, err := httpclient.New(cfg.GetRPCConfig().GetAddress(), "/websocket")
 	if err != nil {
 		return nil, err
 	}

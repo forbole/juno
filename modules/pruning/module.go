@@ -15,12 +15,12 @@ var _ modules.Module = &Module{}
 
 // Module represents the pruning module allowing to clean the database periodically
 type Module struct {
-	cfg *types.PruningConfig
+	cfg types.PruningConfig
 	db  db.Database
 }
 
 // NewModule builds a new Module instance
-func NewModule(cfg *types.PruningConfig, db db.Database) *Module {
+func NewModule(cfg types.PruningConfig, db db.Database) *Module {
 	return &Module{
 		cfg: cfg,
 		db:  db,
@@ -39,7 +39,7 @@ func (m *Module) HandleBlock(block *tmctypes.ResultBlock, _ []*types.Tx, _ *tmct
 		return nil
 	}
 
-	if block.Block.Height%m.cfg.Interval != 0 {
+	if block.Block.Height%m.cfg.GetInterval() != 0 {
 		// Not an interval height, so just skip
 		return nil
 	}
@@ -57,9 +57,9 @@ func (m *Module) HandleBlock(block *tmctypes.ResultBlock, _ []*types.Tx, _ *tmct
 
 	// Iterate from last pruned height until (current block height - keep recent) to
 	// avoid pruning the recent blocks that should be kept
-	for ; height < block.Block.Height-m.cfg.KeepRecent; height++ {
+	for ; height < block.Block.Height-m.cfg.GetKeepRecent(); height++ {
 
-		if height%m.cfg.KeepEvery == 0 {
+		if height%m.cfg.GetKeepEvery() == 0 {
 			// The height should be kept, so just skip
 			continue
 		}

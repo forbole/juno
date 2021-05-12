@@ -11,9 +11,9 @@ func CreateGrpcConnection(cfg types.Config) (*grpc.ClientConn, error) {
 	gprConfig := cfg.GetGrpcConfig()
 
 	var grpcOpts []grpc.DialOption
-	if gprConfig.Insecure {
+	if gprConfig.IsInsecure() {
 		grpcOpts = append(grpcOpts, grpc.WithInsecure())
 	}
 
-	return grpc.Dial(gprConfig.Address, grpcOpts...)
+	return grpc.Dial(gprConfig.GetAddress(), grpcOpts...)
 }

@@ -65,7 +65,7 @@ func StartParsing(data *ParserData) error {
 
 	// Create workers
 	config := worker.NewConfig(exportQueue, data.EncodingConfig, data.Proxy, data.Database, data.Modules)
-	workers := make([]worker.Worker, cfg.Workers, cfg.Workers)
+	workers := make([]worker.Worker, cfg.GetWorkers(), cfg.GetWorkers())
 	for i := range workers {
 		workers[i] = worker.NewWorker(config)
 	}
@@ -90,16 +90,16 @@ func StartParsing(data *ParserData) error {
 	// Listen for and trap any OS signal to gracefully shutdown and exit
 	trapSignal(data.Proxy, data.Database)
 
-	if cfg.ParseGenesis {
+	if cfg.ShouldParseGenesis() {
 		// Add the genesis to the queue if requested
 		exportQueue <- 1
 	}
 
-	if cfg.ParseOldBlocks {
+	if cfg.ShouldParseOldBlocks() {
 		go enqueueMissingBlocks(exportQueue, data)
 	}
 
-	if cfg.ParseNewBlocks {
+	if cfg.ShouldParseNewBlocks() {
 		go startNewBlockListener(exportQueue, data)
 	}
 
@@ -120,7 +120,7 @@ func enqueueMissingBlocks(exportQueue types.HeightQueue, data *ParserData) {
 		log.Fatal().Err(fmt.Errorf("failed to get last block from RPC client: %s", err))
 	}
 
-	if cfg.FastSync {
+	if cfg.UseFastSync() {
 		log.Info().Int64("latest_block_height", latestBlockHeight).
 			Msg("fast sync is enabled, ignoring all previous blocks")
 		for _, module := range data.Modules {
@@ -137,7 +137,7 @@ func enqueueMissingBlocks(exportQueue types.HeightQueue, data *ParserData) {
 	} else {
 		log.Info().Int64("latest_block_height", latestBlockHeight).
 			Msg("syncing missing blocks...")
-		for i := cfg.StartHeight; i <= latestBlockHeight; i++ {
+		for i := cfg.GetStartHeight(); i <= latestBlockHeight; i++ {
 			log.Debug().Int64("height", i).Msg("enqueueing missing block")
 			exportQueue <- i
 		}
@@ -148,7 +148,7 @@ func enqueueMissingBlocks(exportQueue types.HeightQueue, data *ParserData) {
 // and enqueues each new block height onto the provided queue. It blocks as new
 // blocks are incoming.
 func startNewBlockListener(exportQueue types.HeightQueue, data *ParserData) {
-	eventCh, cancel, err := data.Proxy.SubscribeNewBlocks(types.Cfg.GetRPCConfig().ClientName + "-blocks")
+	eventCh, cancel, err := data.Proxy.SubscribeNewBlocks(types.Cfg.GetRPCConfig().GetClientName() + "-blocks")
 	defer cancel()
 
 	if err != nil {

@@ -16,14 +16,14 @@ func setupLogging(_ *cobra.Command, _ []string) error {
 	cfg := types.Cfg.GetLoggingConfig()
 
 	// Init logging level
-	logLvl, err := zerolog.ParseLevel(cfg.LogLevel)
+	logLvl, err := zerolog.ParseLevel(cfg.GetLogLevel())
 	if err != nil {
 		return err
 	}
 	zerolog.SetGlobalLevel(logLvl)
 
 	// Init logging format
-	switch cfg.LogFormat {
+	switch cfg.GetLogFormat() {
 	case "json":
 		// JSON is the default logging format
 		break
@@ -33,7 +33,7 @@ func setupLogging(_ *cobra.Command, _ []string) error {
 		break
 
 	default:
-		return fmt.Errorf("invalid logging format: %s", cfg.LogFormat)
+		return fmt.Errorf("invalid logging format: %s", cfg.GetLogFormat())
 	}
 	return err
 }
