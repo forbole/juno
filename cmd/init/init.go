@@ -119,7 +119,7 @@ func InitCmd(cfg *Config) *cobra.Command {
 
 	command.Flags().Int64(flagPruningKeepRecent, 100, "Number of recent states to keep")
 	command.Flags().Int64(flagPruningKeepEvery, 500, "Keep every x amount of states forever")
-	command.Flags().Int64(flagPruningKeepEvery, 10, "Number of blocks every which to perform the pruning")
+	command.Flags().Int64(flagPruningInterval, 10, "Number of blocks every which to perform the pruning")
 
 	// Set additional flags
 	cfg.GetConfigSetupFlag()(command)
