@@ -331,12 +331,12 @@ func NewLoggingConfig(level, format string) LoggingConfig {
 
 // GetLogLevel implements LoggingConfig
 func (l *loggingConfig) GetLogLevel() string {
-	panic("implement me")
+	return l.LogLevel
 }
 
 // GetLogFormat implements LoggingConfig
 func (l *loggingConfig) GetLogFormat() string {
-	panic("implement me")
+	return l.LogFormat
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
