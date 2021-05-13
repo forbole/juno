@@ -147,20 +147,39 @@ func (db *Database) HasValidator(addr string) (bool, error) {
 	return res, err
 }
 
-// SaveValidator implements db.Database
-func (db *Database) SaveValidator(addr, pk string) error {
-	stmt := `INSERT INTO validator (consensus_address, consensus_pubkey) VALUES ($1, $2) ON CONFLICT DO NOTHING;`
-	_, err := db.Sql.Exec(stmt, addr, pk)
+// SaveValidators implements db.Database
+func (db *Database) SaveValidators(validators []*types.Validator) error {
+	stmt := `INSERT INTO validator (consensus_address, consensus_pubkey) VALUES `
+
+	var vparams []interface{}
+	for i, val := range validators {
+		vi := i * 2
+
+		stmt += fmt.Sprintf("($%d, $%d),", vi+1, vi+2)
+		vparams = append(vparams, val.ConsAddr, val.ConsPubKey)
+	}
+
+	stmt = stmt[:len(stmt)-1] // Remove trailing ,
+	stmt += " ON CONFLICT DO NOTHING"
+	_, err := db.Sql.Exec(stmt, vparams...)
 	return err
 }
 
-// SaveCommitSig implements db.Database
-func (db *Database) SaveCommitSig(pc *types.CommitSig) error {
-	sqlStatement := `
-INSERT INTO pre_commit (validator_address, height, timestamp, voting_power, proposer_priority)
-VALUES ($1, $2, $3, $4, $5) ON CONFLICT (validator_address, timestamp) DO NOTHING;`
+// SaveCommitSignatures implements db.Database
+func (db *Database) SaveCommitSignatures(signatures []*types.CommitSig) error {
+	stmt := `INSERT INTO pre_commit (validator_address, height, timestamp, voting_power, proposer_priority) VALUES `
 
-	_, err := db.Sql.Exec(sqlStatement, pc.ValidatorAddress, pc.Height, pc.Timestamp, pc.VotingPower, pc.ProposerPriority)
+	var sparams []interface{}
+	for i, sig := range signatures {
+		si := i * 5
+
+		stmt += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d),", si+1, si+2, si+3, si+4, si+5)
+		sparams = append(sparams, sig.ValidatorAddress, sig.Height, sig.Timestamp, sig.VotingPower, sig.ProposerPriority)
+	}
+
+	stmt = stmt[:len(stmt)-1]
+	stmt += " ON CONFLICT (validator_address, timestamp) DO NOTHING"
+	_, err := db.Sql.Exec(stmt, sparams...)
 	return err
 }
 

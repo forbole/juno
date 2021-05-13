@@ -26,14 +26,13 @@ type Database interface {
 	// An error is returned if the operation fails.
 	HasValidator(address string) (bool, error)
 
-	// SaveValidator stores a validator if it does not already exist.
+	// SaveValidators stores a list of validators if they do not already exist.
 	// An error is returned if the operation fails.
-	// The address should be the consensus address of the validator.
-	SaveValidator(address, publicKey string) error
+	SaveValidators(validators []*types.Validator) error
 
-	// SaveCommitSig stores a validator's commit signature.
+	// SaveCommitSignatures stores a  slice of validator commit signatures.
 	// An error is returned if the operation fails.
-	SaveCommitSig(commitSig *types.CommitSig) error
+	SaveCommitSignatures(signatures []*types.CommitSig) error
 
 	// SaveMessage stores a single message.
 	// An error is returned if the operation fails.

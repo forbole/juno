@@ -101,11 +101,6 @@ func (w Worker) process(height int64) error {
 		return err
 	}
 
-	err = w.ExportPreCommit(block.Block.LastCommit, vals)
-	if err != nil {
-		return err
-	}
-
 	return w.ExportBlock(block, txs, vals)
 }
 
@@ -151,19 +146,88 @@ func (w Worker) HandleGenesis(genesis *tmtypes.GenesisDoc) error {
 	return nil
 }
 
-// ExportPreCommit accepts a block commitment and a corresponding set of
-// validators for the commitment and persists them to the database. An error is
-// returned if any write fails or if there is any missing aggregated data.
-func (w Worker) ExportPreCommit(commit *tmtypes.Commit, vals *tmctypes.ResultValidators) error {
-	// Save all validators
-	for _, validator := range vals.Validators {
-		err := w.SaveValidator(validator)
+// SaveValidators persists a list of Tendermint validators with an address and a
+// consensus public key. An error is returned if the public key cannot be Bech32
+// encoded or if the DB write fails.
+func (w Worker) SaveValidators(vals []*tmtypes.Validator) error {
+	var validators = make([]*types.Validator, len(vals))
+	for index, val := range vals {
+		consAddr := sdk.ConsAddress(val.Address).String()
+
+		consPubKey, err := types.ConvertValidatorPubKeyToBech32String(val.PubKey)
 		if err != nil {
+			log.Error().Err(err).Str("validator", consAddr).Msg("failed to convert validator public key")
 			return err
+		}
+
+		validators[index] = types.NewValidator(consAddr, consPubKey)
+	}
+
+	err := w.db.SaveValidators(validators)
+	if err != nil {
+		return fmt.Errorf("error while saving validators: %s", err)
+	}
+
+	return nil
+}
+
+// ExportBlock accepts a finalized block and a corresponding set of transactions
+// and persists them to the database along with attributable metadata. An error
+// is returned if the write fails.
+func (w Worker) ExportBlock(b *tmctypes.ResultBlock, txs []*types.Tx, vals *tmctypes.ResultValidators) error {
+	// Save all validators
+	err := w.SaveValidators(vals.Validators)
+	if err != nil {
+		return err
+	}
+
+	// Make sure the proposer exists
+	proposerAddr := sdk.ConsAddress(b.Block.ProposerAddress)
+	val := findValidatorByAddr(proposerAddr.String(), vals)
+	if val == nil {
+		err := fmt.Errorf("failed to find validator")
+		log.Error().
+			Err(err).
+			Int64("height", b.Block.Height).
+			Str("validator_hex", b.Block.ProposerAddress.String()).
+			Str("validator_bech32", proposerAddr.String()).
+			Time("commit_timestamp", b.Block.Time).
+			Send()
+		return err
+	}
+
+	// Save the block
+	err = w.db.SaveBlock(types.NewBlockFromTmBlock(b, sumGasTxs(txs)))
+	if err != nil {
+		log.Error().Err(err).Int64("height", b.Block.Height).Msg("failed to persist block")
+		return err
+	}
+
+	// Save the commits
+	err = w.ExportCommit(b.Block.LastCommit, vals)
+	if err != nil {
+		return err
+	}
+
+	// Call the block handlers
+	for _, module := range w.modules {
+		if module, ok := module.(modules.BlockModule); ok {
+			err := module.HandleBlock(b, txs, vals)
+			if err != nil {
+				types.LogBlockError(err)
+			}
 		}
 	}
 
-	// Save all precommits
+	// Export the transactions
+	return w.ExportTxs(txs)
+}
+
+// ExportCommit accepts a block commitment and a corresponding set of
+// validators for the commitment and persists them to the database. An error is
+// returned if any write fails or if there is any missing aggregated data.
+func (w Worker) ExportCommit(commit *tmtypes.Commit, vals *tmctypes.ResultValidators) error {
+	var signatures []*types.CommitSig
 	for _, commitSig := range commit.Signatures {
 		// Avoid empty commits
 		if commitSig.Signature == nil {
@@ -184,104 +248,21 @@ func (w Worker) ExportPreCommit(commit *tmtypes.Commit, vals *tmctypes.ResultVal
 			return err
 		}
 
-		err := w.SaveValidator(val)
-		if err != nil {
-			return err
-		}
-
-		err = w.db.SaveCommitSig(types.NewCommitSig(
+		signatures = append(signatures, types.NewCommitSig(
 			types.ConvertValidatorAddressToBech32String(commitSig.ValidatorAddress),
 			val.VotingPower,
 			val.ProposerPriority,
 			commit.Height,
 			commitSig.Timestamp,
 		))
-		if err != nil {
-			log.Error().
-				Err(err).
-				Int64("height", commit.Height).
-				Str("validator_hex", commitSig.ValidatorAddress.String()).
-				Str("validator_bech32", valAddr.String()).
-				Msg("failed to persist validator pre-commit")
-			return err
-		}
+	}
+
+	err := w.db.SaveCommitSignatures(signatures)
+	if err != nil {
+		return fmt.Errorf("error while saving commit signatures: %s", err)
 	}
 
 	return nil
-}
-
-// SaveValidator persists a Tendermint validator with an address and a
-// consensus public key. An error is returned if the public key cannot be Bech32
-// encoded or if the DB write fails.
-func (w Worker) SaveValidator(val *tmtypes.Validator) error {
-	valAddr := sdk.ConsAddress(val.Address).String()
-
-	consPubKey, err := types.ConvertValidatorPubKeyToBech32String(val.PubKey)
-	if err != nil {
-		log.Error().Err(err).Str("validator", valAddr).Msg("failed to convert validator public key")
-		return err
-	}
-
-	err = w.db.SaveValidator(valAddr, consPubKey)
-	if err != nil {
-		log.Error().Err(err).Str("validator", valAddr).Msg("failed to persist validator")
-		return err
-	}
-
-	return nil
-}
-
-// ExportBlock accepts a finalized block and a corresponding set of transactions
-// and persists them to the database along with attributable metadata. An error
-// is returned if the write fails.
-func (w Worker) ExportBlock(b *tmctypes.ResultBlock, txs []*types.Tx, vals *tmctypes.ResultValidators) error {
-	// Set the block's proposer if it does not already exist. This may occur if
-	// the proposer has never signed before.
-	proposerAddr := sdk.ConsAddress(b.Block.ProposerAddress)
-
-	data, err := w.cp.ConsensusState()
-	if err != nil {
-		return err
-	}
-	log.Debug().RawJSON("vote", data.Votes)
-
-	val := findValidatorByAddr(proposerAddr.String(), vals)
-	if val == nil {
-		err := fmt.Errorf("failed to find validator")
-		log.Error().
-			Err(err).
-			Int64("height", b.Block.Height).
-			Str("validator_hex", b.Block.ProposerAddress.String()).
-			Str("validator_bech32", proposerAddr.String()).
-			Time("commit_timestamp", b.Block.Time).
-			Send()
-		return err
-	}
-
-	err = w.SaveValidator(val)
-	if err != nil {
-		return err
-	}
-
-	// Save the block
-	err = w.db.SaveBlock(types.NewBlockFromTmBlock(b, sumGasTxs(txs)))
-	if err != nil {
-		log.Error().Err(err).Int64("height", b.Block.Height).Msg("failed to persist block")
-		return err
-	}
-
-	// Call the block handlers
-	for _, module := range w.modules {
-		if module, ok := module.(modules.BlockModule); ok {
-			err := module.HandleBlock(b, txs, vals)
-			if err != nil {
-				types.LogBlockError(err)
-			}
-		}
-	}
-
-	// Export the transactions
-	return w.ExportTxs(txs)
 }
 
 // ExportTxs accepts a slice of transactions and persists then inside the database.
