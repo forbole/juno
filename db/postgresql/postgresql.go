@@ -149,6 +149,10 @@ func (db *Database) HasValidator(addr string) (bool, error) {
 
 // SaveValidators implements db.Database
 func (db *Database) SaveValidators(validators []*types.Validator) error {
+	if len(validators) == 0 {
+		return nil
+	}
+
 	stmt := `INSERT INTO validator (consensus_address, consensus_pubkey) VALUES `
 
 	var vparams []interface{}
@@ -167,6 +171,10 @@ func (db *Database) SaveValidators(validators []*types.Validator) error {
 
 // SaveCommitSignatures implements db.Database
 func (db *Database) SaveCommitSignatures(signatures []*types.CommitSig) error {
+	if len(signatures) == 0 {
+		return nil
+	}
+
 	stmt := `INSERT INTO pre_commit (validator_address, height, timestamp, voting_power, proposer_priority) VALUES `
 
 	var sparams []interface{}

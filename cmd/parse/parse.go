@@ -92,7 +92,7 @@ func StartParsing(data *ParserData) error {
 
 	if cfg.ShouldParseGenesis() {
 		// Add the genesis to the queue if requested
-		exportQueue <- 1
+		exportQueue <- 0
 	}
 
 	if cfg.ShouldParseOldBlocks() {

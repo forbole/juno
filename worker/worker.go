@@ -3,7 +3,6 @@ package worker
 import (
 	"encoding/json"
 	"fmt"
-
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 
 	"github.com/desmos-labs/juno/modules"
@@ -12,8 +11,6 @@ import (
 	"github.com/rs/zerolog/log"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
-
-	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
 
 	"github.com/desmos-labs/juno/client"
 	"github.com/desmos-labs/juno/db"
@@ -70,7 +67,7 @@ func (w Worker) process(height int64) error {
 		return nil
 	}
 
-	if height == 1 {
+	if height == 0 {
 		log.Debug().Msg("getting genesis")
 		response, err := w.cp.Genesis()
 		if err != nil {
@@ -95,7 +92,7 @@ func (w Worker) process(height int64) error {
 		return err
 	}
 
-	vals, err := w.cp.Validators(block.Block.LastCommit.Height)
+	vals, err := w.cp.Validators(height)
 	if err != nil {
 		log.Error().Err(err).Int64("height", height).Msg("failed to get validators for block")
 		return err
@@ -112,26 +109,6 @@ func (w Worker) HandleGenesis(genesis *tmtypes.GenesisDoc) error {
 	var appState map[string]json.RawMessage
 	if err := json.Unmarshal(genesis.AppState, &appState); err != nil {
 		return fmt.Errorf("error unmarshalling genesis doc %s: %s", appState, err.Error())
-	}
-
-	// Store a new block with height 1
-	// Since the genesis has no proposer, we simply take the first validator and use its address as the proposer
-	// Also, the number of transactions will be the length of the genesis transactions slice
-	var genUtilState genutiltypes.GenesisState
-	if err := json.Unmarshal(appState[genutiltypes.ModuleName], &genUtilState); err != nil {
-		return fmt.Errorf("error unmarshaling gentuil genesis state: %s", err)
-	}
-
-	err := w.db.SaveBlock(types.NewBlock(
-		genesis.InitialHeight,
-		genesis.AppHash.String(),
-		len(genUtilState.GenTxs),
-		0,
-		"",
-		genesis.GenesisTime,
-	))
-	if err != nil {
-		return fmt.Errorf("error while saving genesis block: %s", err)
 	}
 
 	// Call the genesis handlers
