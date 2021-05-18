@@ -53,13 +53,13 @@ var _ Config = &config{}
 
 // Config defines all necessary juno configuration parameters.
 type config struct {
-	RPC      RPCConfig
-	Grpc     GrpcConfig
-	Cosmos   CosmosConfig
-	Database DatabaseConfig
-	Logging  LoggingConfig
-	Parsing  ParsingConfig
-	Pruning  PruningConfig
+	RPC      RPCConfig      `toml:"rpc"`
+	Grpc     GrpcConfig     `toml:"grpc"`
+	Cosmos   CosmosConfig   `toml:"cosmos"`
+	Database DatabaseConfig `toml:"database"`
+	Logging  LoggingConfig  `toml:"logging"`
+	Parsing  ParsingConfig  `toml:"parsing"`
+	Pruning  PruningConfig  `toml:"pruning"`
 }
 
 // NewConfig builds a new Config instance
