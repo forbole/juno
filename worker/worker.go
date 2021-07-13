@@ -3,6 +3,9 @@ package worker
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
+
+	tmjson "github.com/tendermint/tendermint/libs/json"
 
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 
@@ -10,6 +13,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/rs/zerolog/log"
+	tmos "github.com/tendermint/tendermint/libs/os"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 
@@ -69,14 +73,22 @@ func (w Worker) process(height int64) error {
 	}
 
 	if height == 0 {
-		log.Debug().Msg("getting genesis")
-		response, err := w.cp.Genesis()
-		if err != nil {
-			log.Error().Err(err).Msg("failed to get genesis")
-			return err
+		cfg := types.Cfg.GetParsingConfig()
+
+		var genesis *tmtypes.GenesisDoc
+		if strings.TrimSpace(cfg.GetGenesisFilePath()) != "" {
+			genesis, err = w.getGenesisFromFilePath(cfg.GetGenesisFilePath())
+			if err != nil {
+				return err
+			}
+		} else {
+			genesis, err = w.getGenesisFromRPC()
+			if err != nil {
+				return err
+			}
 		}
 
-		return w.HandleGenesis(response.Genesis)
+		return w.HandleGenesis(genesis)
 	}
 
 	log.Debug().Int64("height", height).Msg("processing block")
@@ -100,6 +112,36 @@ func (w Worker) process(height int64) error {
 	}
 
 	return w.ExportBlock(block, txs, vals)
+}
+
+// getGenesisFromRPC returns the genesis read from the RPC endpoint
+func (w Worker) getGenesisFromRPC() (*tmtypes.GenesisDoc, error) {
+	log.Debug().Msg("getting genesis")
+	response, err := w.cp.Genesis()
+	if err != nil {
+		log.Error().Err(err).Msg("failed to get genesis")
+		return nil, err
+	}
+	return response.Genesis, nil
+}
+
+// getGenesisFromFilePath tries reading the genesis doc from the given path
+func (w Worker) getGenesisFromFilePath(path string) (*tmtypes.GenesisDoc, error) {
+	var genDoc tmtypes.GenesisDoc
+
+	bz, err := tmos.ReadFile(path)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to read genesis file")
+		return nil, err
+	}
+
+	err = tmjson.Unmarshal(bz, &genDoc)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to unmarshal genesis doc")
+		return nil, err
+	}
+
+	return &genDoc, nil
 }
 
 // HandleGenesis accepts a GenesisDoc and calls all the registered genesis handlers

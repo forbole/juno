@@ -347,6 +347,7 @@ type ParsingConfig interface {
 	ShouldParseNewBlocks() bool
 	ShouldParseOldBlocks() bool
 	ShouldParseGenesis() bool
+	GetGenesisFilePath() string
 	GetStartHeight() int64
 	UseFastSync() bool
 }
@@ -354,26 +355,28 @@ type ParsingConfig interface {
 var _ ParsingConfig = &parsingConfig{}
 
 type parsingConfig struct {
-	Workers        int64 `toml:"workers"`
-	ParseNewBlocks bool  `toml:"listen_new_blocks"`
-	ParseOldBlocks bool  `toml:"parse_old_blocks"`
-	ParseGenesis   bool  `toml:"parse_genesis"`
-	StartHeight    int64 `toml:"start_height"`
-	FastSync       bool  `toml:"fast_sync"`
+	Workers         int64  `toml:"workers"`
+	ParseNewBlocks  bool   `toml:"listen_new_blocks"`
+	ParseOldBlocks  bool   `toml:"parse_old_blocks"`
+	GenesisFilePath string `toml:"genesis_file_path"`
+	ParseGenesis    bool   `toml:"parse_genesis"`
+	StartHeight     int64  `toml:"start_height"`
+	FastSync        bool   `toml:"fast_sync"`
 }
 
 func NewParsingConfig(
 	workers int64,
 	parseNewBlocks, parseOldBlocks bool,
-	parseGenesis bool, startHeight int64, fastSync bool,
+	parseGenesis bool, genesisFilePath string, startHeight int64, fastSync bool,
 ) ParsingConfig {
 	return &parsingConfig{
-		Workers:        workers,
-		ParseOldBlocks: parseOldBlocks,
-		ParseNewBlocks: parseNewBlocks,
-		ParseGenesis:   parseGenesis,
-		StartHeight:    startHeight,
-		FastSync:       fastSync,
+		Workers:         workers,
+		ParseOldBlocks:  parseOldBlocks,
+		ParseNewBlocks:  parseNewBlocks,
+		ParseGenesis:    parseGenesis,
+		GenesisFilePath: genesisFilePath,
+		StartHeight:     startHeight,
+		FastSync:        fastSync,
 	}
 }
 
@@ -395,6 +398,10 @@ func (p *parsingConfig) ShouldParseOldBlocks() bool {
 // ShouldParseGenesis implements ParsingConfig
 func (p *parsingConfig) ShouldParseGenesis() bool {
 	return p.ParseGenesis
+}
+
+func (p *parsingConfig) GetGenesisFilePath() string {
+	return p.GenesisFilePath
 }
 
 // GetStartHeight implements ParsingConfig

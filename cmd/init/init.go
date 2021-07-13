@@ -41,6 +41,7 @@ const (
 	flagParsingNewBlocks    = "parsing-new-blocks"
 	flagParsingOldBlocks    = "parsing-old-blocks"
 	flagParsingParseGenesis = "parsing-parse-genesis"
+	flagGenesisFilePath     = "parsing-genesis-file-path"
 	flagParsingStartHeight  = "parsing-start-height"
 	flagParsingFastSync     = "parsing-fast-sync"
 
@@ -114,6 +115,7 @@ func InitCmd(cfg *Config) *cobra.Command {
 	command.Flags().Bool(flagParsingNewBlocks, true, "Whether or not to parse new blocks")
 	command.Flags().Bool(flagParsingOldBlocks, true, "Whether or not to parse old blocks")
 	command.Flags().Bool(flagParsingParseGenesis, true, "Whether or not to parse the genesis")
+	command.Flags().String(flagGenesisFilePath, "", "(Optional) Path to the genesis file, if it should not be retrieved from the RPC")
 	command.Flags().Int64(flagParsingStartHeight, 1, "Starting height when parsing new blocks")
 	command.Flags().Bool(flagParsingFastSync, true, "Whether to use fast sync or not when parsing old blocks")
 
