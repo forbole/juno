@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/desmos-labs/juno/types/logging"
+
 	tmjson "github.com/tendermint/tendermint/libs/json"
 
 	"github.com/cosmos/cosmos-sdk/simapp/params"
@@ -117,6 +119,7 @@ func (w Worker) process(height int64) error {
 // getGenesisFromRPC returns the genesis read from the RPC endpoint
 func (w Worker) getGenesisFromRPC() (*tmtypes.GenesisDoc, error) {
 	log.Debug().Msg("getting genesis")
+
 	response, err := w.cp.Genesis()
 	if err != nil {
 		log.Error().Err(err).Msg("failed to get genesis")
@@ -127,7 +130,7 @@ func (w Worker) getGenesisFromRPC() (*tmtypes.GenesisDoc, error) {
 
 // getGenesisFromFilePath tries reading the genesis doc from the given path
 func (w Worker) getGenesisFromFilePath(path string) (*tmtypes.GenesisDoc, error) {
-	var genDoc tmtypes.GenesisDoc
+	log.Debug().Str("path", path).Msg("reading genesis from file")
 
 	bz, err := tmos.ReadFile(path)
 	if err != nil {
@@ -135,6 +138,7 @@ func (w Worker) getGenesisFromFilePath(path string) (*tmtypes.GenesisDoc, error)
 		return nil, err
 	}
 
+	var genDoc tmtypes.GenesisDoc
 	err = tmjson.Unmarshal(bz, &genDoc)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to unmarshal genesis doc")
@@ -147,8 +151,6 @@ func (w Worker) getGenesisFromFilePath(path string) (*tmtypes.GenesisDoc, error)
 // HandleGenesis accepts a GenesisDoc and calls all the registered genesis handlers
 // in the order in which they have been registered.
 func (w Worker) HandleGenesis(genesis *tmtypes.GenesisDoc) error {
-	log.Debug().Str("module", "worker").Msg("handling genesis")
-
 	var appState map[string]json.RawMessage
 	if err := json.Unmarshal(genesis.AppState, &appState); err != nil {
 		return fmt.Errorf("error unmarshalling genesis doc %s: %s", appState, err.Error())
@@ -156,9 +158,9 @@ func (w Worker) HandleGenesis(genesis *tmtypes.GenesisDoc) error {
 
 	// Call the genesis handlers
 	for _, module := range w.modules {
-		if module, ok := module.(modules.GenesisModule); ok {
-			if err := module.HandleGenesis(genesis, appState); err != nil {
-				types.LogGenesisError(err)
+		if genesisModule, ok := module.(modules.GenesisModule); ok {
+			if err := genesisModule.HandleGenesis(genesis, appState); err != nil {
+				logging.LogGenesisError(module, err)
 			}
 		}
 	}
@@ -231,10 +233,10 @@ func (w Worker) ExportBlock(b *tmctypes.ResultBlock, txs []*types.Tx, vals *tmct
 
 	// Call the block handlers
 	for _, module := range w.modules {
-		if module, ok := module.(modules.BlockModule); ok {
-			err := module.HandleBlock(b, txs, vals)
+		if blockModule, ok := module.(modules.BlockModule); ok {
+			err = blockModule.HandleBlock(b, txs, vals)
 			if err != nil {
-				types.LogBlockError(err)
+				logging.LogBLockError(module, b, err)
 			}
 		}
 	}
@@ -299,10 +301,10 @@ func (w Worker) ExportTxs(txs []*types.Tx) error {
 
 		// Call the tx handlers
 		for _, module := range w.modules {
-			if module, ok := module.(modules.TransactionModule); ok {
-				err := module.HandleTx(tx)
+			if transactionModule, ok := module.(modules.TransactionModule); ok {
+				err = transactionModule.HandleTx(tx)
 				if err != nil {
-					types.LogTxError(err)
+					logging.LogTxError(module, tx, err)
 				}
 			}
 		}
@@ -317,10 +319,10 @@ func (w Worker) ExportTxs(txs []*types.Tx) error {
 
 			// Call the handlers
 			for _, module := range w.modules {
-				if module, ok := module.(modules.MessageModule); ok {
-					err = module.HandleMsg(i, stdMsg, tx)
+				if messageModule, ok := module.(modules.MessageModule); ok {
+					err = messageModule.HandleMsg(i, stdMsg, tx)
 					if err != nil {
-						types.LogMsgError(err)
+						logging.LogMsgError(module, tx, stdMsg, err)
 					}
 				}
 			}

@@ -66,7 +66,7 @@ func (m *Module) HandleBlock(block *tmctypes.ResultBlock, _ []*types.Tx, _ *tmct
 
 		// Prune the height
 		log.Debug().Str("module", "pruning").Int64("height", height).Msg("pruning")
-		err := pruningDb.Prune(height)
+		err = pruningDb.Prune(height)
 		if err != nil {
 			return fmt.Errorf("error while pruning height %d: %s", height, err.Error())
 		}

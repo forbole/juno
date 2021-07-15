@@ -6,8 +6,6 @@ import (
 	"path"
 
 	"github.com/pelletier/go-toml"
-
-	"github.com/rs/zerolog/log"
 )
 
 var (
@@ -24,8 +22,6 @@ func Read(configPath string, parser ConfigParser) (Config, error) {
 	if configPath == "" {
 		return nil, fmt.Errorf("empty configuration path")
 	}
-
-	log.Debug().Msg("reading config file")
 
 	configData, err := ioutil.ReadFile(configPath)
 	if err != nil {

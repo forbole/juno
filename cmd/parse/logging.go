@@ -1,12 +1,9 @@
 package parse
 
 import (
-	"fmt"
-	"os"
-
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
+
+	"github.com/desmos-labs/juno/types/logging"
 
 	"github.com/desmos-labs/juno/types"
 )
@@ -15,25 +12,15 @@ import (
 func setupLogging(_ *cobra.Command, _ []string) error {
 	cfg := types.Cfg.GetLoggingConfig()
 
-	// Init logging level
-	logLvl, err := zerolog.ParseLevel(cfg.GetLogLevel())
+	err := logging.SetLogLevel(cfg.GetLogLevel())
 	if err != nil {
 		return err
 	}
-	zerolog.SetGlobalLevel(logLvl)
 
-	// Init logging format
-	switch cfg.GetLogFormat() {
-	case "json":
-		// JSON is the default logging format
-		break
-
-	case "text":
-		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
-		break
-
-	default:
-		return fmt.Errorf("invalid logging format: %s", cfg.GetLogFormat())
+	err = logging.SetLogFormat(cfg.GetLogFormat())
+	if err != nil {
+		return err
 	}
+
 	return err
 }
