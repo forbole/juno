@@ -29,6 +29,6 @@ jobs:
       - name: Test & Create coverage report
         run: make install test-unit
       - name: Upload cove coverage
-        uses: codecov/codecov-action@v1.0.7
+        uses: codecov/codecov-action@v1.0.14
         with:
           file: ./coverage.txt
