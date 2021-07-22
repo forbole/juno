@@ -1,4 +1,7 @@
 # Juno
+
+![banner](.docs/.img/logo.png)
+
 > This branch is intended to be used with Cosmos SDK `v0.40.x`.
 
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/desmos-labs/juno/Tests)](https://github.com/desmos-labs/juno/actions?query=workflow%3ATests)
@@ -28,57 +31,24 @@ We achieved the first objective by supporting both PostgreSQL and MongoDB. We al
 
 On the other hand, to achieve a highly modular code, we implemented extension points through the `worker.RegisterBlockHandler`, `worker.RegisterTxHandler` and `worker.RegisterMsgHandler` methods. You can use those to extend the default working of the code (which simply parses and saves the data on the database) with whatever operation you want.    
 
-
-## Install
-Juno takes a simple configuration. It needs to only know about a database instance and a Tendermint RPC node.
-
-To install the binary run `make install`.
-
-**Note**: Requires [Go 1.13+](https://golang.org/dl/)
-
-### Working with PostgreSQL
-#### Config
-```toml
-[cosmos]
-prefix = "desmos"
-modules = []
-
-[rpc]
-address = "<rpc-ip/host>:<rpc-port>"
-
-[grpc]
-address = "<grpc-ip/host>:<grpc-port>"
-insecure = true
-
-[api]
-address = "<client-ip/host>:<client-port>"
-
-[cosmos]
-prefix = "desmos"
-modules = []
-
-[database]
-type = "postgresql"
-
-[database.config]
-host = "<db-host>"
-port = 5432
-name = "<db-name>"
-user = "<db-user>"
-password = "<db-password>"
-```
-
 ## Usage
-Juno internally runs a single worker that consumes from a single queue. The queue contains block heights to aggregate and export to a database. Juno will start a new block even listener where for each new block, it will enqueue the height. A worker listens for new heights and queries for various data related to the block height to persist. For each block height, Juno will persist the block, the validators that committed/signed the block, all the pre-commits for the block and the transactions in the block.
+To know how to setup and run Juno, please refer to the [docs folder](.docs).
 
-In addition, it will also sync missing blocks from `--start-height` to the latest known height.
+## Testing
+If you want to test the code, you can do so by running
 
 ```shell
-$ juno parse /path/to/config.toml [flags]
+$ make test-unit
 ```
 
+**Note**: Requires [Docker](https://docker.com).
+
+This will:
+1. Create a Docker container running a PostgreSQL database.
+2. Run all the tests using that database as support.
+
 ## Schemas
-The schema definitions are contained in the `schema/` directory. Note, these schemas are not necessarily optimal and are subject to change! However, feel free to fork this tool and expand upon the schemas as you see fit. Any tweaks will most likely require adjustments to the `database` wrapper.
+The schema definitions are inside the `db/postgresql` directory. Note, these schemas are not necessarily optimal and are subject to change! However, feel free to fork this tool and expand upon the schemas as you see fit. Any tweaks will most likely require adjustments to the `database` wrapper.
 
 ## GraphQL integration
 If you want to know how to run a GraphQL server that allows to expose the parsed data, please refer to the following guides: 
