@@ -1,4 +1,6 @@
-# Juno
+<div align="center">
+  <h1> Juno </h1>
+</div>
 
 ![banner](.docs/.img/logo.png)
 
@@ -12,9 +14,7 @@
 
 ## Table of Contents
   - [Background](#background)
-  - [Install](#install)
   - [Usage](#usage)
-  - [Schemas](#schemas)
   - [GraphQL integration](#graphql-integration)
   - [Contributing](#contributing)
   - [License](#license)
@@ -31,6 +31,16 @@ We achieved the first objective by supporting both PostgreSQL and MongoDB. We al
 
 On the other hand, to achieve a highly modular code, we implemented extension points through the `worker.RegisterBlockHandler`, `worker.RegisterTxHandler` and `worker.RegisterMsgHandler` methods. You can use those to extend the default working of the code (which simply parses and saves the data on the database) with whatever operation you want.    
 
+## Compatibility table
+Since the Cosmos SDK has evolved a lot, we have different versions of Juno available.
+
+| Cosmos SDK Version | Juno branch |
+| :----------------: | :---------: | 
+| `v0.37.x` | `cosmos-v0.37.x` |
+| `v0.38.x` | `cosmos-v0.38.x` |
+| `v0.39.x` | `cosmos-v0.39.x` |
+| Stargate <br> (`v0.40.x`, `v0.41.x`, `v0.42.x`) | `cosmos-v0.40.x` |
+
 ## Usage
 To know how to setup and run Juno, please refer to the [docs folder](.docs).
 
@@ -46,9 +56,6 @@ $ make test-unit
 This will:
 1. Create a Docker container running a PostgreSQL database.
 2. Run all the tests using that database as support.
-
-## Schemas
-The schema definitions are inside the `db/postgresql` directory. Note, these schemas are not necessarily optimal and are subject to change! However, feel free to fork this tool and expand upon the schemas as you see fit. Any tweaks will most likely require adjustments to the `database` wrapper.
 
 ## GraphQL integration
 If you want to know how to run a GraphQL server that allows to expose the parsed data, please refer to the following guides: 
