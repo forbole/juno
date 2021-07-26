@@ -52,7 +52,18 @@ var CosmosMessageAddressesParser = JoinMessageParsers(
 	IBCTransferMessagesParser,
 	SlashingMessagesParser,
 	StakingMessagesParser,
+	DefaultMessagesParser,
 )
+
+// DefaultMessagesParser represents the default messages parser that simply returns the list
+// of all the signers of a message
+func DefaultMessagesParser(_ codec.Marshaler, cosmosMsg sdk.Msg) ([]string, error) {
+	var signers = make([]string, len(cosmosMsg.GetSigners()))
+	for index, signer := range cosmosMsg.GetSigners() {
+		signers[index] = signer.String()
+	}
+	return signers, nil
+}
 
 // BankMessagesParser returns the list of all the accounts involved in the given
 // message if it's related to the x/bank module
