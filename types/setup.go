@@ -5,7 +5,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// SdkConfigSetup represents a method that allows to customize the given sdk.Config.
+// SdkConfigSetup represents a method that allows to customize the given sdk.ParsingConfig.
 // This should be used to set custom Bech32 addresses prefixes and other app-related configurations.
 type SdkConfigSetup func(config Config, sdkConfig *sdk.Config)
 

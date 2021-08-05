@@ -3,7 +3,8 @@ package pruning
 import (
 	"fmt"
 
-	"github.com/rs/zerolog/log"
+	"github.com/desmos-labs/juno/types/logging"
+
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	"github.com/desmos-labs/juno/db"
@@ -15,15 +16,17 @@ var _ modules.Module = &Module{}
 
 // Module represents the pruning module allowing to clean the database periodically
 type Module struct {
-	cfg types.PruningConfig
-	db  db.Database
+	cfg    types.PruningConfig
+	db     db.Database
+	logger logging.Logger
 }
 
 // NewModule builds a new Module instance
-func NewModule(cfg types.PruningConfig, db db.Database) *Module {
+func NewModule(cfg types.PruningConfig, db db.Database, logger logging.Logger) *Module {
 	return &Module{
-		cfg: cfg,
-		db:  db,
+		cfg:    cfg,
+		db:     db,
+		logger: logger,
 	}
 }
 
@@ -65,7 +68,7 @@ func (m *Module) HandleBlock(block *tmctypes.ResultBlock, _ []*types.Tx, _ *tmct
 		}
 
 		// Prune the height
-		log.Debug().Str("module", "pruning").Int64("height", height).Msg("pruning")
+		m.logger.Debug("pruning", "module", "pruning", "height", height)
 		err = pruningDb.Prune(height)
 		if err != nil {
 			return fmt.Errorf("error while pruning height %d: %s", height, err.Error())

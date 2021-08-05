@@ -3,6 +3,8 @@ package parse
 import (
 	"fmt"
 
+	"github.com/desmos-labs/juno/db"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/desmos-labs/juno/client"
@@ -11,9 +13,9 @@ import (
 	"github.com/desmos-labs/juno/types"
 )
 
-// SetupParsing setups all the things that should be later passed to StartParsing in order
+// GetParsingContext setups all the things that should be later passed to StartParsing in order
 // to parse the chain data properly.
-func SetupParsing(parseConfig *Config) (*ParserData, error) {
+func GetParsingContext(parseConfig *Config) (*Context, error) {
 	// Get the global config
 	cfg := types.Cfg
 
@@ -26,7 +28,8 @@ func SetupParsing(parseConfig *Config) (*ParserData, error) {
 	sdkConfig.Seal()
 
 	// Get the database
-	database, err := parseConfig.GetDBBuilder()(cfg, &encodingConfig)
+	databaseCtx := db.NewContext(cfg.GetDatabaseConfig(), &encodingConfig, parseConfig.GetLogger())
+	database, err := parseConfig.GetDBBuilder()(databaseCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -37,9 +40,21 @@ func SetupParsing(parseConfig *Config) (*ParserData, error) {
 		return nil, fmt.Errorf("failed to start client: %s", err)
 	}
 
+	// Setup the logging
+	err = parseConfig.GetLogger().SetLogLevel(cfg.GetLoggingConfig().GetLogLevel())
+	if err != nil {
+		return nil, fmt.Errorf("error while setting logging level: %s", err)
+	}
+
+	err = parseConfig.GetLogger().SetLogFormat(cfg.GetLoggingConfig().GetLogFormat())
+	if err != nil {
+		return nil, fmt.Errorf("error while setting logging format: %s", err)
+	}
+
 	// Get the modules
-	mods := parseConfig.GetRegistrar().BuildModules(cfg, &encodingConfig, sdkConfig, database, cp)
-	registeredModules := modsregistrar.GetModules(mods, cfg.GetCosmosConfig().GetModules())
+	context := modsregistrar.NewContext(cfg, sdkConfig, &encodingConfig, database, cp, parseConfig.GetLogger())
+	mods := parseConfig.GetRegistrar().BuildModules(context)
+	registeredModules := modsregistrar.GetModules(mods, cfg.GetCosmosConfig().GetModules(), parseConfig.GetLogger())
 
 	// Run all the additional operations
 	for _, module := range registeredModules {
@@ -51,5 +66,5 @@ func SetupParsing(parseConfig *Config) (*ParserData, error) {
 		}
 	}
 
-	return NewParserData(&encodingConfig, cp, database, registeredModules), nil
+	return NewContext(&encodingConfig, cp, database, parseConfig.GetLogger(), registeredModules), nil
 }

@@ -6,13 +6,10 @@ import (
 
 	"github.com/desmos-labs/juno/types"
 
-	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 )
 
 const (
-	LogFormatText = "text"
-
 	flagReplace = "replace"
 
 	flagRPCClientName = "client-name"
@@ -48,6 +45,9 @@ const (
 	flagPruningKeepRecent = "pruning-keep-recent"
 	flagPruningKeepEvery  = "pruning-keep-every"
 	flagPruningInterval   = "pruning-interval"
+
+	flagTelemetryEnabled = "telemetry-enabled"
+	flagTelemetryPort    = "telemetry-port"
 )
 
 // InitCmd returns the command that should be run in order to properly initialize BDJuno
@@ -89,39 +89,50 @@ func InitCmd(cfg *Config) *cobra.Command {
 	// Set default flags
 	command.Flags().Bool(flagReplace, false, "replaces any existing configuration with a new one")
 
-	command.Flags().String(flagRPCClientName, "juno", "Name of the subscriber to use when listening to events")
-	command.Flags().String(flagRPCAddress, "http://localhost:26657", "RPC address to use")
+	defRPCConfig := types.DefaultRPCConfig()
+	command.Flags().String(flagRPCClientName, defRPCConfig.GetClientName(), "Name of the subscriber to use when listening to events")
+	command.Flags().String(flagRPCAddress, defRPCConfig.GetAddress(), "RPC address to use")
 
-	command.Flags().String(flagGRPCAddress, "localhost:9090", "gRPC address to use")
-	command.Flags().Bool(flagGRPCInsecure, true, "Tells whether the gRPC host should be treated as insecure or not")
+	defGRPCConfig := types.DefaultGrpcConfig()
+	command.Flags().String(flagGRPCAddress, defGRPCConfig.GetAddress(), "gRPC address to use")
+	command.Flags().Bool(flagGRPCInsecure, defGRPCConfig.IsInsecure(), "Tells whether the gRPC host should be treated as insecure or not")
 
-	command.Flags().String(flagCosmosPrefix, "cosmos", "Bech32 prefix to use for addresses")
-	command.Flags().StringSlice(flagCosmosModules, []string{}, "List of modules to use")
+	defCosmosConfig := types.DefaultCosmosConfig()
+	command.Flags().String(flagCosmosPrefix, defCosmosConfig.GetPrefix(), "Bech32 prefix to use for addresses")
+	command.Flags().StringSlice(flagCosmosModules, defCosmosConfig.GetModules(), "List of modules to use")
 
-	command.Flags().String(flagDatabaseName, "database-name", "Name of the database to use")
-	command.Flags().String(flagDatabaseHost, "localhost", "Database host")
-	command.Flags().Int64(flagDatabasePort, 5432, "Database port to use")
-	command.Flags().String(flagDatabaseUser, "user", "User to use when authenticating inside the database")
-	command.Flags().String(flagDatabasePassword, "password", "Password to use when authenticating inside the database")
-	command.Flags().String(flagDatabaseSSLMode, "", "SSL mode to use when connecting to the database")
-	command.Flags().String(flagDatabaseSchema, "public", "Database schema to use")
-	command.Flags().Int(flagDatabaseMaxOpenConnections, 0, "Max open connections (a value less than or equal to 0 means unlimited)")
-	command.Flags().Int(flagDatabaseMaxIdleConnections, 0, "Max connections in the idle state (a value less than or equal to 0 means unlimited)")
+	defDatabaseConfig := types.DefaultDatabaseConfig()
+	command.Flags().String(flagDatabaseName, defDatabaseConfig.GetName(), "Name of the database to use")
+	command.Flags().String(flagDatabaseHost, defDatabaseConfig.GetHost(), "Database host")
+	command.Flags().Int64(flagDatabasePort, defDatabaseConfig.GetPort(), "Database port to use")
+	command.Flags().String(flagDatabaseUser, defDatabaseConfig.GetUser(), "User to use when authenticating inside the database")
+	command.Flags().String(flagDatabasePassword, defDatabaseConfig.GetPassword(), "Password to use when authenticating inside the database")
+	command.Flags().String(flagDatabaseSSLMode, defDatabaseConfig.GetSSLMode(), "SSL mode to use when connecting to the database")
+	command.Flags().String(flagDatabaseSchema, defDatabaseConfig.GetSchema(), "Database schema to use")
+	command.Flags().Int(flagDatabaseMaxOpenConnections, defDatabaseConfig.GetMaxOpenConnections(), "Max open connections (a value less than or equal to 0 means unlimited)")
+	command.Flags().Int(flagDatabaseMaxIdleConnections, defDatabaseConfig.GetMaxIdleConnections(), "Max connections in the idle state (a value less than or equal to 0 means unlimited)")
 
-	command.Flags().String(flagLoggingLevel, zerolog.DebugLevel.String(), "Logging level to be used")
-	command.Flags().String(flagLoggingFormat, LogFormatText, "Logging format to be used")
+	defLoggingConfig := types.DefaultLoggingConfig()
+	command.Flags().String(flagLoggingLevel, defLoggingConfig.GetLogLevel(), "Logging level to be used")
+	command.Flags().String(flagLoggingFormat, defLoggingConfig.GetLogFormat(), "Logging format to be used")
 
-	command.Flags().Int64(flagParsingWorkers, 1, "Number of workers to use")
-	command.Flags().Bool(flagParsingNewBlocks, true, "Whether or not to parse new blocks")
-	command.Flags().Bool(flagParsingOldBlocks, true, "Whether or not to parse old blocks")
-	command.Flags().Bool(flagParsingParseGenesis, true, "Whether or not to parse the genesis")
-	command.Flags().String(flagGenesisFilePath, "", "(Optional) Path to the genesis file, if it should not be retrieved from the RPC")
-	command.Flags().Int64(flagParsingStartHeight, 1, "Starting height when parsing new blocks")
-	command.Flags().Bool(flagParsingFastSync, true, "Whether to use fast sync or not when parsing old blocks")
+	defParsingConfig := types.DefaultParsingConfig()
+	command.Flags().Int64(flagParsingWorkers, defParsingConfig.GetWorkers(), "Number of workers to use")
+	command.Flags().Bool(flagParsingNewBlocks, defParsingConfig.ShouldParseNewBlocks(), "Whether or not to parse new blocks")
+	command.Flags().Bool(flagParsingOldBlocks, defParsingConfig.ShouldParseOldBlocks(), "Whether or not to parse old blocks")
+	command.Flags().Bool(flagParsingParseGenesis, defParsingConfig.ShouldParseGenesis(), "Whether or not to parse the genesis")
+	command.Flags().String(flagGenesisFilePath, defParsingConfig.GetGenesisFilePath(), "(Optional) Path to the genesis file, if it should not be retrieved from the RPC")
+	command.Flags().Int64(flagParsingStartHeight, defParsingConfig.GetStartHeight(), "Starting height when parsing new blocks")
+	command.Flags().Bool(flagParsingFastSync, defParsingConfig.UseFastSync(), "Whether to use fast sync or not when parsing old blocks")
 
-	command.Flags().Int64(flagPruningKeepRecent, 100, "Number of recent states to keep")
-	command.Flags().Int64(flagPruningKeepEvery, 500, "Keep every x amount of states forever")
-	command.Flags().Int64(flagPruningInterval, 10, "Number of blocks every which to perform the pruning")
+	defPruningConfig := types.DefaultPruningConfig()
+	command.Flags().Int64(flagPruningKeepRecent, defPruningConfig.GetKeepRecent(), "Number of recent states to keep")
+	command.Flags().Int64(flagPruningKeepEvery, defPruningConfig.GetKeepEvery(), "Keep every x amount of states forever")
+	command.Flags().Int64(flagPruningInterval, defPruningConfig.GetInterval(), "Number of blocks every which to perform the pruning")
+
+	defTelemetryConfig := types.DefaultTelemetryConfig()
+	command.Flags().Bool(flagTelemetryEnabled, false, "Whether the telemetry server should be enabled or not")
+	command.Flags().Uint(flagTelemetryPort, defTelemetryConfig.GetPort(), "Port on which the telemetry server will listen")
 
 	// Set additional flags
 	cfg.GetConfigSetupFlag()(command)

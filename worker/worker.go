@@ -14,7 +14,6 @@ import (
 	"github.com/desmos-labs/juno/modules"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/rs/zerolog/log"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -31,32 +30,41 @@ type Worker struct {
 	encodingConfig *params.EncodingConfig
 	cp             *client.Proxy
 	db             db.Database
-	modules        []modules.Module
+	logger         logging.Logger
+
+	index   int
+	modules []modules.Module
 }
 
 // NewWorker allows to create a new Worker implementation.
-func NewWorker(config *Config) Worker {
+func NewWorker(index int, ctx *Context) Worker {
 	return Worker{
-		encodingConfig: config.EncodingConfig,
-		cp:             config.ClientProxy,
-		queue:          config.Queue,
-		db:             config.Database,
-		modules:        config.Modules,
+		index:          index,
+		encodingConfig: ctx.EncodingConfig,
+		cp:             ctx.ClientProxy,
+		queue:          ctx.Queue,
+		db:             ctx.Database,
+		modules:        ctx.Modules,
+		logger:         ctx.Logger,
 	}
 }
 
 // Start starts a worker by listening for new jobs (block heights) from the
 // given worker queue. Any failed job is logged and re-enqueued.
 func (w Worker) Start() {
+	logging.WorkerCount.Inc()
+
 	for i := range w.queue {
 		if err := w.process(i); err != nil {
 			// re-enqueue any failed job
 			// TODO: Implement exponential backoff or max retries for a block height.
 			go func() {
-				log.Error().Err(err).Int64("height", i).Msg("re-enqueueing failed block")
+				w.logger.Error("re-enqueueing failed block", "height", i, "err", err)
 				w.queue <- i
 			}()
 		}
+
+		logging.WorkerHeight.WithLabelValues(fmt.Sprintf("%d", w.index)).Set(float64(i))
 	}
 }
 
@@ -66,11 +74,11 @@ func (w Worker) Start() {
 func (w Worker) process(height int64) error {
 	exists, err := w.db.HasBlock(height)
 	if err != nil {
-		return err
+		return fmt.Errorf("error while searching for block: %s", err)
 	}
 
 	if exists {
-		log.Debug().Int64("height", height).Msg("skipping already exported block")
+		w.logger.Debug("skipping already exported block", "height", height)
 		return nil
 	}
 
@@ -93,24 +101,21 @@ func (w Worker) process(height int64) error {
 		return w.HandleGenesis(genesis)
 	}
 
-	log.Debug().Int64("height", height).Msg("processing block")
+	w.logger.Debug("processing block", "height", height)
 
 	block, err := w.cp.Block(height)
 	if err != nil {
-		log.Error().Err(err).Int64("height", height).Msg("failed to get block")
-		return err
+		return fmt.Errorf("failed to get block from database: %s", err)
 	}
 
 	txs, err := w.cp.Txs(block)
 	if err != nil {
-		log.Error().Err(err).Int64("height", height).Msg("failed to get transactions for block")
-		return err
+		return fmt.Errorf("failed to get transactions for block: %s", err)
 	}
 
 	vals, err := w.cp.Validators(height)
 	if err != nil {
-		log.Error().Err(err).Int64("height", height).Msg("failed to get validators for block")
-		return err
+		return fmt.Errorf("failed to get validators for block: %s", err)
 	}
 
 	return w.ExportBlock(block, txs, vals)
@@ -118,31 +123,29 @@ func (w Worker) process(height int64) error {
 
 // getGenesisFromRPC returns the genesis read from the RPC endpoint
 func (w Worker) getGenesisFromRPC() (*tmtypes.GenesisDoc, error) {
-	log.Debug().Msg("getting genesis")
+	w.logger.Debug("getting genesis from RPC")
 
 	response, err := w.cp.Genesis()
 	if err != nil {
-		log.Error().Err(err).Msg("failed to get genesis")
-		return nil, err
+		return nil, fmt.Errorf("failed to get genesis: %s", err)
 	}
+
 	return response.Genesis, nil
 }
 
 // getGenesisFromFilePath tries reading the genesis doc from the given path
 func (w Worker) getGenesisFromFilePath(path string) (*tmtypes.GenesisDoc, error) {
-	log.Debug().Str("path", path).Msg("reading genesis from file")
+	w.logger.Debug("reading genesis from file", "path", path)
 
 	bz, err := tmos.ReadFile(path)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to read genesis file")
-		return nil, err
+		return nil, fmt.Errorf("failed to read genesis file: %s", err)
 	}
 
 	var genDoc tmtypes.GenesisDoc
 	err = tmjson.Unmarshal(bz, &genDoc)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to unmarshal genesis doc")
-		return nil, err
+		return nil, fmt.Errorf("failed to unmarshal genesis doc: %s", err)
 	}
 
 	return &genDoc, nil
@@ -153,14 +156,14 @@ func (w Worker) getGenesisFromFilePath(path string) (*tmtypes.GenesisDoc, error)
 func (w Worker) HandleGenesis(genesis *tmtypes.GenesisDoc) error {
 	var appState map[string]json.RawMessage
 	if err := json.Unmarshal(genesis.AppState, &appState); err != nil {
-		return fmt.Errorf("error unmarshalling genesis doc %s: %s", appState, err.Error())
+		return fmt.Errorf("error unmarshalling genesis doc: %s", err)
 	}
 
 	// Call the genesis handlers
 	for _, module := range w.modules {
 		if genesisModule, ok := module.(modules.GenesisModule); ok {
 			if err := genesisModule.HandleGenesis(genesis, appState); err != nil {
-				logging.LogGenesisError(module, err)
+				w.logger.GenesisError(module, err)
 			}
 		}
 	}
@@ -178,8 +181,7 @@ func (w Worker) SaveValidators(vals []*tmtypes.Validator) error {
 
 		consPubKey, err := types.ConvertValidatorPubKeyToBech32String(val.PubKey)
 		if err != nil {
-			log.Error().Err(err).Str("validator", consAddr).Msg("failed to convert validator public key")
-			return err
+			return fmt.Errorf("failed to convert validator public key for validators %s: %s", consAddr, err)
 		}
 
 		validators[index] = types.NewValidator(consAddr, consPubKey)
@@ -207,22 +209,13 @@ func (w Worker) ExportBlock(b *tmctypes.ResultBlock, txs []*types.Tx, vals *tmct
 	proposerAddr := sdk.ConsAddress(b.Block.ProposerAddress)
 	val := findValidatorByAddr(proposerAddr.String(), vals)
 	if val == nil {
-		err := fmt.Errorf("failed to find validator")
-		log.Error().
-			Err(err).
-			Int64("height", b.Block.Height).
-			Str("validator_hex", b.Block.ProposerAddress.String()).
-			Str("validator_bech32", proposerAddr.String()).
-			Time("commit_timestamp", b.Block.Time).
-			Send()
-		return err
+		return fmt.Errorf("failed to find validator by proposer address %s: %s", proposerAddr.String(), err)
 	}
 
 	// Save the block
 	err = w.db.SaveBlock(types.NewBlockFromTmBlock(b, sumGasTxs(txs)))
 	if err != nil {
-		log.Error().Err(err).Int64("height", b.Block.Height).Msg("failed to persist block")
-		return err
+		return fmt.Errorf("failed to persist block: %s", err)
 	}
 
 	// Save the commits
@@ -236,7 +229,7 @@ func (w Worker) ExportBlock(b *tmctypes.ResultBlock, txs []*types.Tx, vals *tmct
 		if blockModule, ok := module.(modules.BlockModule); ok {
 			err = blockModule.HandleBlock(b, txs, vals)
 			if err != nil {
-				logging.LogBLockError(module, b, err)
+				w.logger.BlockError(module, b, err)
 			}
 		}
 	}
@@ -259,15 +252,7 @@ func (w Worker) ExportCommit(commit *tmtypes.Commit, vals *tmctypes.ResultValida
 		valAddr := sdk.ConsAddress(commitSig.ValidatorAddress)
 		val := findValidatorByAddr(valAddr.String(), vals)
 		if val == nil {
-			err := fmt.Errorf("failed to find validator")
-			log.Error().
-				Err(err).
-				Int64("height", commit.Height).
-				Str("validator_hex", commitSig.ValidatorAddress.String()).
-				Str("validator_bech32", valAddr.String()).
-				Time("commit_timestamp", commitSig.Timestamp).
-				Send()
-			return err
+			return fmt.Errorf("failed to find validator by commit validator address %s", valAddr.String())
 		}
 
 		signatures = append(signatures, types.NewCommitSig(
@@ -295,8 +280,7 @@ func (w Worker) ExportTxs(txs []*types.Tx) error {
 		// Save the transaction itself
 		err := w.db.SaveTx(tx)
 		if err != nil {
-			log.Error().Err(err).Str("hash", tx.TxHash).Msg("failed to handle transaction")
-			return err
+			return fmt.Errorf("failed to handle transaction with hash %s: %s", tx.TxHash, err)
 		}
 
 		// Call the tx handlers
@@ -304,7 +288,7 @@ func (w Worker) ExportTxs(txs []*types.Tx) error {
 			if transactionModule, ok := module.(modules.TransactionModule); ok {
 				err = transactionModule.HandleTx(tx)
 				if err != nil {
-					logging.LogTxError(module, tx, err)
+					w.logger.TxError(module, tx, err)
 				}
 			}
 		}
@@ -314,7 +298,7 @@ func (w Worker) ExportTxs(txs []*types.Tx) error {
 			var stdMsg sdk.Msg
 			err = w.encodingConfig.Marshaler.UnpackAny(msg, &stdMsg)
 			if err != nil {
-				return err
+				return fmt.Errorf("error while unpacking message: %s", err)
 			}
 
 			// Call the handlers
@@ -322,7 +306,7 @@ func (w Worker) ExportTxs(txs []*types.Tx) error {
 				if messageModule, ok := module.(modules.MessageModule); ok {
 					err = messageModule.HandleMsg(i, stdMsg, tx)
 					if err != nil {
-						logging.LogMsgError(module, tx, stdMsg, err)
+						w.logger.MsgError(module, tx, stdMsg, err)
 					}
 				}
 			}

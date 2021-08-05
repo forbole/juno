@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/rs/zerolog/log"
+	"github.com/desmos-labs/juno/types/logging"
 
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 	"github.com/lib/pq"
@@ -19,24 +19,24 @@ import (
 // Builder creates a database connection with the given database connection info
 // from config. It returns a database connection handle or an error if the
 // connection fails.
-func Builder(cfg types.DatabaseConfig, encodingConfig *params.EncodingConfig) (db.Database, error) {
+func Builder(ctx *db.Context) (db.Database, error) {
 	sslMode := "disable"
-	if cfg.GetSSLMode() != "" {
-		sslMode = cfg.GetSSLMode()
+	if ctx.Cfg.GetSSLMode() != "" {
+		sslMode = ctx.Cfg.GetSSLMode()
 	}
 
 	schema := "public"
-	if cfg.GetSchema() != "" {
-		schema = cfg.GetSchema()
+	if ctx.Cfg.GetSchema() != "" {
+		schema = ctx.Cfg.GetSchema()
 	}
 
 	connStr := fmt.Sprintf(
 		"host=%s port=%d dbname=%s user=%s sslmode=%s search_path=%s",
-		cfg.GetHost(), cfg.GetPort(), cfg.GetName(), cfg.GetUser(), sslMode, schema,
+		ctx.Cfg.GetHost(), ctx.Cfg.GetPort(), ctx.Cfg.GetName(), ctx.Cfg.GetUser(), sslMode, schema,
 	)
 
-	if cfg.GetPassword() != "" {
-		connStr += fmt.Sprintf(" password=%s", cfg.GetPassword())
+	if ctx.Cfg.GetPassword() != "" {
+		connStr += fmt.Sprintf(" password=%s", ctx.Cfg.GetPassword())
 	}
 
 	postgresDb, err := sql.Open("postgres", connStr)
@@ -45,10 +45,14 @@ func Builder(cfg types.DatabaseConfig, encodingConfig *params.EncodingConfig) (d
 	}
 
 	// Set max open connections
-	postgresDb.SetMaxOpenConns(cfg.GetMaxOpenConnections())
-	postgresDb.SetMaxIdleConns(cfg.GetMaxIdleConnections())
+	postgresDb.SetMaxOpenConns(ctx.Cfg.GetMaxOpenConnections())
+	postgresDb.SetMaxIdleConns(ctx.Cfg.GetMaxIdleConnections())
 
-	return &Database{Sql: postgresDb, EncodingConfig: encodingConfig}, nil
+	return &Database{
+		Sql:            postgresDb,
+		EncodingConfig: ctx.EncodingConfig,
+		Logger:         ctx.Logger,
+	}, nil
 }
 
 // type check to ensure interface is properly implemented
@@ -59,6 +63,7 @@ var _ db.Database = &Database{}
 type Database struct {
 	Sql            *sql.DB
 	EncodingConfig *params.EncodingConfig
+	Logger         logging.Logger
 }
 
 // LastBlockHeight implements db.Database
@@ -205,7 +210,7 @@ VALUES ($1, $2, $3, $4, $5)`
 func (db *Database) Close() {
 	err := db.Sql.Close()
 	if err != nil {
-		log.Error().Str("module", "psql database").Err(err).Msg("error while closing connection")
+		db.Logger.Error("error while closing connection", "err", err)
 	}
 }
 

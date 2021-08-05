@@ -4,6 +4,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/simapp"
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 
+	"github.com/desmos-labs/juno/types/logging"
+
 	"github.com/desmos-labs/juno/client"
 	"github.com/desmos-labs/juno/db"
 	"github.com/desmos-labs/juno/db/builder"
@@ -19,6 +21,7 @@ type Config struct {
 	encodingConfigBuilder types.EncodingConfigBuilder
 	setupCfg              types.SdkConfigSetup
 	buildDb               db.Builder
+	logger                logging.Logger
 }
 
 // NewConfig allows to build a new Config instance
@@ -96,25 +99,41 @@ func (config *Config) GetDBBuilder() db.Builder {
 	return config.buildDb
 }
 
+// WithLogger sets the logger to be used while parsing the data
+func (config *Config) WithLogger(logger logging.Logger) *Config {
+	config.logger = logger
+	return config
+}
+
+// GetLogger returns the logger to be used when parsing the data
+func (config *Config) GetLogger() logging.Logger {
+	if config.logger == nil {
+		return logging.DefaultLogger()
+	}
+	return config.logger
+}
+
 // --------------------------------------------------------------------------------------------------------------------
 
-// ParserData contains the data that should be used to start parsing the chain
-type ParserData struct {
+// Context contains the parsing context
+type Context struct {
 	EncodingConfig *params.EncodingConfig
 	Proxy          *client.Proxy
 	Database       db.Database
+	Logger         logging.Logger
 	Modules        []modules.Module
 }
 
-// NewParserData builds a new ParserData instance
-func NewParserData(
-	encodingConfig *params.EncodingConfig,
-	proxy *client.Proxy, db db.Database, modules []modules.Module,
-) *ParserData {
-	return &ParserData{
+// NewContext builds a new Context instance
+func NewContext(
+	encodingConfig *params.EncodingConfig, proxy *client.Proxy, db db.Database,
+	logger logging.Logger, modules []modules.Module,
+) *Context {
+	return &Context{
 		EncodingConfig: encodingConfig,
 		Proxy:          proxy,
 		Database:       db,
 		Modules:        modules,
+		Logger:         logger,
 	}
 }

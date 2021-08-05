@@ -3,32 +3,41 @@ package worker
 import (
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 
+	"github.com/desmos-labs/juno/types/logging"
+
 	"github.com/desmos-labs/juno/client"
 	"github.com/desmos-labs/juno/db"
 	"github.com/desmos-labs/juno/modules"
 	"github.com/desmos-labs/juno/types"
 )
 
-type Config struct {
+// Context represents the context that is shared among different workers
+type Context struct {
 	EncodingConfig *params.EncodingConfig
-	Queue          types.HeightQueue
 	ClientProxy    *client.Proxy
 	Database       db.Database
-	Modules        []modules.Module
+	Logger         logging.Logger
+
+	Queue   types.HeightQueue
+	Modules []modules.Module
 }
 
-func NewConfig(
-	queue types.HeightQueue,
+// NewContext allows to build a new Worker Context instance
+func NewContext(
 	encodingConfig *params.EncodingConfig,
 	clientProxy *client.Proxy,
 	db db.Database,
+	logger logging.Logger,
+	queue types.HeightQueue,
 	modules []modules.Module,
-) *Config {
-	return &Config{
+) *Context {
+	return &Context{
 		EncodingConfig: encodingConfig,
-		Queue:          queue,
 		ClientProxy:    clientProxy,
 		Database:       db,
-		Modules:        modules,
+		Logger:         logger,
+
+		Queue:   queue,
+		Modules: modules,
 	}
 }
