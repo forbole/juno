@@ -156,4 +156,4 @@ This section allows to configure the telemetry details of Juno.
 | `port` | `uint` | Port on which the telemetry server will listen | `8000` | 
 
 **Note**  
-If the telemetry server is enabled, a new endpoint at the provided port and path `/prometheus` will expose [Prometheus](https://prometheus.io/) data.
+If the telemetry server is enabled, a new endpoint at the provided port and path `/metrics` will expose [Prometheus](https://prometheus.io/) data.

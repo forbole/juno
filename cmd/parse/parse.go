@@ -55,7 +55,7 @@ func StartPrometheus() {
 	}
 
 	router := mux.NewRouter()
-	router.Handle("/prometheus", promhttp.Handler())
+	router.Handle("/metrics", promhttp.Handler())
 
 	err := http.ListenAndServe(fmt.Sprintf(":%d", cfg.GetPort()), router)
 	if err != nil {
