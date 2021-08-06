@@ -3,7 +3,7 @@ module github.com/desmos-labs/juno
 go 1.13
 
 require (
-	github.com/cosmos/cosmos-sdk v0.42.7
+	github.com/cosmos/cosmos-sdk v0.42.9
 	github.com/go-co-op/gocron v0.3.3
 	github.com/gogo/protobuf v1.3.3
 	github.com/gorilla/mux v1.8.0
