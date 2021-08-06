@@ -2,22 +2,24 @@ package parse
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 	"time"
 
+	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+
+	"github.com/desmos-labs/juno/types/logging"
+
 	"github.com/go-co-op/gocron"
-	"github.com/rs/zerolog/log"
 	tmtypes "github.com/tendermint/tendermint/types"
 
-	"github.com/desmos-labs/juno/client"
 	"github.com/desmos-labs/juno/modules"
 	"github.com/desmos-labs/juno/types"
 	"github.com/desmos-labs/juno/worker"
-
-	"github.com/desmos-labs/juno/db"
 
 	"github.com/spf13/cobra"
 )
@@ -31,26 +33,45 @@ func ParseCmd(cmdCfg *Config) *cobra.Command {
 	return &cobra.Command{
 		Use:     "parse",
 		Short:   "Start parsing the blockchain data",
-		PreRunE: types.ConcatCobraCmdFuncs(ReadConfig(cmdCfg), setupLogging),
+		PreRunE: ReadConfig(cmdCfg),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			parserData, err := SetupParsing(cmdCfg)
+			context, err := GetParsingContext(cmdCfg)
 			if err != nil {
 				return err
 			}
 
-			return StartParsing(parserData)
+			go StartPrometheus()
+
+			return StartParsing(context)
 		},
 	}
 }
 
+// StartPrometheus allows to start a Telemetry server used to expose useful metrics
+func StartPrometheus() {
+	cfg := types.Cfg.GetTelemetryConfig()
+	if !cfg.IsEnabled() {
+		return
+	}
+
+	router := mux.NewRouter()
+	router.Handle("/metrics", promhttp.Handler())
+
+	err := http.ListenAndServe(fmt.Sprintf(":%d", cfg.GetPort()), router)
+	if err != nil {
+		panic(err)
+	}
+}
+
 // StartParsing represents the function that should be called when the parse command is executed
-func StartParsing(data *ParserData) error {
+func StartParsing(ctx *Context) error {
 	// Get the config
 	cfg := types.Cfg.GetParsingConfig()
+	logging.StartHeight.Add(float64(cfg.GetStartHeight()))
 
 	// Start periodic operations
 	scheduler := gocron.NewScheduler(time.UTC)
-	for _, module := range data.Modules {
+	for _, module := range ctx.Modules {
 		if module, ok := module.(modules.PeriodicOperationsModule); ok {
 			err := module.RegisterPeriodicOperations(scheduler)
 			if err != nil {
@@ -64,16 +85,16 @@ func StartParsing(data *ParserData) error {
 	exportQueue := types.NewQueue(25)
 
 	// Create workers
-	config := worker.NewConfig(exportQueue, data.EncodingConfig, data.Proxy, data.Database, data.Modules)
+	workerCtx := worker.NewContext(ctx.EncodingConfig, ctx.Proxy, ctx.Database, ctx.Logger, exportQueue, ctx.Modules)
 	workers := make([]worker.Worker, cfg.GetWorkers(), cfg.GetWorkers())
 	for i := range workers {
-		workers[i] = worker.NewWorker(config)
+		workers[i] = worker.NewWorker(i, workerCtx)
 	}
 
 	waitGroup.Add(1)
 
 	// Run all the async operations
-	for _, module := range data.Modules {
+	for _, module := range ctx.Modules {
 		if module, ok := module.(modules.AsyncOperationsModule); ok {
 			go module.RunAsyncOperations()
 		}
@@ -82,13 +103,12 @@ func StartParsing(data *ParserData) error {
 	// Start each blocking worker in a go-routine where the worker consumes jobs
 	// off of the export queue.
 	for i, w := range workers {
-		log.Debug().Int("number", i+1).Msg("starting worker...")
-
+		ctx.Logger.Debug("starting worker...", "number", i+1)
 		go w.Start()
 	}
 
 	// Listen for and trap any OS signal to gracefully shutdown and exit
-	trapSignal(data.Proxy, data.Database)
+	trapSignal(ctx)
 
 	if cfg.ShouldParseGenesis() {
 		// Add the genesis to the queue if requested
@@ -96,11 +116,11 @@ func StartParsing(data *ParserData) error {
 	}
 
 	if cfg.ShouldParseOldBlocks() {
-		go enqueueMissingBlocks(exportQueue, data)
+		go enqueueMissingBlocks(exportQueue, ctx)
 	}
 
 	if cfg.ShouldParseNewBlocks() {
-		go startNewBlockListener(exportQueue, data)
+		go startNewBlockListener(exportQueue, ctx)
 	}
 
 	// Block main process (signal capture will call WaitGroup's Done)
@@ -110,35 +130,34 @@ func StartParsing(data *ParserData) error {
 
 // enqueueMissingBlocks enqueues jobs (block heights) for missed blocks starting
 // at the startHeight up until the latest known height.
-func enqueueMissingBlocks(exportQueue types.HeightQueue, data *ParserData) {
+func enqueueMissingBlocks(exportQueue types.HeightQueue, ctx *Context) {
 	// Get the config
 	cfg := types.Cfg.GetParsingConfig()
 
 	// Get the latest height
-	latestBlockHeight, err := data.Proxy.LatestHeight()
+	latestBlockHeight, err := ctx.Proxy.LatestHeight()
 	if err != nil {
-		log.Fatal().Err(fmt.Errorf("failed to get last block from RPC client: %s", err))
+		panic(fmt.Errorf("failed to get last block from RPC client: %s", err))
 	}
 
 	if cfg.UseFastSync() {
-		log.Info().Int64("latest_block_height", latestBlockHeight).
-			Msg("fast sync is enabled, ignoring all previous blocks")
-		for _, module := range data.Modules {
+		ctx.Logger.Info("fast sync is enabled, ignoring all previous blocks", "latest_block_height", latestBlockHeight)
+		for _, module := range ctx.Modules {
 			if mod, ok := module.(modules.FastSyncModule); ok {
-				err := mod.DownloadState(latestBlockHeight)
+				err = mod.DownloadState(latestBlockHeight)
 				if err != nil {
-					log.Error().Err(err).
-						Int64("last_block_height", latestBlockHeight).
-						Str("module", module.Name()).
-						Msg("error while performing fast sync")
+					ctx.Logger.Error("error while performing fast sync",
+						"err", err,
+						"last_block_height", latestBlockHeight,
+						"module", module.Name(),
+					)
 				}
 			}
 		}
 	} else {
-		log.Info().Int64("latest_block_height", latestBlockHeight).
-			Msg("syncing missing blocks...")
+		ctx.Logger.Info("syncing missing blocks...", "latest_block_height", latestBlockHeight)
 		for i := cfg.GetStartHeight(); i <= latestBlockHeight; i++ {
-			log.Debug().Int64("height", i).Msg("enqueueing missing block")
+			ctx.Logger.Debug("enqueueing missing block", "height", i)
 			exportQueue <- i
 		}
 	}
@@ -147,28 +166,28 @@ func enqueueMissingBlocks(exportQueue types.HeightQueue, data *ParserData) {
 // startNewBlockListener subscribes to new block events via the Tendermint RPC
 // and enqueues each new block height onto the provided queue. It blocks as new
 // blocks are incoming.
-func startNewBlockListener(exportQueue types.HeightQueue, data *ParserData) {
-	eventCh, cancel, err := data.Proxy.SubscribeNewBlocks(types.Cfg.GetRPCConfig().GetClientName() + "-blocks")
+func startNewBlockListener(exportQueue types.HeightQueue, ctx *Context) {
+	eventCh, cancel, err := ctx.Proxy.SubscribeNewBlocks(types.Cfg.GetRPCConfig().GetClientName() + "-blocks")
 	defer cancel()
 
 	if err != nil {
-		log.Fatal().Err(fmt.Errorf("failed to subscribe to new blocks: %s", err))
+		panic(fmt.Errorf("failed to subscribe to new blocks: %s", err))
 	}
 
-	log.Info().Msg("listening for new block events...")
+	ctx.Logger.Info("listening for new block events...")
 
 	for e := range eventCh {
 		newBlock := e.Data.(tmtypes.EventDataNewBlock).Block
 		height := newBlock.Header.Height
 
-		log.Debug().Int64("height", height).Msg("enqueueing new block")
+		ctx.Logger.Debug("enqueueing new block", "height", height)
 		exportQueue <- height
 	}
 }
 
 // trapSignal will listen for any OS signal and invoke Done on the main
 // WaitGroup allowing the main process to gracefully exit.
-func trapSignal(cp *client.Proxy, db db.Database) {
+func trapSignal(ctx *Context) {
 	var sigCh = make(chan os.Signal)
 
 	signal.Notify(sigCh, syscall.SIGTERM)
@@ -176,9 +195,9 @@ func trapSignal(cp *client.Proxy, db db.Database) {
 
 	go func() {
 		sig := <-sigCh
-		log.Info().Str("signal", sig.String()).Msg("caught signal; shutting down...")
-		defer cp.Stop()
-		defer db.Close()
+		ctx.Logger.Info("caught signal; shutting down...", "signal", sig.String())
+		defer ctx.Proxy.Stop()
+		defer ctx.Database.Close()
 		defer waitGroup.Done()
 	}()
 }

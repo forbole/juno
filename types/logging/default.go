@@ -13,10 +13,21 @@ import (
 	"github.com/desmos-labs/juno/types"
 )
 
-var _ Logger = &defaultLogger{}
+var (
+	_ Logger = &defaultLogger{}
+)
 
 // defaultLogger represents the default logger for any kind of error
-type defaultLogger struct{}
+type defaultLogger struct {
+	zerolog.Logger
+}
+
+// DefaultLogger allows to build a new defaultLogger instance
+func DefaultLogger() Logger {
+	return &defaultLogger{
+		Logger: log.Logger,
+	}
+}
 
 // SetLogLevel implements Logger
 func (d *defaultLogger) SetLogLevel(level string) error {
@@ -25,7 +36,7 @@ func (d *defaultLogger) SetLogLevel(level string) error {
 		return err
 	}
 
-	zerolog.SetGlobalLevel(logLvl)
+	d.Logger.Level(logLvl)
 	return nil
 }
 
@@ -37,7 +48,7 @@ func (d *defaultLogger) SetLogFormat(format string) error {
 		break
 
 	case "text":
-		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+		d.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 		break
 
 	default:
@@ -47,26 +58,69 @@ func (d *defaultLogger) SetLogFormat(format string) error {
 	return nil
 }
 
-// LogGenesisError implements Logger
-func (d *defaultLogger) LogGenesisError(module modules.Module, err error) {
-	log.Error().Err(err).Str(LogKeyModule, module.Name()).
-		Msg("error while handling genesis")
+// Info implements Logger
+func (d *defaultLogger) Info(msg string, keyVals ...interface{}) {
+	d.Logger.Info().Fields(getLogFields(keyVals...)).Msg(msg)
 }
 
-// LogBLockError implements Logger
-func (d *defaultLogger) LogBLockError(module modules.Module, block *tmctypes.ResultBlock, err error) {
-	log.Error().Err(err).Str(LogKeyModule, module.Name()).Int64(LogKeyHeight, block.Block.Height).
-		Msg("error while handling block")
+// Debug implements Logger
+func (d *defaultLogger) Debug(msg string, keyVals ...interface{}) {
+	d.Logger.Debug().Fields(getLogFields(keyVals...)).Msg(msg)
 }
 
-// LogTxError implements Logger
-func (d *defaultLogger) LogTxError(module modules.Module, tx *types.Tx, err error) {
-	log.Error().Err(err).Str(LogKeyModule, module.Name()).Int64("height", tx.Height).
-		Str(LogKeyTxHash, tx.TxHash).Msg("error while handling transaction")
+// Error implements Logger
+func (d *defaultLogger) Error(msg string, keyVals ...interface{}) {
+	ErrorCount.Inc()
+	d.Logger.Error().Fields(getLogFields(keyVals...)).Msg(msg)
 }
 
-// LogMsgError implements Logger
-func (d *defaultLogger) LogMsgError(module modules.Module, tx *types.Tx, msg sdk.Msg, err error) {
-	log.Error().Err(err).Str(LogKeyModule, module.Name()).Int64(LogKeyHeight, tx.Height).
-		Str(LogKeyTxHash, tx.TxHash).Str(LogKeyMsgType, msg.Type()).Msg("error while handling message")
+// GenesisError implements Logger
+func (d *defaultLogger) GenesisError(module modules.Module, err error) {
+	d.Error("error while handling genesis",
+		"err", err,
+		LogKeyModule, module.Name(),
+	)
+}
+
+// BlockError implements Logger
+func (d *defaultLogger) BlockError(module modules.Module, block *tmctypes.ResultBlock, err error) {
+	d.Error("error while handling block",
+		"err", err,
+		LogKeyModule, module.Name(),
+		LogKeyHeight, block.Block.Height,
+	)
+}
+
+// TxError implements Logger
+func (d *defaultLogger) TxError(module modules.Module, tx *types.Tx, err error) {
+	d.Error("error while handling transaction",
+		"err", err,
+		LogKeyModule, module.Name(),
+		LogKeyHeight, tx.Height,
+		LogKeyTxHash, tx.TxHash,
+	)
+}
+
+// MsgError implements Logger
+func (d *defaultLogger) MsgError(module modules.Module, tx *types.Tx, msg sdk.Msg, err error) {
+	d.Error("error while handling message",
+		"err", err,
+		LogKeyModule, module.Name(),
+		LogKeyHeight, tx.Height,
+		LogKeyTxHash, tx.TxHash,
+		LogKeyMsgType, msg.Type(),
+	)
+}
+
+func getLogFields(keyVals ...interface{}) map[string]interface{} {
+	if len(keyVals)%2 != 0 {
+		return nil
+	}
+
+	fields := make(map[string]interface{})
+	for i := 0; i < len(keyVals); i += 2 {
+		fields[keyVals[i].(string)] = keyVals[i+1]
+	}
+
+	return fields
 }

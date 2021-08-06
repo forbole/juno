@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/rs/zerolog/log"
-
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/tx"
@@ -189,6 +187,6 @@ func (cp *Proxy) Txs(block *tmctypes.ResultBlock) ([]*types.Tx, error) {
 func (cp *Proxy) Stop() {
 	err := cp.rpcClient.Stop()
 	if err != nil {
-		log.Fatal().Str("module", "client proxy").Err(err).Msg("error while stopping proxy")
+		panic(fmt.Errorf("error while stopping proxy: %s", err))
 	}
 }

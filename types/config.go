@@ -1,6 +1,9 @@
 package types
 
-import "github.com/pelletier/go-toml"
+import (
+	"github.com/pelletier/go-toml"
+	"github.com/rs/zerolog"
+)
 
 var (
 	// Cfg represents the configuration to be used during the execution
@@ -11,13 +14,14 @@ var (
 type ConfigParser = func(fileContents []byte) (Config, error)
 
 type configToml struct {
-	RPC      *rpcConfig      `toml:"rpc"`
-	Grpc     *grpcConfig     `toml:"grpc"`
-	Cosmos   *cosmosConfig   `toml:"cosmos"`
-	Database *databaseConfig `toml:"database"`
-	Logging  *loggingConfig  `toml:"logging"`
-	Parsing  *parsingConfig  `toml:"parsing"`
-	Pruning  *pruningConfig  `toml:"pruning"`
+	RPC       *rpcConfig       `toml:"rpc"`
+	Grpc      *grpcConfig      `toml:"grpc"`
+	Cosmos    *cosmosConfig    `toml:"cosmos"`
+	Database  *databaseConfig  `toml:"database"`
+	Logging   *loggingConfig   `toml:"logging"`
+	Parsing   *parsingConfig   `toml:"parsing"`
+	Pruning   *pruningConfig   `toml:"pruning"`
+	Telemetry *telemetryConfig `toml:"telemetry"`
 }
 
 // DefaultConfigParser attempts to read and parse a Juno config from the given string bytes.
@@ -33,6 +37,7 @@ func DefaultConfigParser(configData []byte) (Config, error) {
 		cfg.Logging,
 		cfg.Parsing,
 		cfg.Pruning,
+		cfg.Telemetry,
 	), err
 }
 
@@ -47,19 +52,21 @@ type Config interface {
 	GetLoggingConfig() LoggingConfig
 	GetParsingConfig() ParsingConfig
 	GetPruningConfig() PruningConfig
+	GetTelemetryConfig() TelemetryConfig
 }
 
 var _ Config = &config{}
 
 // Config defines all necessary juno configuration parameters.
 type config struct {
-	RPC      RPCConfig      `toml:"rpc"`
-	Grpc     GrpcConfig     `toml:"grpc"`
-	Cosmos   CosmosConfig   `toml:"cosmos"`
-	Database DatabaseConfig `toml:"database"`
-	Logging  LoggingConfig  `toml:"logging"`
-	Parsing  ParsingConfig  `toml:"parsing"`
-	Pruning  PruningConfig  `toml:"pruning"`
+	RPC       RPCConfig       `toml:"rpc"`
+	Grpc      GrpcConfig      `toml:"grpc"`
+	Cosmos    CosmosConfig    `toml:"cosmos"`
+	Database  DatabaseConfig  `toml:"database"`
+	Logging   LoggingConfig   `toml:"logging"`
+	Parsing   ParsingConfig   `toml:"parsing"`
+	Pruning   PruningConfig   `toml:"pruning"`
+	Telemetry TelemetryConfig `toml:"prometheus"`
 }
 
 // NewConfig builds a new Config instance
@@ -67,85 +74,82 @@ func NewConfig(
 	rpcConfig RPCConfig, grpConfig GrpcConfig,
 	cosmosConfig CosmosConfig, dbConfig DatabaseConfig,
 	loggingConfig LoggingConfig, parsingConfig ParsingConfig,
-	pruningConfig PruningConfig,
+	pruningConfig PruningConfig, telemetryConfig TelemetryConfig,
 ) Config {
 	return &config{
-		RPC:      rpcConfig,
-		Grpc:     grpConfig,
-		Cosmos:   cosmosConfig,
-		Database: dbConfig,
-		Logging:  loggingConfig,
-		Parsing:  parsingConfig,
-		Pruning:  pruningConfig,
+		RPC:       rpcConfig,
+		Grpc:      grpConfig,
+		Cosmos:    cosmosConfig,
+		Database:  dbConfig,
+		Logging:   loggingConfig,
+		Parsing:   parsingConfig,
+		Pruning:   pruningConfig,
+		Telemetry: telemetryConfig,
 	}
 }
 
 // GetRPCConfig implements Config
 func (c *config) GetRPCConfig() RPCConfig {
+	if c.RPC == nil {
+		return DefaultRPCConfig()
+	}
 	return c.RPC
 }
 
 // GetGrpcConfig implements Config
 func (c *config) GetGrpcConfig() GrpcConfig {
+	if c.Grpc == nil {
+		return DefaultGrpcConfig()
+	}
 	return c.Grpc
 }
 
 // GetCosmosConfig implements Config
 func (c *config) GetCosmosConfig() CosmosConfig {
+	if c.Cosmos == nil {
+		return DefaultCosmosConfig()
+	}
 	return c.Cosmos
 }
 
 // GetDatabaseConfig implements Config
 func (c *config) GetDatabaseConfig() DatabaseConfig {
+	if c.Database == nil {
+		return DefaultDatabaseConfig()
+	}
 	return c.Database
 }
 
 // GetLoggingConfig implements Config
 func (c *config) GetLoggingConfig() LoggingConfig {
+	if c.Logging == nil {
+		return DefaultLoggingConfig()
+	}
 	return c.Logging
 }
 
 // GetParsingConfig implements Config
 func (c *config) GetParsingConfig() ParsingConfig {
+	if c.Parsing == nil {
+		return DefaultParsingConfig()
+	}
 	return c.Parsing
 }
 
 // GetPruningConfig implements Config
 func (c *config) GetPruningConfig() PruningConfig {
+	if c.Pruning == nil {
+		return DefaultPruningConfig()
+	}
 	return c.Pruning
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-
-// GrpcConfig contains the configuration of the gRPC endpoint
-type GrpcConfig interface {
-	GetAddress() string
-	IsInsecure() bool
-}
-
-var _ GrpcConfig = &grpcConfig{}
-
-type grpcConfig struct {
-	Address  string `toml:"address"`
-	Insecure bool   `toml:"insecure"`
-}
-
-// NewGrpcConfig allows to build a new GrpcConfig instance
-func NewGrpcConfig(address string, insecure bool) GrpcConfig {
-	return &grpcConfig{
-		Address:  address,
-		Insecure: insecure,
+// GetTelemetryConfig implements Config
+func (c *config) GetTelemetryConfig() TelemetryConfig {
+	if c.Telemetry == nil {
+		return DefaultTelemetryConfig()
 	}
-}
-
-// GetAddress implements GrpcConfig
-func (g *grpcConfig) GetAddress() string {
-	return g.Address
-}
-
-// IsInsecure implements GrpcConfig
-func (g *grpcConfig) IsInsecure() bool {
-	return g.Insecure
+	return c.Telemetry
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -171,6 +175,11 @@ func NewRPCConfig(clientName, address string) RPCConfig {
 	}
 }
 
+// DefaultRPCConfig returns the default instance of RPCConfig
+func DefaultRPCConfig() RPCConfig {
+	return NewRPCConfig("juno", "http://localhost:26657")
+}
+
 // GetClientName implements RPCConfig
 func (r *rpcConfig) GetClientName() string {
 	return r.ClientName
@@ -179,6 +188,44 @@ func (r *rpcConfig) GetClientName() string {
 // GetAddress implements RPCConfig
 func (r *rpcConfig) GetAddress() string {
 	return r.Address
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+// GrpcConfig contains the configuration of the gRPC endpoint
+type GrpcConfig interface {
+	GetAddress() string
+	IsInsecure() bool
+}
+
+var _ GrpcConfig = &grpcConfig{}
+
+type grpcConfig struct {
+	Address  string `toml:"address"`
+	Insecure bool   `toml:"insecure"`
+}
+
+// NewGrpcConfig allows to build a new GrpcConfig instance
+func NewGrpcConfig(address string, insecure bool) GrpcConfig {
+	return &grpcConfig{
+		Address:  address,
+		Insecure: insecure,
+	}
+}
+
+// DefaultGrpcConfig returns the default instance of a GrpcConfig
+func DefaultGrpcConfig() GrpcConfig {
+	return NewGrpcConfig("localhost:9090", true)
+}
+
+// GetAddress implements GrpcConfig
+func (g *grpcConfig) GetAddress() string {
+	return g.Address
+}
+
+// IsInsecure implements GrpcConfig
+func (g *grpcConfig) IsInsecure() bool {
+	return g.Insecure
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -202,6 +249,11 @@ func NewCosmosConfig(prefix string, modules []string) CosmosConfig {
 		Prefix:  prefix,
 		Modules: modules,
 	}
+}
+
+// DefaultCosmosConfig returns the default instance of CosmosConfig
+func DefaultCosmosConfig() CosmosConfig {
+	return NewCosmosConfig("cosmos", nil)
 }
 
 // GetPrefix implements CosmosConfig
@@ -259,6 +311,21 @@ func NewDatabaseConfig(
 		MaxOpenConnections: maxOpenConnections,
 		MaxIdleConnections: maxIdleConnections,
 	}
+}
+
+// DefaultDatabaseConfig returns the default instance of DatabaseConfig
+func DefaultDatabaseConfig() DatabaseConfig {
+	return NewDatabaseConfig(
+		"database-name",
+		"localhost",
+		5432,
+		"user",
+		"password",
+		"",
+		"public",
+		1,
+		1,
+	)
 }
 
 // GetName implements DatabaseConfig
@@ -329,6 +396,11 @@ func NewLoggingConfig(level, format string) LoggingConfig {
 	}
 }
 
+// DefaultLoggingConfig returns the default LoggingConfig instance
+func DefaultLoggingConfig() LoggingConfig {
+	return NewLoggingConfig(zerolog.DebugLevel.String(), "text")
+}
+
 // GetLogLevel implements LoggingConfig
 func (l *loggingConfig) GetLogLevel() string {
 	return l.LogLevel
@@ -364,6 +436,7 @@ type parsingConfig struct {
 	FastSync        bool   `toml:"fast_sync"`
 }
 
+// NewParsingConfig allows to build a new ParsingConfig instance
 func NewParsingConfig(
 	workers int64,
 	parseNewBlocks, parseOldBlocks bool,
@@ -378,6 +451,19 @@ func NewParsingConfig(
 		StartHeight:     startHeight,
 		FastSync:        fastSync,
 	}
+}
+
+// DefaultParsingConfig returns the default instance of ParsingConfig
+func DefaultParsingConfig() ParsingConfig {
+	return NewParsingConfig(
+		1,
+		true,
+		true,
+		true,
+		"",
+		1,
+		false,
+	)
 }
 
 // GetWorkers implements ParsingConfig
@@ -440,6 +526,11 @@ func NewPruningConfig(keepRecent, keepEvery, interval int64) PruningConfig {
 	}
 }
 
+// DefaultPruningConfig returns the default PruningConfig instance
+func DefaultPruningConfig() PruningConfig {
+	return NewPruningConfig(100, 500, 10)
+}
+
 // GetKeepRecent implements PruningConfig
 func (p *pruningConfig) GetKeepRecent() int64 {
 	return p.KeepRecent
@@ -453,4 +544,42 @@ func (p *pruningConfig) GetKeepEvery() int64 {
 // GetInterval implements PruningConfig
 func (p *pruningConfig) GetInterval() int64 {
 	return p.Interval
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+// TelemetryConfig contains the configuration of the pruning strategy
+type TelemetryConfig interface {
+	IsEnabled() bool
+	GetPort() uint
+}
+
+var _ TelemetryConfig = &telemetryConfig{}
+
+type telemetryConfig struct {
+	Enabled bool `toml:"enabled"`
+	Port    uint `toml:"port"`
+}
+
+// NewTelemetryConfig allows to build a new TelemetryConfig instance
+func NewTelemetryConfig(enabled bool, port uint) TelemetryConfig {
+	return &telemetryConfig{
+		Enabled: enabled,
+		Port:    port,
+	}
+}
+
+// DefaultTelemetryConfig returns the default TelemetryConfig instance
+func DefaultTelemetryConfig() TelemetryConfig {
+	return NewTelemetryConfig(false, 500)
+}
+
+// IsEnabled implements TelemetryConfig
+func (p *telemetryConfig) IsEnabled() bool {
+	return p.Enabled
+}
+
+// GetPort implements TelemetryConfig
+func (p *telemetryConfig) GetPort() uint {
+	return p.Port
 }

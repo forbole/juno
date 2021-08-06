@@ -4,6 +4,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 
 	"github.com/desmos-labs/juno/types"
+	"github.com/desmos-labs/juno/types/logging"
 )
 
 // Database represents an abstract database that can be used to save data inside it
@@ -54,5 +55,21 @@ type PruningDb interface {
 	GetLastPruned() (int64, error)
 }
 
+// Context contains the data that might be used to build a Database instance
+type Context struct {
+	Cfg            types.DatabaseConfig
+	EncodingConfig *params.EncodingConfig
+	Logger         logging.Logger
+}
+
+// NewContext allows to build a new Context instance
+func NewContext(cfg types.DatabaseConfig, encodingConfig *params.EncodingConfig, logger logging.Logger) *Context {
+	return &Context{
+		Cfg:            cfg,
+		EncodingConfig: encodingConfig,
+		Logger:         logger,
+	}
+}
+
 // Builder represents a method that allows to build any database from a given codec and configuration
-type Builder func(cfg types.Config, encodingConfig *params.EncodingConfig) (Database, error)
+type Builder func(ctx *Context) (Database, error)

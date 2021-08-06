@@ -3,7 +3,8 @@ package registrar
 import (
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/rs/zerolog/log"
+
+	"github.com/desmos-labs/juno/types/logging"
 
 	"github.com/desmos-labs/juno/types"
 
@@ -16,27 +17,56 @@ import (
 	"github.com/desmos-labs/juno/db"
 )
 
+// Context represents the context of the modules registrar
+type Context struct {
+	ParsingConfig  types.Config
+	SDKConfig      *sdk.Config
+	EncodingConfig *params.EncodingConfig
+	Database       db.Database
+	Proxy          *client.Proxy
+	Logger         logging.Logger
+}
+
+// NewContext allows to build a new Context instance
+func NewContext(
+	parsingConfig types.Config, sdkConfig *sdk.Config, encodingConfig *params.EncodingConfig,
+	database db.Database, proxy *client.Proxy, logger logging.Logger,
+) Context {
+	return Context{
+		ParsingConfig:  parsingConfig,
+		SDKConfig:      sdkConfig,
+		EncodingConfig: encodingConfig,
+		Database:       database,
+		Proxy:          proxy,
+		Logger:         logger,
+	}
+}
+
 // Registrar represents a modules registrar. This allows to build a list of modules that can later be used by
 // specifying their names inside the TOML configuration file.
 type Registrar interface {
-	BuildModules(types.Config, *params.EncodingConfig, *sdk.Config, db.Database, *client.Proxy) modules.Modules
+	BuildModules(context Context) modules.Modules
 }
 
 // ------------------------------------------------------------------------------------------------------------------
 
-var _ Registrar = &EmptyRegistrar{}
+var (
+	_ Registrar = &EmptyRegistrar{}
+)
 
 // EmptyRegistrar represents a Registrar which does not register any custom module
 type EmptyRegistrar struct{}
 
 // BuildModules implements Registrar
-func (*EmptyRegistrar) BuildModules(
-	types.Config, *params.EncodingConfig, *sdk.Config, db.Database, *client.Proxy,
-) modules.Modules {
+func (*EmptyRegistrar) BuildModules(_ Context) modules.Modules {
 	return nil
 }
 
 // ------------------------------------------------------------------------------------------------------------------
+
+var (
+	_ Registrar = &DefaultRegistrar{}
+)
 
 // DefaultRegistrar represents a registrar that allows to handle the default Juno modules
 type DefaultRegistrar struct {
@@ -51,12 +81,10 @@ func NewDefaultRegistrar(parser messages.MessageAddressesParser) *DefaultRegistr
 }
 
 // BuildModules implements Registrar
-func (r *DefaultRegistrar) BuildModules(
-	cfg types.Config, encodingCfg *params.EncodingConfig, _ *sdk.Config, db db.Database, _ *client.Proxy,
-) modules.Modules {
+func (r *DefaultRegistrar) BuildModules(ctx Context) modules.Modules {
 	return modules.Modules{
-		pruning.NewModule(cfg.GetPruningConfig(), db),
-		messages.NewModule(r.parser, encodingCfg.Marshaler, db),
+		pruning.NewModule(ctx.ParsingConfig.GetPruningConfig(), ctx.Database, ctx.Logger),
+		messages.NewModule(r.parser, ctx.EncodingConfig.Marshaler, ctx.Database),
 	}
 }
 
@@ -64,14 +92,14 @@ func (r *DefaultRegistrar) BuildModules(
 
 // GetModules returns the list of module implementations based on the given module names.
 // For each module name that is specified but not found, a warning log is printed.
-func GetModules(mods modules.Modules, names []string) []modules.Module {
+func GetModules(mods modules.Modules, names []string, logger logging.Logger) []modules.Module {
 	var modulesImpls []modules.Module
 	for _, name := range names {
 		module, found := mods.FindByName(name)
 		if found {
 			modulesImpls = append(modulesImpls, module)
 		} else {
-			log.Warn().Msgf("%s module is required but not registered. Be sure to register it using registrar.RegisterModule", name)
+			logger.Error("Module is required but not registered. Be sure to register it using registrar.RegisterModule", "module", name)
 		}
 	}
 	return modulesImpls
