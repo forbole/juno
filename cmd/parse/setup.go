@@ -41,14 +41,14 @@ func GetParsingContext(parseConfig *Config) (*Context, error) {
 	}
 
 	// Setup the logging
-	err = parseConfig.GetLogger().SetLogLevel(cfg.GetLoggingConfig().GetLogLevel())
-	if err != nil {
-		return nil, fmt.Errorf("error while setting logging level: %s", err)
-	}
-
 	err = parseConfig.GetLogger().SetLogFormat(cfg.GetLoggingConfig().GetLogFormat())
 	if err != nil {
 		return nil, fmt.Errorf("error while setting logging format: %s", err)
+	}
+
+	err = parseConfig.GetLogger().SetLogLevel(cfg.GetLoggingConfig().GetLogLevel())
+	if err != nil {
+		return nil, fmt.Errorf("error while setting logging level: %s", err)
 	}
 
 	// Get the modules

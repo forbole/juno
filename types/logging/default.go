@@ -19,7 +19,7 @@ var (
 
 // defaultLogger represents the default logger for any kind of error
 type defaultLogger struct {
-	zerolog.Logger
+	Logger zerolog.Logger
 }
 
 // DefaultLogger allows to build a new defaultLogger instance
@@ -36,7 +36,7 @@ func (d *defaultLogger) SetLogLevel(level string) error {
 		return err
 	}
 
-	d.Logger.Level(logLvl)
+	zerolog.SetGlobalLevel(logLvl)
 	return nil
 }
 
@@ -48,7 +48,7 @@ func (d *defaultLogger) SetLogFormat(format string) error {
 		break
 
 	case "text":
-		d.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 		break
 
 	default:
