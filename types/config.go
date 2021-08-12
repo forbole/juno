@@ -66,7 +66,7 @@ type config struct {
 	Logging   LoggingConfig   `toml:"logging"`
 	Parsing   ParsingConfig   `toml:"parsing"`
 	Pruning   PruningConfig   `toml:"pruning"`
-	Telemetry TelemetryConfig `toml:"prometheus"`
+	Telemetry TelemetryConfig `toml:"telemetry"`
 }
 
 // NewConfig builds a new Config instance
