@@ -13,12 +13,32 @@ var (
 // ConfigParser represents a function that allows to parse a file contents as a Config object
 type ConfigParser = func(fileContents []byte) (Config, error)
 
+type configToml struct {
+	RPC       *rpcConfig       `toml:"rpc"`
+	Grpc      *grpcConfig      `toml:"grpc"`
+	Cosmos    *cosmosConfig    `toml:"cosmos"`
+	Database  *databaseConfig  `toml:"database"`
+	Logging   *loggingConfig   `toml:"logging"`
+	Parsing   *parsingConfig   `toml:"parsing"`
+	Pruning   *pruningConfig   `toml:"pruning"`
+	Telemetry *telemetryConfig `toml:"telemetry"`
+}
+
 // DefaultConfigParser attempts to read and parse a Juno config from the given string bytes.
 // An error reading or parsing the config results in a panic.
 func DefaultConfigParser(configData []byte) (Config, error) {
-	var cfg config
+	var cfg configToml
 	err := toml.Unmarshal(configData, &cfg)
-	return &cfg, err
+	return NewConfig(
+		cfg.RPC,
+		cfg.Grpc,
+		cfg.Cosmos,
+		cfg.Database,
+		cfg.Logging,
+		cfg.Parsing,
+		cfg.Pruning,
+		cfg.Telemetry,
+	), err
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -46,7 +66,7 @@ type config struct {
 	Logging   LoggingConfig   `toml:"logging"`
 	Parsing   ParsingConfig   `toml:"parsing"`
 	Pruning   PruningConfig   `toml:"pruning"`
-	Telemetry TelemetryConfig `toml:"telemetry"`
+	Telemetry TelemetryConfig `toml:"prometheus"`
 }
 
 // NewConfig builds a new Config instance
