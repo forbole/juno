@@ -12,8 +12,9 @@ import (
 const (
 	flagReplace = "replace"
 
-	flagRPCClientName = "client-name"
-	flagRPCAddress    = "rpc-address"
+	flagRPCClientName     = "client-name"
+	flagRPCAddress        = "rpc-address"
+	flagRPCMaxConnections = "max-connections"
 
 	flagGRPCAddress  = "grpc-address"
 	flagGRPCInsecure = "grpc-insecure"
@@ -92,6 +93,7 @@ func InitCmd(cfg *Config) *cobra.Command {
 	defRPCConfig := types.DefaultRPCConfig()
 	command.Flags().String(flagRPCClientName, defRPCConfig.GetClientName(), "Name of the subscriber to use when listening to events")
 	command.Flags().String(flagRPCAddress, defRPCConfig.GetAddress(), "RPC address to use")
+	command.Flags().Int(flagRPCMaxConnections, defRPCConfig.GetMaxConnections(), "Max number of connections to be use (any value <= 0 means to use the default one)")
 
 	defGRPCConfig := types.DefaultGrpcConfig()
 	command.Flags().String(flagGRPCAddress, defGRPCConfig.GetAddress(), "gRPC address to use")

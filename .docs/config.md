@@ -13,6 +13,7 @@ prefix = "cosmos"
 [rpc]
 address = "http://localhost:26657"
 client_name = "juno"
+max_connections = 20
 
 [grpc]
 address = "localhost:9090"
@@ -94,6 +95,7 @@ This section contains the details of the chain RPC to which Juno will connect.
 | :-------: | :---: | :--------- | :------ |
 | `address` | `string` | Address of the RPC endpoint | `http://localhost:26657` |
 | `client_name` | `string` | Client name used when subscribing to the Tendermint websocket | `juno` |
+| `max_connections` | `int` | Max number of connections that can created towards the RPC node (any value less or equal to `0` means to use the default one instead) | `20` | 
 
 ## `grpc`
 This section contains the details of the gRPC endpoint that Juno will use to query the data.

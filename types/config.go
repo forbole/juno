@@ -158,26 +158,33 @@ func (c *config) GetTelemetryConfig() TelemetryConfig {
 type RPCConfig interface {
 	GetClientName() string
 	GetAddress() string
+	GetMaxConnections() int
 }
 
 var _ RPCConfig = &rpcConfig{}
 
+const (
+	DefaultMaxConnections = 20
+)
+
 type rpcConfig struct {
-	ClientName string `toml:"client_name"`
-	Address    string `toml:"address"`
+	ClientName     string `toml:"client_name"`
+	Address        string `toml:"address"`
+	MaxConnections int    `toml:"max_connections"`
 }
 
 // NewRPCConfig allows to build a new RPCConfig instance
-func NewRPCConfig(clientName, address string) RPCConfig {
+func NewRPCConfig(clientName, address string, maxConnections int) RPCConfig {
 	return &rpcConfig{
-		ClientName: clientName,
-		Address:    address,
+		ClientName:     clientName,
+		Address:        address,
+		MaxConnections: maxConnections,
 	}
 }
 
 // DefaultRPCConfig returns the default instance of RPCConfig
 func DefaultRPCConfig() RPCConfig {
-	return NewRPCConfig("juno", "http://localhost:26657")
+	return NewRPCConfig("juno", "http://localhost:26657", DefaultMaxConnections)
 }
 
 // GetClientName implements RPCConfig
@@ -188,6 +195,14 @@ func (r *rpcConfig) GetClientName() string {
 // GetAddress implements RPCConfig
 func (r *rpcConfig) GetAddress() string {
 	return r.Address
+}
+
+// GetMaxConnections implements RPCConfig
+func (r *rpcConfig) GetMaxConnections() int {
+	if r.MaxConnections <= 0 {
+		return DefaultMaxConnections
+	}
+	return r.MaxConnections
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

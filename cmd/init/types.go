@@ -25,6 +25,7 @@ type ConfigCreator = func(cmd *cobra.Command) types.Config
 func DefaultConfigCreator(cmd *cobra.Command) types.Config {
 	rpcClientName, _ := cmd.Flags().GetString(flagRPCClientName)
 	rpcAddr, _ := cmd.Flags().GetString(flagRPCAddress)
+	rpcMaxConnections, _ := cmd.Flags().GetInt(flagRPCMaxConnections)
 
 	grpcAddr, _ := cmd.Flags().GetString(flagGRPCAddress)
 	grpcInsecure, _ := cmd.Flags().GetBool(flagGRPCInsecure)
@@ -61,7 +62,7 @@ func DefaultConfigCreator(cmd *cobra.Command) types.Config {
 	telemetryPort, _ := cmd.Flags().GetUint(flagTelemetryPort)
 
 	return types.NewConfig(
-		types.NewRPCConfig(rpcClientName, rpcAddr),
+		types.NewRPCConfig(rpcClientName, rpcAddr, rpcMaxConnections),
 		types.NewGrpcConfig(grpcAddr, grpcInsecure),
 		types.NewCosmosConfig(cosmosPrefix, cosmosModules),
 		types.NewDatabaseConfig(

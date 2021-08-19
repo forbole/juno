@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/simapp/params"
@@ -18,6 +19,7 @@ import (
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
 	httpclient "github.com/tendermint/tendermint/rpc/client/http"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+	jsonrpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
 
 	constypes "github.com/tendermint/tendermint/consensus/types"
 )
@@ -36,7 +38,19 @@ type Proxy struct {
 
 // NewClientProxy allows to build a new Proxy instance
 func NewClientProxy(cfg types.Config, encodingConfig *params.EncodingConfig) (*Proxy, error) {
-	rpcClient, err := httpclient.New(cfg.GetRPCConfig().GetAddress(), "/websocket")
+	httpClient, err := jsonrpcclient.DefaultHTTPClient(cfg.GetRPCConfig().GetAddress())
+	if err != nil {
+		return nil, err
+	}
+
+	// Tweak the transport
+	httpTransport, ok := (httpClient.Transport).(*http.Transport)
+	if !ok {
+		return nil, fmt.Errorf("invalid HTTP Transport: %T", httpTransport)
+	}
+	httpTransport.MaxConnsPerHost = cfg.GetRPCConfig().GetMaxConnections()
+
+	rpcClient, err := httpclient.NewWithClient(cfg.GetRPCConfig().GetAddress(), "/websocket", httpClient)
 	if err != nil {
 		return nil, err
 	}

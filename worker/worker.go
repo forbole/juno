@@ -105,7 +105,7 @@ func (w Worker) process(height int64) error {
 
 	block, err := w.cp.Block(height)
 	if err != nil {
-		return fmt.Errorf("failed to get block from database: %s", err)
+		return fmt.Errorf("failed to get block from RPC endpoint: %s", err)
 	}
 
 	txs, err := w.cp.Txs(block)
