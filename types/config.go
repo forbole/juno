@@ -3,11 +3,13 @@ package types
 import (
 	"github.com/pelletier/go-toml"
 	"github.com/rs/zerolog"
+	"regexp"
 )
 
 var (
 	// Cfg represents the configuration to be used during the execution
-	Cfg Config
+	Cfg           Config
+	HTTPProtocols = regexp.MustCompile("https?://")
 )
 
 // ConfigParser represents a function that allows to parse a file contents as a Config object
@@ -235,7 +237,7 @@ func DefaultGrpcConfig() GrpcConfig {
 
 // GetAddress implements GrpcConfig
 func (g *grpcConfig) GetAddress() string {
-	return g.Address
+	return HTTPProtocols.ReplaceAllString(g.Address, "")
 }
 
 // IsInsecure implements GrpcConfig
