@@ -1,9 +1,10 @@
 package types
 
 import (
+	"regexp"
+
 	"github.com/pelletier/go-toml"
 	"github.com/rs/zerolog"
-	"regexp"
 )
 
 var (

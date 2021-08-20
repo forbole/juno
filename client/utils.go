@@ -1,7 +1,10 @@
 package client
 
 import (
+	"crypto/tls"
 	"strconv"
+
+	"google.golang.org/grpc/credentials"
 
 	"github.com/desmos-labs/juno/types"
 
@@ -34,6 +37,8 @@ func CreateGrpcConnection(cfg types.Config) (*grpc.ClientConn, error) {
 	var grpcOpts []grpc.DialOption
 	if gprConfig.IsInsecure() {
 		grpcOpts = append(grpcOpts, grpc.WithInsecure())
+	} else {
+		grpcOpts = append(grpcOpts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
 	}
 
 	return grpc.Dial(gprConfig.GetAddress(), grpcOpts...)
