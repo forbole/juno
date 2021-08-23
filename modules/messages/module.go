@@ -15,11 +15,11 @@ var _ modules.Module = &Module{}
 type Module struct {
 	parser MessageAddressesParser
 
-	cdc codec.Marshaler
+	cdc codec.Codec
 	db  db.Database
 }
 
-func NewModule(parser MessageAddressesParser, cdc codec.Marshaler, db db.Database) *Module {
+func NewModule(parser MessageAddressesParser, cdc codec.Codec, db db.Database) *Module {
 	return &Module{
 		parser: parser,
 		cdc:    cdc,

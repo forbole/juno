@@ -3,31 +3,37 @@ package messages
 import (
 	"fmt"
 
-	crisistypes "github.com/cosmos/cosmos-sdk/x/crisis/types"
-	evidencetypes "github.com/cosmos/cosmos-sdk/x/evidence/types"
-	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
-	ibctransfertypes "github.com/cosmos/cosmos-sdk/x/ibc/applications/transfer/types"
-	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
+	"github.com/gogo/protobuf/proto"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	crisistypes "github.com/cosmos/cosmos-sdk/x/crisis/types"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
+	evidencetypes "github.com/cosmos/cosmos-sdk/x/evidence/types"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+
+	ibctransfertypes "github.com/cosmos/ibc-go/modules/apps/transfer/types"
+
+	evmtypes "github.com/tharsis/ethermint/x/evm/types"
+
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 // MessageNotSupported returns an error telling that the given message is not supported
 func MessageNotSupported(msg sdk.Msg) error {
-	return fmt.Errorf("message type not supported: %s", msg.Type())
+	return fmt.Errorf("message type not supported: %s", proto.MessageName(msg))
 }
 
 // MessageAddressesParser represents a function that extracts all the
 // involved addresses from a provided message (both accounts and validators)
-type MessageAddressesParser = func(cdc codec.Marshaler, msg sdk.Msg) ([]string, error)
+type MessageAddressesParser = func(cdc codec.Codec, msg sdk.Msg) ([]string, error)
 
 // JoinMessageParsers joins together all the given parsers, calling them in order
 func JoinMessageParsers(parsers ...MessageAddressesParser) MessageAddressesParser {
-	return func(cdc codec.Marshaler, msg sdk.Msg) ([]string, error) {
+	return func(cdc codec.Codec, msg sdk.Msg) ([]string, error) {
 		for _, parser := range parsers {
 			// Try getting the addresses
 			addresses, _ := parser(cdc, msg)
@@ -52,12 +58,13 @@ var CosmosMessageAddressesParser = JoinMessageParsers(
 	IBCTransferMessagesParser,
 	SlashingMessagesParser,
 	StakingMessagesParser,
+	EVMMessagesParser,
 	DefaultMessagesParser,
 )
 
 // DefaultMessagesParser represents the default messages parser that simply returns the list
 // of all the signers of a message
-func DefaultMessagesParser(_ codec.Marshaler, cosmosMsg sdk.Msg) ([]string, error) {
+func DefaultMessagesParser(_ codec.Codec, cosmosMsg sdk.Msg) ([]string, error) {
 	var signers = make([]string, len(cosmosMsg.GetSigners()))
 	for index, signer := range cosmosMsg.GetSigners() {
 		signers[index] = signer.String()
@@ -67,7 +74,7 @@ func DefaultMessagesParser(_ codec.Marshaler, cosmosMsg sdk.Msg) ([]string, erro
 
 // BankMessagesParser returns the list of all the accounts involved in the given
 // message if it's related to the x/bank module
-func BankMessagesParser(_ codec.Marshaler, cosmosMsg sdk.Msg) ([]string, error) {
+func BankMessagesParser(_ codec.Codec, cosmosMsg sdk.Msg) ([]string, error) {
 	switch msg := cosmosMsg.(type) {
 	case *banktypes.MsgSend:
 		return []string{msg.ToAddress, msg.FromAddress}, nil
@@ -88,7 +95,7 @@ func BankMessagesParser(_ codec.Marshaler, cosmosMsg sdk.Msg) ([]string, error) 
 
 // CrisisMessagesParser returns the list of all the accounts involved in the given
 // message if it's related to the x/crisis module
-func CrisisMessagesParser(_ codec.Marshaler, cosmosMsg sdk.Msg) ([]string, error) {
+func CrisisMessagesParser(_ codec.Codec, cosmosMsg sdk.Msg) ([]string, error) {
 	switch msg := cosmosMsg.(type) {
 
 	case *crisistypes.MsgVerifyInvariant:
@@ -101,7 +108,7 @@ func CrisisMessagesParser(_ codec.Marshaler, cosmosMsg sdk.Msg) ([]string, error
 
 // DistributionMessagesParser returns the list of all the accounts involved in the given
 // message if it's related to the x/distribution module
-func DistributionMessagesParser(_ codec.Marshaler, cosmosMsg sdk.Msg) ([]string, error) {
+func DistributionMessagesParser(_ codec.Codec, cosmosMsg sdk.Msg) ([]string, error) {
 	switch msg := cosmosMsg.(type) {
 
 	case *distrtypes.MsgSetWithdrawAddress:
@@ -123,7 +130,7 @@ func DistributionMessagesParser(_ codec.Marshaler, cosmosMsg sdk.Msg) ([]string,
 
 // EvidenceMessagesParser returns the list of all the accounts involved in the given
 // message if it's related to the x/evidence module
-func EvidenceMessagesParser(_ codec.Marshaler, cosmosMsg sdk.Msg) ([]string, error) {
+func EvidenceMessagesParser(_ codec.Codec, cosmosMsg sdk.Msg) ([]string, error) {
 	switch msg := cosmosMsg.(type) {
 
 	case *evidencetypes.MsgSubmitEvidence:
@@ -136,7 +143,7 @@ func EvidenceMessagesParser(_ codec.Marshaler, cosmosMsg sdk.Msg) ([]string, err
 
 // GovMessagesParser returns the list of all the accounts involved in the given
 // message if it's related to the x/gov module
-func GovMessagesParser(cdc codec.Marshaler, cosmosMsg sdk.Msg) ([]string, error) {
+func GovMessagesParser(cdc codec.Codec, cosmosMsg sdk.Msg) ([]string, error) {
 	switch msg := cosmosMsg.(type) {
 
 	case *govtypes.MsgSubmitProposal:
@@ -168,8 +175,8 @@ func GovMessagesParser(cdc codec.Marshaler, cosmosMsg sdk.Msg) ([]string, error)
 }
 
 // IBCTransferMessagesParser returns the list of all the accounts involved in the given
-// message if it's related to the x/iBCTransfer module
-func IBCTransferMessagesParser(_ codec.Marshaler, cosmosMsg sdk.Msg) ([]string, error) {
+// message if it's related to the x/IBCTransfer module
+func IBCTransferMessagesParser(_ codec.Codec, cosmosMsg sdk.Msg) ([]string, error) {
 	switch msg := cosmosMsg.(type) {
 
 	case *ibctransfertypes.MsgTransfer:
@@ -182,7 +189,7 @@ func IBCTransferMessagesParser(_ codec.Marshaler, cosmosMsg sdk.Msg) ([]string, 
 
 // SlashingMessagesParser returns the list of all the accounts involved in the given
 // message if it's related to the x/slashing module
-func SlashingMessagesParser(_ codec.Marshaler, cosmosMsg sdk.Msg) ([]string, error) {
+func SlashingMessagesParser(_ codec.Codec, cosmosMsg sdk.Msg) ([]string, error) {
 	switch msg := cosmosMsg.(type) {
 
 	case *slashingtypes.MsgUnjail:
@@ -195,7 +202,7 @@ func SlashingMessagesParser(_ codec.Marshaler, cosmosMsg sdk.Msg) ([]string, err
 
 // StakingMessagesParser returns the list of all the accounts involved in the given
 // message if it's related to the x/staking module
-func StakingMessagesParser(_ codec.Marshaler, cosmosMsg sdk.Msg) ([]string, error) {
+func StakingMessagesParser(_ codec.Codec, cosmosMsg sdk.Msg) ([]string, error) {
 	switch msg := cosmosMsg.(type) {
 
 	case *stakingtypes.MsgCreateValidator:
@@ -213,6 +220,47 @@ func StakingMessagesParser(_ codec.Marshaler, cosmosMsg sdk.Msg) ([]string, erro
 	case *stakingtypes.MsgUndelegate:
 		return []string{msg.DelegatorAddress, msg.ValidatorAddress}, nil
 
+	}
+
+	return nil, MessageNotSupported(cosmosMsg)
+}
+
+// EVMMessagesParser returns the list of all the accounts involved in the given
+// message if it's related to the x/evm module. The account addresses are returned
+// in both bech32 and hex formats.
+func EVMMessagesParser(cdc codec.Codec, cosmosMsg sdk.Msg) ([]string, error) {
+	switch msg := cosmosMsg.(type) {
+
+	case *evmtypes.MsgEthereumTx:
+		var data evmtypes.TxData
+		err := cdc.UnpackAny(msg.Data, &data)
+		if err != nil {
+			return nil, err
+		}
+
+		// Sender address is obtained from the signature and cached to msg.From
+		sender, err := msg.GetSender(data.GetChainID())
+		if err != nil {
+			return nil, err
+		}
+
+		senderBech32 := sdk.AccAddress(sender.Bytes()).String()
+		senderHex := sender.Hex()
+
+		to := data.GetTo()
+
+		if to != nil {
+			toBech32 := sdk.AccAddress(to.Bytes()).String()
+			toHex := to.Hex()
+			return []string{senderBech32, senderHex, toBech32, toHex}, nil
+		}
+
+		// when the recipient address **IS** defined, we are performing a EVM Contract creation
+		contract := crypto.CreateAddress(sender, data.GetNonce())
+		contractBech32 := sdk.AccAddress(contract.Bytes()).String()
+		contractHex := contract.Hex()
+
+		return []string{senderBech32, senderHex, contractBech32, contractHex}, nil
 	}
 
 	return nil, MessageNotSupported(cosmosMsg)

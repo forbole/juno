@@ -5,6 +5,7 @@ import (
 	"os"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/gogo/protobuf/proto"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -108,7 +109,7 @@ func (d *defaultLogger) MsgError(module modules.Module, tx *types.Tx, msg sdk.Ms
 		LogKeyModule, module.Name(),
 		LogKeyHeight, tx.Height,
 		LogKeyTxHash, tx.TxHash,
-		LogKeyMsgType, msg.Type(),
+		LogKeyMsgType, proto.MessageName(msg),
 	)
 }
 

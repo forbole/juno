@@ -12,7 +12,7 @@ import (
 // HandleMsg represents a message handler that stores the given message inside the proper database table
 func HandleMsg(
 	index int, msg sdk.Msg, tx *types.Tx,
-	parseAddresses MessageAddressesParser, cdc codec.Marshaler, db db.Database,
+	parseAddresses MessageAddressesParser, cdc codec.Codec, db db.Database,
 ) error {
 	// Get the involved addresses
 	addresses, err := parseAddresses(cdc, msg)
