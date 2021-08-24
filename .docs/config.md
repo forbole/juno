@@ -71,7 +71,6 @@ This section contains the details of the chain configuration regarding the Cosmo
 | Attribute | Type | Description | Example |
 | :-------: | :---: | :--------- | :------ |
 | `modules` | `array` | List of modules that should be enabled | `[ "auth", "bank", "distribution" ]` |
-|
 | `prefix` | `string` | Bech 32 prefix of the addresses | `cosmos` | 
 
 ### Supported modules
