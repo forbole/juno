@@ -2,6 +2,7 @@ package messages
 
 import (
 	"fmt"
+	"github.com/gogo/protobuf/proto"
 
 	crisistypes "github.com/cosmos/cosmos-sdk/x/crisis/types"
 	evidencetypes "github.com/cosmos/cosmos-sdk/x/evidence/types"
@@ -18,7 +19,7 @@ import (
 
 // MessageNotSupported returns an error telling that the given message is not supported
 func MessageNotSupported(msg sdk.Msg) error {
-	return fmt.Errorf("message type not supported: %s", msg.Type())
+	return fmt.Errorf("message type not supported: %s", proto.MessageName(msg))
 }
 
 // MessageAddressesParser represents a function that extracts all the

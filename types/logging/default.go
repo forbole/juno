@@ -2,6 +2,7 @@ package logging
 
 import (
 	"fmt"
+	"github.com/gogo/protobuf/proto"
 	"os"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -108,7 +109,7 @@ func (d *defaultLogger) MsgError(module modules.Module, tx *types.Tx, msg sdk.Ms
 		LogKeyModule, module.Name(),
 		LogKeyHeight, tx.Height,
 		LogKeyTxHash, tx.TxHash,
-		LogKeyMsgType, msg.Type(),
+		LogKeyMsgType, proto.MessageName(msg),
 	)
 }
 
