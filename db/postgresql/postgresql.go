@@ -2,6 +2,7 @@ package postgresql
 
 import (
 	"database/sql"
+	"encoding/base64"
 	"fmt"
 	"strings"
 
@@ -101,8 +102,8 @@ INSERT INTO transaction
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT DO NOTHING`
 
 	var sigs = make([]string, len(tx.Signatures))
-	for index, sig := range sigs {
-		sigs[index] = sig
+	for index, sig := range tx.Signatures {
+		sigs[index] = base64.StdEncoding.EncodeToString(sig)
 	}
 
 	var msgs = make([]string, len(tx.Body.Messages))
