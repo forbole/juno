@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/desmos-labs/juno/types/config"
+
 	"github.com/spf13/cobra"
 
 	"github.com/desmos-labs/juno/types"
@@ -13,7 +15,7 @@ import (
 // the provided configuration parser
 func ReadConfig(cfg *Config) types.CobraCmdFunc {
 	return func(_ *cobra.Command, _ []string) error {
-		file := types.GetConfigFilePath()
+		file := config.GetConfigFilePath()
 
 		// Make sure the path exists
 		if _, err := os.Stat(file); os.IsNotExist(err) {
@@ -21,13 +23,13 @@ func ReadConfig(cfg *Config) types.CobraCmdFunc {
 		}
 
 		// Read the config
-		cfg, err := types.Read(file, cfg.GetConfigParser())
+		cfg, err := config.Read(file, cfg.GetConfigParser())
 		if err != nil {
 			return err
 		}
 
 		// Set the global configuration
-		types.Cfg = cfg
+		config.Cfg = cfg
 		return nil
 	}
 }

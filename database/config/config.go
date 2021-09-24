@@ -1,0 +1,46 @@
+package config
+
+type Config struct {
+	Name               string `yaml:"name"`
+	Host               string `yaml:"host"`
+	Port               int64  `yaml:"port"`
+	User               string `yaml:"user"`
+	Password           string `yaml:"password"`
+	SSLMode            string `yaml:"ssl_mode"`
+	Schema             string `yaml:"schema"`
+	MaxOpenConnections int    `yaml:"max_open_connections"`
+	MaxIdleConnections int    `yaml:"max_idle_connections"`
+}
+
+func NewDatabaseConfig(
+	name, host string, port int64, user string, password string,
+	sslMode string, schema string,
+	maxOpenConnections int, maxIdleConnections int,
+) Config {
+	return Config{
+		Name:               name,
+		Host:               host,
+		Port:               port,
+		User:               user,
+		Password:           password,
+		SSLMode:            sslMode,
+		Schema:             schema,
+		MaxOpenConnections: maxOpenConnections,
+		MaxIdleConnections: maxIdleConnections,
+	}
+}
+
+// DefaultDatabaseConfig returns the default instance of Config
+func DefaultDatabaseConfig() Config {
+	return NewDatabaseConfig(
+		"database-name",
+		"localhost",
+		5432,
+		"user",
+		"password",
+		"",
+		"public",
+		1,
+		1,
+	)
+}

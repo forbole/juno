@@ -1,4 +1,4 @@
-package worker
+package parser
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"

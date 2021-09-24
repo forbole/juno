@@ -1,16 +1,19 @@
-package client
+package remote
 
 import (
 	"crypto/tls"
+	"regexp"
 	"strconv"
 
 	"google.golang.org/grpc/credentials"
 
-	"github.com/desmos-labs/juno/types"
-
 	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
+)
+
+var (
+	HTTPProtocols = regexp.MustCompile("https?://")
 )
 
 // GetHeightRequestHeader returns the grpc.CallOption to query the state at a given height
@@ -22,7 +25,7 @@ func GetHeightRequestHeader(height int64) grpc.CallOption {
 }
 
 // MustCreateGrpcConnection creates a new gRPC connection using the provided configuration and panics on error
-func MustCreateGrpcConnection(cfg types.Config) *grpc.ClientConn {
+func MustCreateGrpcConnection(cfg *GRPCConfig) *grpc.ClientConn {
 	grpConnection, err := CreateGrpcConnection(cfg)
 	if err != nil {
 		panic(err)
@@ -31,15 +34,14 @@ func MustCreateGrpcConnection(cfg types.Config) *grpc.ClientConn {
 }
 
 // CreateGrpcConnection creates a new gRPC client connection from the given configuration
-func CreateGrpcConnection(cfg types.Config) (*grpc.ClientConn, error) {
-	gprConfig := cfg.GetGrpcConfig()
-
+func CreateGrpcConnection(cfg *GRPCConfig) (*grpc.ClientConn, error) {
 	var grpcOpts []grpc.DialOption
-	if gprConfig.IsInsecure() {
+	if cfg.Insecure {
 		grpcOpts = append(grpcOpts, grpc.WithInsecure())
 	} else {
 		grpcOpts = append(grpcOpts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
 	}
 
-	return grpc.Dial(gprConfig.GetAddress(), grpcOpts...)
+	address := HTTPProtocols.ReplaceAllString(cfg.Address, "")
+	return grpc.Dial(address, grpcOpts...)
 }

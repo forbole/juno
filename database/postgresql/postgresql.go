@@ -6,38 +6,38 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/desmos-labs/juno/types/logging"
+	"github.com/desmos-labs/juno/logging"
 
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 	"github.com/lib/pq"
 
 	_ "github.com/lib/pq" // nolint
 
-	"github.com/desmos-labs/juno/db"
+	"github.com/desmos-labs/juno/database"
 	"github.com/desmos-labs/juno/types"
 )
 
 // Builder creates a database connection with the given database connection info
 // from config. It returns a database connection handle or an error if the
 // connection fails.
-func Builder(ctx *db.Context) (db.Database, error) {
+func Builder(ctx *database.Context) (database.Database, error) {
 	sslMode := "disable"
-	if ctx.Cfg.GetSSLMode() != "" {
-		sslMode = ctx.Cfg.GetSSLMode()
+	if ctx.Cfg.SSLMode != "" {
+		sslMode = ctx.Cfg.SSLMode
 	}
 
 	schema := "public"
-	if ctx.Cfg.GetSchema() != "" {
-		schema = ctx.Cfg.GetSchema()
+	if ctx.Cfg.Schema != "" {
+		schema = ctx.Cfg.Schema
 	}
 
 	connStr := fmt.Sprintf(
 		"host=%s port=%d dbname=%s user=%s sslmode=%s search_path=%s",
-		ctx.Cfg.GetHost(), ctx.Cfg.GetPort(), ctx.Cfg.GetName(), ctx.Cfg.GetUser(), sslMode, schema,
+		ctx.Cfg.Host, ctx.Cfg.Port, ctx.Cfg.Name, ctx.Cfg.User, sslMode, schema,
 	)
 
-	if ctx.Cfg.GetPassword() != "" {
-		connStr += fmt.Sprintf(" password=%s", ctx.Cfg.GetPassword())
+	if ctx.Cfg.Password != "" {
+		connStr += fmt.Sprintf(" password=%s", ctx.Cfg.Password)
 	}
 
 	postgresDb, err := sql.Open("postgres", connStr)
@@ -46,8 +46,8 @@ func Builder(ctx *db.Context) (db.Database, error) {
 	}
 
 	// Set max open connections
-	postgresDb.SetMaxOpenConns(ctx.Cfg.GetMaxOpenConnections())
-	postgresDb.SetMaxIdleConns(ctx.Cfg.GetMaxIdleConnections())
+	postgresDb.SetMaxOpenConns(ctx.Cfg.MaxOpenConnections)
+	postgresDb.SetMaxIdleConns(ctx.Cfg.MaxIdleConnections)
 
 	return &Database{
 		Sql:            postgresDb,
@@ -57,7 +57,7 @@ func Builder(ctx *db.Context) (db.Database, error) {
 }
 
 // type check to ensure interface is properly implemented
-var _ db.Database = &Database{}
+var _ database.Database = &Database{}
 
 // Database defines a wrapper around a SQL database and implements functionality
 // for data aggregation and exporting.
@@ -67,21 +67,21 @@ type Database struct {
 	Logger         logging.Logger
 }
 
-// LastBlockHeight implements db.Database
+// LastBlockHeight implements database.Database
 func (db *Database) LastBlockHeight() (int64, error) {
 	var height int64
 	err := db.Sql.QueryRow(`SELECT coalesce(MAX(height),0) AS height FROM block;`).Scan(&height)
 	return height, err
 }
 
-// HasBlock implements db.Database
+// HasBlock implements database.Database
 func (db *Database) HasBlock(height int64) (bool, error) {
 	var res bool
 	err := db.Sql.QueryRow(`SELECT EXISTS(SELECT 1 FROM block WHERE height = $1);`, height).Scan(&res)
 	return res, err
 }
 
-// SaveBlock implements db.Database
+// SaveBlock implements database.Database
 func (db *Database) SaveBlock(block *types.Block) error {
 	sqlStatement := `
 INSERT INTO block (height, hash, num_txs, total_gas, proposer_address, timestamp)
@@ -94,7 +94,7 @@ VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING`
 	return err
 }
 
-// SaveTx implements db.Database
+// SaveTx implements database.Database
 func (db *Database) SaveTx(tx *types.Tx) error {
 	sqlStatement := `
 INSERT INTO transaction 
@@ -145,7 +145,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT DO NOTHIN
 	return err
 }
 
-// HasValidator implements db.Database
+// HasValidator implements database.Database
 func (db *Database) HasValidator(addr string) (bool, error) {
 	var res bool
 	stmt := `SELECT EXISTS(SELECT 1 FROM validator WHERE consensus_address = $1);`
@@ -153,7 +153,7 @@ func (db *Database) HasValidator(addr string) (bool, error) {
 	return res, err
 }
 
-// SaveValidators implements db.Database
+// SaveValidators implements database.Database
 func (db *Database) SaveValidators(validators []*types.Validator) error {
 	if len(validators) == 0 {
 		return nil
@@ -175,7 +175,7 @@ func (db *Database) SaveValidators(validators []*types.Validator) error {
 	return err
 }
 
-// SaveCommitSignatures implements db.Database
+// SaveCommitSignatures implements database.Database
 func (db *Database) SaveCommitSignatures(signatures []*types.CommitSig) error {
 	if len(signatures) == 0 {
 		return nil
@@ -197,7 +197,7 @@ func (db *Database) SaveCommitSignatures(signatures []*types.CommitSig) error {
 	return err
 }
 
-// SaveMessage implements db.Database
+// SaveMessage implements database.Database
 func (db *Database) SaveMessage(msg *types.Message) error {
 	stmt := `
 INSERT INTO message(transaction_hash, index, type, value, involved_accounts_addresses) 
@@ -207,7 +207,7 @@ VALUES ($1, $2, $3, $4, $5)`
 	return err
 }
 
-// Close implements db.Database
+// Close implements database.Database
 func (db *Database) Close() {
 	err := db.Sql.Close()
 	if err != nil {
@@ -217,14 +217,14 @@ func (db *Database) Close() {
 
 // -------------------------------------------------------------------------------------------------------------------
 
-// GetLastPruned implements db.PruningDb
+// GetLastPruned implements database.PruningDb
 func (db *Database) GetLastPruned() (int64, error) {
 	var lastPrunedHeight int64
 	err := db.Sql.QueryRow(`SELECT coalesce(MAX(last_pruned_height),0) FROM pruning LIMIT 1;`).Scan(&lastPrunedHeight)
 	return lastPrunedHeight, err
 }
 
-// StoreLastPruned implements db.PruningDb
+// StoreLastPruned implements database.PruningDb
 func (db *Database) StoreLastPruned(height int64) error {
 	_, err := db.Sql.Exec(`DELETE FROM pruning`)
 	if err != nil {
@@ -235,7 +235,7 @@ func (db *Database) StoreLastPruned(height int64) error {
 	return err
 }
 
-// Prune implements db.PruningDb
+// Prune implements database.PruningDb
 func (db *Database) Prune(height int64) error {
 	_, err := db.Sql.Exec(`DELETE FROM pre_commit WHERE height = $1`, height)
 	if err != nil {

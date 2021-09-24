@@ -1,18 +1,20 @@
-package types
+package parse
 
 import (
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/desmos-labs/juno/types/config"
 )
 
-// SdkConfigSetup represents a method that allows to customize the given sdk.ParsingConfig.
+// SdkConfigSetup represents a method that allows to customize the given sdk.Config.
 // This should be used to set custom Bech32 addresses prefixes and other app-related configurations.
-type SdkConfigSetup func(config Config, sdkConfig *sdk.Config)
+type SdkConfigSetup func(config config.Config, sdkConfig *sdk.Config)
 
 // DefaultConfigSetup represents a handy implementation of SdkConfigSetup that simply setups the prefix
 // inside the configuration
-func DefaultConfigSetup(cfg Config, sdkConfig *sdk.Config) {
-	prefix := cfg.GetCosmosConfig().GetPrefix()
+func DefaultConfigSetup(cfg config.Config, sdkConfig *sdk.Config) {
+	prefix := cfg.Chain.Bech32Prefix
 	sdkConfig.SetBech32PrefixForAccount(
 		prefix,
 		prefix+sdk.PrefixPublic,

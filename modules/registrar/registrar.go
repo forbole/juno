@@ -4,36 +4,39 @@ import (
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/desmos-labs/juno/types/logging"
+	"github.com/desmos-labs/juno/node"
 
-	"github.com/desmos-labs/juno/types"
+	"github.com/desmos-labs/juno/modules/telemetry"
+
+	"github.com/desmos-labs/juno/logging"
+
+	"github.com/desmos-labs/juno/types/config"
 
 	"github.com/desmos-labs/juno/modules/pruning"
 
 	"github.com/desmos-labs/juno/modules"
 	"github.com/desmos-labs/juno/modules/messages"
 
-	"github.com/desmos-labs/juno/client"
-	"github.com/desmos-labs/juno/db"
+	"github.com/desmos-labs/juno/database"
 )
 
 // Context represents the context of the modules registrar
 type Context struct {
-	ParsingConfig  types.Config
+	JunoConfig     config.Config
 	SDKConfig      *sdk.Config
 	EncodingConfig *params.EncodingConfig
-	Database       db.Database
-	Proxy          *client.Proxy
+	Database       database.Database
+	Proxy          node.Node
 	Logger         logging.Logger
 }
 
 // NewContext allows to build a new Context instance
 func NewContext(
-	parsingConfig types.Config, sdkConfig *sdk.Config, encodingConfig *params.EncodingConfig,
-	database db.Database, proxy *client.Proxy, logger logging.Logger,
+	parsingConfig config.Config, sdkConfig *sdk.Config, encodingConfig *params.EncodingConfig,
+	database database.Database, proxy node.Node, logger logging.Logger,
 ) Context {
 	return Context{
-		ParsingConfig:  parsingConfig,
+		JunoConfig:     parsingConfig,
 		SDKConfig:      sdkConfig,
 		EncodingConfig: encodingConfig,
 		Database:       database,
@@ -83,8 +86,9 @@ func NewDefaultRegistrar(parser messages.MessageAddressesParser) *DefaultRegistr
 // BuildModules implements Registrar
 func (r *DefaultRegistrar) BuildModules(ctx Context) modules.Modules {
 	return modules.Modules{
-		pruning.NewModule(ctx.ParsingConfig.GetPruningConfig(), ctx.Database, ctx.Logger),
+		pruning.NewModule(ctx.JunoConfig, ctx.Database, ctx.Logger),
 		messages.NewModule(r.parser, ctx.EncodingConfig.Marshaler, ctx.Database),
+		telemetry.NewModule(ctx.JunoConfig),
 	}
 }
 

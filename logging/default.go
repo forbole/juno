@@ -2,8 +2,9 @@ package logging
 
 import (
 	"fmt"
-	"github.com/gogo/protobuf/proto"
 	"os"
+
+	"github.com/gogo/protobuf/proto"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/rs/zerolog"

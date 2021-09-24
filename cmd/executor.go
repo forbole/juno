@@ -5,6 +5,8 @@ import (
 	"os"
 	"path"
 
+	"github.com/desmos-labs/juno/types/config"
+
 	initcmd "github.com/desmos-labs/juno/cmd/init"
 	parsecmd "github.com/desmos-labs/juno/cmd/parse"
 
@@ -48,8 +50,8 @@ func BuildDefaultExecutor(config *Config) cli.Executor {
 func RootCmd(name string) *cobra.Command {
 	return &cobra.Command{
 		Use:   name,
-		Short: fmt.Sprintf("%s is a Cosmos SDK-based chain data aggregator and exporter", name),
-		Long: fmt.Sprintf(`A Cosmos chain data aggregator. It improves the chain's data accessibility
+		Short: fmt.Sprintf("%s is a Chain SDK-based chain data aggregator and exporter", name),
+		Long: fmt.Sprintf(`A Chain chain data aggregator. It improves the chain's data accessibility
 by providing an indexed database exposing aggregated resources and models such as blocks, validators, pre-commits, 
 transactions, and various aspects of the governance module. 
 %s is meant to run with a GraphQL layer on top so that it even further eases the ability for developers and
@@ -75,6 +77,6 @@ func PrepareRootCmd(name string, cmd *cobra.Command) cli.Executor {
 
 // setupHome setups the home directory of the root command
 func setupHome(cmd *cobra.Command, _ []string) error {
-	types.HomePath, _ = cmd.Flags().GetString(FlagHome)
+	config.HomePath, _ = cmd.Flags().GetString(FlagHome)
 	return nil
 }

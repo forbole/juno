@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	// ParsingConfig the runner
+	// JunoConfig the runner
 	config := cmd.NewConfig("juno").
 		WithParseConfig(parse.NewConfig().
 			WithRegistrar(registrar.NewDefaultRegistrar(

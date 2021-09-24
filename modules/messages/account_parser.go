@@ -2,6 +2,7 @@ package messages
 
 import (
 	"fmt"
+
 	"github.com/gogo/protobuf/proto"
 
 	crisistypes "github.com/cosmos/cosmos-sdk/x/crisis/types"
@@ -43,7 +44,7 @@ func JoinMessageParsers(parsers ...MessageAddressesParser) MessageAddressesParse
 }
 
 // CosmosMessageAddressesParser represents a MessageAddressesParser that parses a
-// Cosmos message and returns all the involved addresses (both accounts and validators)
+// Chain message and returns all the involved addresses (both accounts and validators)
 var CosmosMessageAddressesParser = JoinMessageParsers(
 	BankMessagesParser,
 	CrisisMessagesParser,

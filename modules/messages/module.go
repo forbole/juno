@@ -4,7 +4,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/desmos-labs/juno/db"
+	"github.com/desmos-labs/juno/database"
 	"github.com/desmos-labs/juno/modules"
 	"github.com/desmos-labs/juno/types"
 )
@@ -16,10 +16,10 @@ type Module struct {
 	parser MessageAddressesParser
 
 	cdc codec.Marshaler
-	db  db.Database
+	db  database.Database
 }
 
-func NewModule(parser MessageAddressesParser, cdc codec.Marshaler, db db.Database) *Module {
+func NewModule(parser MessageAddressesParser, cdc codec.Marshaler, db database.Database) *Module {
 	return &Module{
 		parser: parser,
 		cdc:    cdc,

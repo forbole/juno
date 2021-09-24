@@ -5,14 +5,14 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gogo/protobuf/proto"
 
-	"github.com/desmos-labs/juno/db"
+	"github.com/desmos-labs/juno/database"
 	"github.com/desmos-labs/juno/types"
 )
 
 // HandleMsg represents a message handler that stores the given message inside the proper database table
 func HandleMsg(
 	index int, msg sdk.Msg, tx *types.Tx,
-	parseAddresses MessageAddressesParser, cdc codec.Marshaler, db db.Database,
+	parseAddresses MessageAddressesParser, cdc codec.Marshaler, db database.Database,
 ) error {
 	// Get the involved addresses
 	addresses, err := parseAddresses(cdc, msg)

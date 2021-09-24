@@ -2,24 +2,22 @@ package parse
 
 import (
 	"fmt"
-	"net/http"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 	"time"
 
-	"github.com/gorilla/mux"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/desmos-labs/juno/logging"
 
-	"github.com/desmos-labs/juno/types/logging"
+	"github.com/desmos-labs/juno/types/config"
 
 	"github.com/go-co-op/gocron"
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/desmos-labs/juno/modules"
+	"github.com/desmos-labs/juno/parser"
 	"github.com/desmos-labs/juno/types"
-	"github.com/desmos-labs/juno/worker"
 
 	"github.com/spf13/cobra"
 )
@@ -40,34 +38,16 @@ func ParseCmd(cmdCfg *Config) *cobra.Command {
 				return err
 			}
 
-			go StartPrometheus()
-
 			return StartParsing(context)
 		},
-	}
-}
-
-// StartPrometheus allows to start a Telemetry server used to expose useful metrics
-func StartPrometheus() {
-	cfg := types.Cfg.GetTelemetryConfig()
-	if !cfg.IsEnabled() {
-		return
-	}
-
-	router := mux.NewRouter()
-	router.Handle("/metrics", promhttp.Handler())
-
-	err := http.ListenAndServe(fmt.Sprintf(":%d", cfg.GetPort()), router)
-	if err != nil {
-		panic(err)
 	}
 }
 
 // StartParsing represents the function that should be called when the parse command is executed
 func StartParsing(ctx *Context) error {
 	// Get the config
-	cfg := types.Cfg.GetParsingConfig()
-	logging.StartHeight.Add(float64(cfg.GetStartHeight()))
+	cfg := config.Cfg.Parser
+	logging.StartHeight.Add(float64(cfg.StartHeight))
 
 	// Start periodic operations
 	scheduler := gocron.NewScheduler(time.UTC)
@@ -85,10 +65,10 @@ func StartParsing(ctx *Context) error {
 	exportQueue := types.NewQueue(25)
 
 	// Create workers
-	workerCtx := worker.NewContext(ctx.EncodingConfig, ctx.Proxy, ctx.Database, ctx.Logger, exportQueue, ctx.Modules)
-	workers := make([]worker.Worker, cfg.GetWorkers(), cfg.GetWorkers())
+	workerCtx := parser.NewContext(ctx.EncodingConfig.Marshaler, exportQueue, ctx.Node, ctx.Database, ctx.Logger, ctx.Modules)
+	workers := make([]parser.Worker, cfg.Workers, cfg.Workers)
 	for i := range workers {
-		workers[i] = worker.NewWorker(i, workerCtx)
+		workers[i] = parser.NewWorker(i, workerCtx)
 	}
 
 	waitGroup.Add(1)
@@ -110,16 +90,16 @@ func StartParsing(ctx *Context) error {
 	// Listen for and trap any OS signal to gracefully shutdown and exit
 	trapSignal(ctx)
 
-	if cfg.ShouldParseGenesis() {
+	if cfg.ParseGenesis {
 		// Add the genesis to the queue if requested
 		exportQueue <- 0
 	}
 
-	if cfg.ShouldParseOldBlocks() {
+	if cfg.ParseOldBlocks {
 		go enqueueMissingBlocks(exportQueue, ctx)
 	}
 
-	if cfg.ShouldParseNewBlocks() {
+	if cfg.ParseNewBlocks {
 		go startNewBlockListener(exportQueue, ctx)
 	}
 
@@ -132,15 +112,15 @@ func StartParsing(ctx *Context) error {
 // at the startHeight up until the latest known height.
 func enqueueMissingBlocks(exportQueue types.HeightQueue, ctx *Context) {
 	// Get the config
-	cfg := types.Cfg.GetParsingConfig()
+	cfg := config.Cfg.Parser
 
 	// Get the latest height
-	latestBlockHeight, err := ctx.Proxy.LatestHeight()
+	latestBlockHeight, err := ctx.Node.LatestHeight()
 	if err != nil {
-		panic(fmt.Errorf("failed to get last block from RPC client: %s", err))
+		panic(fmt.Errorf("failed to get last block from RPCConfig client: %s", err))
 	}
 
-	if cfg.UseFastSync() {
+	if cfg.FastSync {
 		ctx.Logger.Info("fast sync is enabled, ignoring all previous blocks", "latest_block_height", latestBlockHeight)
 		for _, module := range ctx.Modules {
 			if mod, ok := module.(modules.FastSyncModule); ok {
@@ -156,18 +136,18 @@ func enqueueMissingBlocks(exportQueue types.HeightQueue, ctx *Context) {
 		}
 	} else {
 		ctx.Logger.Info("syncing missing blocks...", "latest_block_height", latestBlockHeight)
-		for i := cfg.GetStartHeight(); i <= latestBlockHeight; i++ {
+		for i := cfg.StartHeight; i <= latestBlockHeight; i++ {
 			ctx.Logger.Debug("enqueueing missing block", "height", i)
 			exportQueue <- i
 		}
 	}
 }
 
-// startNewBlockListener subscribes to new block events via the Tendermint RPC
+// startNewBlockListener subscribes to new block events via the Tendermint RPCConfig
 // and enqueues each new block height onto the provided queue. It blocks as new
 // blocks are incoming.
 func startNewBlockListener(exportQueue types.HeightQueue, ctx *Context) {
-	eventCh, cancel, err := ctx.Proxy.SubscribeNewBlocks(types.Cfg.GetRPCConfig().GetClientName() + "-blocks")
+	eventCh, cancel, err := ctx.Node.SubscribeNewBlocks("juno-new-blocks-listener")
 	defer cancel()
 
 	if err != nil {
@@ -196,7 +176,7 @@ func trapSignal(ctx *Context) {
 	go func() {
 		sig := <-sigCh
 		ctx.Logger.Info("caught signal; shutting down...", "signal", sig.String())
-		defer ctx.Proxy.Stop()
+		defer ctx.Node.Stop()
 		defer ctx.Database.Close()
 		defer waitGroup.Done()
 	}()

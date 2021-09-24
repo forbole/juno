@@ -1,15 +1,18 @@
-package worker
+package parser
 
 import (
 	"encoding/json"
 	"fmt"
 	"strings"
 
-	"github.com/desmos-labs/juno/types/logging"
+	logging2 "github.com/desmos-labs/juno/logging"
+
+	"github.com/cosmos/cosmos-sdk/codec"
+
+	"github.com/desmos-labs/juno/database"
+	"github.com/desmos-labs/juno/types/config"
 
 	tmjson "github.com/tendermint/tendermint/libs/json"
-
-	"github.com/cosmos/cosmos-sdk/simapp/params"
 
 	"github.com/desmos-labs/juno/modules"
 
@@ -18,41 +21,41 @@ import (
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 
-	"github.com/desmos-labs/juno/client"
-	"github.com/desmos-labs/juno/db"
+	"github.com/desmos-labs/juno/node"
 	"github.com/desmos-labs/juno/types"
 )
 
 // Worker defines a job consumer that is responsible for getting and
 // aggregating block and associated data and exporting it to a database.
 type Worker struct {
-	queue          types.HeightQueue
-	encodingConfig *params.EncodingConfig
-	cp             *client.Proxy
-	db             db.Database
-	logger         logging.Logger
+	index int
 
-	index   int
+	queue   types.HeightQueue
+	codec   codec.BinaryMarshaler
 	modules []modules.Module
+
+	node   node.Node
+	db     database.Database
+	logger logging2.Logger
 }
 
 // NewWorker allows to create a new Worker implementation.
 func NewWorker(index int, ctx *Context) Worker {
 	return Worker{
-		index:          index,
-		encodingConfig: ctx.EncodingConfig,
-		cp:             ctx.ClientProxy,
-		queue:          ctx.Queue,
-		db:             ctx.Database,
-		modules:        ctx.Modules,
-		logger:         ctx.Logger,
+		index:   index,
+		codec:   ctx.Codec,
+		node:    ctx.Node,
+		queue:   ctx.Queue,
+		db:      ctx.Database,
+		modules: ctx.Modules,
+		logger:  ctx.Logger,
 	}
 }
 
 // Start starts a worker by listening for new jobs (block heights) from the
 // given worker queue. Any failed job is logged and re-enqueued.
 func (w Worker) Start() {
-	logging.WorkerCount.Inc()
+	logging2.WorkerCount.Inc()
 
 	for i := range w.queue {
 		if err := w.process(i); err != nil {
@@ -64,7 +67,7 @@ func (w Worker) Start() {
 			}()
 		}
 
-		logging.WorkerHeight.WithLabelValues(fmt.Sprintf("%d", w.index)).Set(float64(i))
+		logging2.WorkerHeight.WithLabelValues(fmt.Sprintf("%d", w.index)).Set(float64(i))
 	}
 }
 
@@ -83,11 +86,11 @@ func (w Worker) process(height int64) error {
 	}
 
 	if height == 0 {
-		cfg := types.Cfg.GetParsingConfig()
+		cfg := config.Cfg.Parser
 
 		var genesis *tmtypes.GenesisDoc
-		if strings.TrimSpace(cfg.GetGenesisFilePath()) != "" {
-			genesis, err = w.getGenesisFromFilePath(cfg.GetGenesisFilePath())
+		if strings.TrimSpace(cfg.GenesisFilePath) != "" {
+			genesis, err = w.getGenesisFromFilePath(cfg.GenesisFilePath)
 			if err != nil {
 				return err
 			}
@@ -103,17 +106,17 @@ func (w Worker) process(height int64) error {
 
 	w.logger.Debug("processing block", "height", height)
 
-	block, err := w.cp.Block(height)
+	block, err := w.node.Block(height)
 	if err != nil {
-		return fmt.Errorf("failed to get block from RPC endpoint: %s", err)
+		return fmt.Errorf("failed to get block from RPCConfig endpoint: %s", err)
 	}
 
-	txs, err := w.cp.Txs(block)
+	txs, err := w.node.Txs(block)
 	if err != nil {
 		return fmt.Errorf("failed to get transactions for block: %s", err)
 	}
 
-	vals, err := w.cp.Validators(height)
+	vals, err := w.node.Validators(height)
 	if err != nil {
 		return fmt.Errorf("failed to get validators for block: %s", err)
 	}
@@ -121,11 +124,11 @@ func (w Worker) process(height int64) error {
 	return w.ExportBlock(block, txs, vals)
 }
 
-// getGenesisFromRPC returns the genesis read from the RPC endpoint
+// getGenesisFromRPC returns the genesis read from the RPCConfig endpoint
 func (w Worker) getGenesisFromRPC() (*tmtypes.GenesisDoc, error) {
-	w.logger.Debug("getting genesis from RPC")
+	w.logger.Debug("getting genesis from RPCConfig")
 
-	response, err := w.cp.Genesis()
+	response, err := w.node.Genesis()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get genesis: %s", err)
 	}
@@ -296,7 +299,7 @@ func (w Worker) ExportTxs(txs []*types.Tx) error {
 		// Handle all the messages contained inside the transaction
 		for i, msg := range tx.Body.Messages {
 			var stdMsg sdk.Msg
-			err = w.encodingConfig.Marshaler.UnpackAny(msg, &stdMsg)
+			err = w.codec.UnpackAny(msg, &stdMsg)
 			if err != nil {
 				return fmt.Errorf("error while unpacking message: %s", err)
 			}

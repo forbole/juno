@@ -4,23 +4,23 @@ import (
 	"github.com/cosmos/cosmos-sdk/simapp"
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 
-	"github.com/desmos-labs/juno/types/logging"
+	"github.com/desmos-labs/juno/logging"
+	"github.com/desmos-labs/juno/node"
+	"github.com/desmos-labs/juno/types/config"
 
-	"github.com/desmos-labs/juno/client"
-	"github.com/desmos-labs/juno/db"
-	"github.com/desmos-labs/juno/db/builder"
+	"github.com/desmos-labs/juno/database"
+	"github.com/desmos-labs/juno/database/builder"
 	"github.com/desmos-labs/juno/modules"
 	"github.com/desmos-labs/juno/modules/registrar"
-	"github.com/desmos-labs/juno/types"
 )
 
 // Config contains all the configuration for the "parse" command
 type Config struct {
 	registrar             registrar.Registrar
-	configParser          types.ConfigParser
-	encodingConfigBuilder types.EncodingConfigBuilder
-	setupCfg              types.SdkConfigSetup
-	buildDb               db.Builder
+	configParser          config.Parser
+	encodingConfigBuilder EncodingConfigBuilder
+	setupCfg              SdkConfigSetup
+	buildDb               database.Builder
 	logger                logging.Logger
 }
 
@@ -30,87 +30,87 @@ func NewConfig() *Config {
 }
 
 // WithRegistrar sets the modules registrar to be used
-func (config *Config) WithRegistrar(r registrar.Registrar) *Config {
-	config.registrar = r
-	return config
+func (cfg *Config) WithRegistrar(r registrar.Registrar) *Config {
+	cfg.registrar = r
+	return cfg
 }
 
 // GetRegistrar returns the modules registrar to be used
-func (config *Config) GetRegistrar() registrar.Registrar {
-	if config.registrar == nil {
+func (cfg *Config) GetRegistrar() registrar.Registrar {
+	if cfg.registrar == nil {
 		return &registrar.EmptyRegistrar{}
 	}
-	return config.registrar
+	return cfg.registrar
 }
 
 // WithConfigParser sets the configuration parser to be used
-func (config *Config) WithConfigParser(p types.ConfigParser) *Config {
-	config.configParser = p
-	return config
+func (cfg *Config) WithConfigParser(p config.Parser) *Config {
+	cfg.configParser = p
+	return cfg
 }
 
 // GetConfigParser returns the configuration parser to be used
-func (config *Config) GetConfigParser() types.ConfigParser {
-	if config.configParser == nil {
-		return types.DefaultConfigParser
+func (cfg *Config) GetConfigParser() config.Parser {
+	if cfg.configParser == nil {
+		return config.DefaultConfigParser
 	}
-	return config.configParser
+	return cfg.configParser
 }
 
 // WithEncodingConfigBuilder sets the configurations builder to be used
-func (config *Config) WithEncodingConfigBuilder(b types.EncodingConfigBuilder) *Config {
-	config.encodingConfigBuilder = b
-	return config
+func (cfg *Config) WithEncodingConfigBuilder(b EncodingConfigBuilder) *Config {
+	cfg.encodingConfigBuilder = b
+	return cfg
 }
 
 // GetEncodingConfigBuilder returns the encoding config builder to be used
-func (config *Config) GetEncodingConfigBuilder() types.EncodingConfigBuilder {
-	if config.encodingConfigBuilder == nil {
+func (cfg *Config) GetEncodingConfigBuilder() EncodingConfigBuilder {
+	if cfg.encodingConfigBuilder == nil {
 		return simapp.MakeTestEncodingConfig
 	}
-	return config.encodingConfigBuilder
+	return cfg.encodingConfigBuilder
 }
 
 // WithSetupConfig sets the SDK setup configurator to be used
-func (config *Config) WithSetupConfig(s types.SdkConfigSetup) *Config {
-	config.setupCfg = s
-	return config
+func (cfg *Config) WithSetupConfig(s SdkConfigSetup) *Config {
+	cfg.setupCfg = s
+	return cfg
 }
 
 // GetSetupConfig returns the SDK configuration builder to use
-func (config *Config) GetSetupConfig() types.SdkConfigSetup {
-	if config.setupCfg == nil {
-		return types.DefaultConfigSetup
+func (cfg *Config) GetSetupConfig() SdkConfigSetup {
+	if cfg.setupCfg == nil {
+		return DefaultConfigSetup
 	}
-	return config.setupCfg
+	return cfg.setupCfg
 }
 
 // WithDBBuilder sets the database builder to be used
-func (config *Config) WithDBBuilder(b db.Builder) *Config {
-	config.buildDb = b
-	return config
+func (cfg *Config) WithDBBuilder(b database.Builder) *Config {
+	cfg.buildDb = b
+	return cfg
 }
 
 // GetDBBuilder returns the database builder to be used
-func (config *Config) GetDBBuilder() db.Builder {
-	if config.buildDb == nil {
+func (cfg *Config) GetDBBuilder() database.Builder {
+	if cfg.buildDb == nil {
 		return builder.Builder
 	}
-	return config.buildDb
+	return cfg.buildDb
 }
 
 // WithLogger sets the logger to be used while parsing the data
-func (config *Config) WithLogger(logger logging.Logger) *Config {
-	config.logger = logger
-	return config
+func (cfg *Config) WithLogger(logger logging.Logger) *Config {
+	cfg.logger = logger
+	return cfg
 }
 
 // GetLogger returns the logger to be used when parsing the data
-func (config *Config) GetLogger() logging.Logger {
-	if config.logger == nil {
+func (cfg *Config) GetLogger() logging.Logger {
+	if cfg.logger == nil {
 		return logging.DefaultLogger()
 	}
-	return config.logger
+	return cfg.logger
 }
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -118,20 +118,20 @@ func (config *Config) GetLogger() logging.Logger {
 // Context contains the parsing context
 type Context struct {
 	EncodingConfig *params.EncodingConfig
-	Proxy          *client.Proxy
-	Database       db.Database
+	Node           node.Node
+	Database       database.Database
 	Logger         logging.Logger
 	Modules        []modules.Module
 }
 
 // NewContext builds a new Context instance
 func NewContext(
-	encodingConfig *params.EncodingConfig, proxy *client.Proxy, db db.Database,
+	encodingConfig *params.EncodingConfig, proxy node.Node, db database.Database,
 	logger logging.Logger, modules []modules.Module,
 ) *Context {
 	return &Context{
 		EncodingConfig: encodingConfig,
-		Proxy:          proxy,
+		Node:           proxy,
 		Database:       db,
 		Modules:        modules,
 		Logger:         logger,
