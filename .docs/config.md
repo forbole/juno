@@ -1,9 +1,9 @@
 ## Configuration
-The default `config.toml` file should look like the following:
+The default `config.yaml` file should look like the following:
 
 <details>
 
-<summary>Default config.toml file</summary>
+<summary>Default config.yaml file</summary>
 
 ```toml
 [cosmos]

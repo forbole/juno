@@ -60,7 +60,7 @@ func GetParsingContext(parseConfig *Config) (*Context, error) {
 	// Run all the additional operations
 	for _, module := range registeredModules {
 		if module, ok := module.(modules.AdditionalOperationsModule); ok {
-			err := module.RunAdditionalOperations()
+			err = module.RunAdditionalOperations()
 			if err != nil {
 				return nil, err
 			}

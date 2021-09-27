@@ -2,11 +2,11 @@
 # > docker build -t juno .
 #
 # In order to work properly, this Docker container needs to have a volume that:
-# - as source points to a directory which contains a config.toml and firebase-config.toml files
+# - as source points to a directory which contains a config.yaml and firebase-config.yaml files
 # - as destination it points to the /home folder
 #
 # Simple usage with a mounted data directory (considering ~/.juno/config as the configuration folder):
-# > docker run -it -v ~/.juno/config:/home juno juno parse config.toml firebase-config.json
+# > docker run -it -v ~/.juno/config:/home juno juno parse config.yaml firebase-config.json
 #
 # If you want to run this container as a daemon, you can do so by executing
 # > docker run -td -v ~/.juno/config:/home --name juno juno

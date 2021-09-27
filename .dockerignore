@@ -2,6 +2,6 @@ Dockerfile
 Vagrantfile
 
 build/
-config.toml
+config.yaml
 coverage.txt
 firebase-config.json

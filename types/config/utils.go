@@ -13,7 +13,7 @@ var (
 
 // GetConfigFilePath returns the path to the configuration file given the executable name
 func GetConfigFilePath() string {
-	return path.Join(HomePath, "config.toml")
+	return path.Join(HomePath, "config.yaml")
 }
 
 // Write allows to write the given configuration into the file present at the given path

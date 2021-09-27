@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	logging2 "github.com/desmos-labs/juno/logging"
+	"github.com/desmos-labs/juno/logging"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 
@@ -36,7 +36,7 @@ type Worker struct {
 
 	node   node.Node
 	db     database.Database
-	logger logging2.Logger
+	logger logging.Logger
 }
 
 // NewWorker allows to create a new Worker implementation.
@@ -55,7 +55,7 @@ func NewWorker(index int, ctx *Context) Worker {
 // Start starts a worker by listening for new jobs (block heights) from the
 // given worker queue. Any failed job is logged and re-enqueued.
 func (w Worker) Start() {
-	logging2.WorkerCount.Inc()
+	logging.WorkerCount.Inc()
 
 	for i := range w.queue {
 		if err := w.process(i); err != nil {
@@ -67,7 +67,7 @@ func (w Worker) Start() {
 			}()
 		}
 
-		logging2.WorkerHeight.WithLabelValues(fmt.Sprintf("%d", w.index)).Set(float64(i))
+		logging.WorkerHeight.WithLabelValues(fmt.Sprintf("%d", w.index)).Set(float64(i))
 	}
 }
 
