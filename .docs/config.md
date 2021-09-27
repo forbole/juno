@@ -143,7 +143,15 @@ This section contains all the different configuration related to the PostgreSQL 
 | `schema` | `string` | Schema to be used inside the database (default: `public`) | `public` | 
 | `ssl_mode` | `string` | [PostgreSQL SSL mode](https://www.postgresql.org/docs/9.1/libpq-ssl.html) to be used when connecting to the database. If not set, `disable` will be used. | `verify-ca` |
 | `max_idle_connections` | `integer` | Max number of idle connections that should be kept open (default: `1`) | `10` |
-| `max_open_connections` | `integer` | Max number of open connections at any time (default: `1`) | `15` | 
+| `max_open_connections` | `integer` | Max number of open connections at any time (default: `1`) | `15` |
+
+## `logging`
+This section allows to configure the logging details of Juno.
+
+| Attribute | Type | Description | Example |
+| :-------: | :---: | :--------- | :------ |
+| `format` | `string` | Format in which the logs should be output (either `json` or `text`) | `json` | 
+| `level` | `string` | Level of the log (either `verbose`, `debug`, `info`, `warn` or `error`) | `error` | 
 
 ## `pruning`
 This section contains the configuration about the pruning options of the database. Note that this will have effect only if you add the `"pruning"` entry to the `modules` field of the [`chain` config](#chain).
@@ -153,14 +161,6 @@ This section contains the configuration about the pruning options of the databas
 | `interval` | `integer` | Number of blocks that should pass between one pruning and the other (default: prune every `10` blocks) | `100` | 
 | `keep_every` | `integer` | Keep the state every `nth` block, even if it should have been pruned | `500` | 
 | `keep_recent` | `integer` | Do not prune this amount of recent states | `100` |
-
-## `logging`
-This section allows to configure the logging details of Juno.
-
-| Attribute | Type | Description | Example |
-| :-------: | :---: | :--------- | :------ |
-| `format` | `string` | Format in which the logs should be output (either `json` or `text`) | `json` | 
-| `level` | `string` | Level of the log (either `verbose`, `debug`, `info`, `warn` or `error`) | `error` | 
 
 ## `telemetry`
 This section allows to configure the telemetry details of Juno. Note that this will have effect only if you add the `"telemetry"` entry to the `modules` field of the [`chain` config](#chain).
