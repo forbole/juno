@@ -3,6 +3,8 @@ package local
 import (
 	"context"
 	"fmt"
+	"os"
+
 	cfg "github.com/tendermint/tendermint/config"
 	cs "github.com/tendermint/tendermint/consensus"
 	"github.com/tendermint/tendermint/evidence"
@@ -17,7 +19,6 @@ import (
 	"github.com/tendermint/tendermint/state/txindex/null"
 	"github.com/tendermint/tendermint/store"
 	tmtypes "github.com/tendermint/tendermint/types"
-	"os"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -110,20 +111,16 @@ func NewNode(config *Details, txConfig client.TxConfig) (*Node, error) {
 	proxyApp := proxy.NewAppConns(clientCreator)
 
 	csMetrics, _, _, smMetrics := metricsProvider(genDoc.ChainID)
-	//mempool := mempl.NewCListMempool(
-	//	tmCfg.Mempool,
-	//	proxyApp.Mempool(),
-	//	state.LastBlockHeight,
-	//	mempl.WithMetrics(memplMetrics),
-	//	mempl.WithPreCheck(sm.TxPreCheck(state)),
-	//	mempl.WithPostCheck(sm.TxPostCheck(state)),
-	//)
 
-	evidenceDB, err := dbProvider(&tmnode.DBContext{"evidence", tmCfg})
+	evidenceDB, err := dbProvider(&tmnode.DBContext{ID: "evidence", Config: tmCfg})
 	if err != nil {
 		return nil, err
 	}
+
 	evidencePool, err := evidence.NewPool(evidenceDB, sm.NewStore(stateDB), blockStore)
+	if err != nil {
+		return nil, err
+	}
 
 	blockExec := sm.NewBlockExecutor(
 		stateStore,
