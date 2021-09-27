@@ -5,67 +5,59 @@ The default `config.yaml` file should look like the following:
 
 <summary>Default config.yaml file</summary>
 
-```toml
-[cosmos]
-modules = []
-prefix = "cosmos"
+```yaml
+chain:
+  prefix: "cosmos"
+  modules:
 
-[rpc]
-address = "http://localhost:26657"
-client_name = "juno"
-max_connections = 20
+node: 
+  type: remote
+  config: 
+    rpc:
+      client_name: juno
+      address: http://localhost:26657
+      max_connections: 20
+    grpc:
+      insecure: true
+      address: localhost:9090
 
-[grpc]
-address = "localhost:9090"
-insecure = true
+parsing:
+  fast_sync: true
+  listen_new_blocks: true
+  parse_genesis: true
+  parse_old_blocks: true
+  start_height: 1
+  workers: 1
 
-[parsing]
-fast_sync = true
-listen_new_blocks = true
-parse_genesis = true
-parse_old_blocks = true
-start_height = 1
-workers = 1
+database:
+  host: localhost
+  max_idle_connections: 0
+  max_open_connections: 0
+  name: database-name
+  password: password
+  port: 5432
+  schema: public
+  ssl_mode: 
+  user: user
 
-[database]
-host = "localhost"
-max_idle_connections = 0
-max_open_connections = 0
-name = "database-name"
-password = "password"
-port = 5432
-schema = "public"
-ssl_mode = ""
-user = "user"
-
-[pruning]
-interval = 10
-keep_every = 500
-keep_recent = 100
-
-[logging]
-format = "text"
-level = "debug"
-
-[telemetry]
-enabled = false
-port = 5000
+logging:
+  format: "text"
+  level: "debug"
 ```
 
 </details>
 
 Let's see what each section refers to:
 
-- [`cosmos`](#cosmos)
-- [`rpc`](#rpc)
-- [`grpc`](#grpc)
+- [`chain`](#chain)
+- [`node`](#node)
 - [`parsing`](#parsing)
 - [`database`](#database)
 - [`pruning`](#pruning)
 - [`logging`](#logging)
 - [`telemetry`](#telemetry)
 
-## `cosmos`
+## `chain`
 This section contains the details of the chain configuration regarding the Cosmos SDK.
 
 | Attribute | Type | Description | Example |
@@ -78,31 +70,54 @@ Currently we support the followings Cosmos modules:
 
 - `auth` to parse the `x/auth` data
 - `bank` to parse the `x/bank` data
-- `consensus` to parse the consensus data
 - `distribution` to parse the `x/distribution` data
 - `gov` to parse the `x/gox` data
 - `mint` to parse the `x/mint` data
-- `modules` to get the list of enabled modules inside Juno
-- `pricefeed` to get the token prices
 - `slashing` to parse the `x/slashing` data
 - `staking` to parse the `x/staking` data
 
-## `rpc`
-This section contains the details of the chain RPC to which Juno will connect.
+We also have the following custom modules implemented:
 
+- `modules` to get the list of enabled modules inside Juno
+- `pricefeed` to get the token prices
+- `pruning` to periodically prune the old database data
+- `telemetry` to support a telemetry service
+
+## `node`
+This section contains the details of the node to which Juno will connect. 
+
+| Attribute | Type | Description | Example |
+| :-------: | :---: | :--------- | :------ |
+| `type` | `string` | Tells which type of node to use (either `local` or `remote`) | `remote` |
+| `config` | `object` | Contains the configuration data for the node | | 
+
+### Remote node
+A remote node is the default implementation of a node. It relies on both an RPC and gRPC connections to get the data. If you want to use this kind of node, you need to set the [`node`](#node) type to `remote` and then set the following attributes of the configuration.
+
+| Attribute | Type | Description | Example |
+| :-------: | :---: | :--------- | :------ |
+| `rpc` | `object` | Contains the RPC configuration data | | 
+| `grpc` | `object` | Contains the gRPC configuration data | | 
+
+#### `rpc`
 | Attribute | Type | Description | Example |
 | :-------: | :---: | :--------- | :------ |
 | `address` | `string` | Address of the RPC endpoint | `http://localhost:26657` |
 | `client_name` | `string` | Client name used when subscribing to the Tendermint websocket | `juno` |
 | `max_connections` | `int` | Max number of connections that can created towards the RPC node (any value less or equal to `0` means to use the default one instead) | `20` | 
 
-## `grpc`
-This section contains the details of the gRPC endpoint that Juno will use to query the data.
-
+#### `grpc`
 | Attribute | Type | Description | Example |
 | :-------: | :---: | :--------- | :------ |
 | `address` | `string` | Address of the gRPC endpoint | `localhost:9090` |
 | `insecure` | `boolean` | Whether the gRPC endpoint is insecure or not | `false` |
+
+### Local node
+A local node reads the data to be parsed from a local directory referred to as `home`. If you want to use this kind of node, you need to set the [`node`](#node) type to `remote` and then set the following attributes of the configuration.
+
+| Attribute | Type | Description | Example |
+| :-------: | :---: | :--------- | :------ |
+| `home` | `string` | Path to the home folder of the node | `/home/user/.gaiad` |
 
 ## `parsing`
 
@@ -131,8 +146,7 @@ This section contains all the different configuration related to the PostgreSQL 
 | `max_open_connections` | `integer` | Max number of open connections at any time (default: `1`) | `15` | 
 
 ## `pruning`
-This section contains the configuration about the pruning options of the database. Note that this will have effect only
-if you add the `"pruning"` entry to the `modules` field of the [`cosmos` config](#cosmos).
+This section contains the configuration about the pruning options of the database. Note that this will have effect only if you add the `"pruning"` entry to the `modules` field of the [`chain` config](#chain).
 
 | Attribute | Type | Description | Example |
 | :-------: | :---: | :--------- | :------ |
@@ -149,11 +163,10 @@ This section allows to configure the logging details of Juno.
 | `level` | `string` | Level of the log (either `verbose`, `debug`, `info`, `warn` or `error`) | `error` | 
 
 ## `telemetry`
-This section allows to configure the telemetry details of Juno.
+This section allows to configure the telemetry details of Juno. Note that this will have effect only if you add the `"telemetry"` entry to the `modules` field of the [`chain` config](#chain).
 
 | Attribute | Type | Description | Example |
-| :-------: | :---: | :--------- | :------ |
-| `enabled` | `bool` | Whether the telemetry should be enabled or not | `false` | 
+| :-------: | :---: | :--------- | :------ | 
 | `port` | `uint` | Port on which the telemetry server will listen | `8000` | 
 
 **Note**  
