@@ -3,11 +3,11 @@ package database
 import (
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 
-	"github.com/desmos-labs/juno/logging"
+	"github.com/desmos-labs/juno/v2/logging"
 
-	databaseconfig "github.com/desmos-labs/juno/database/config"
+	databaseconfig "github.com/desmos-labs/juno/v2/database/config"
 
-	"github.com/desmos-labs/juno/types"
+	"github.com/desmos-labs/juno/v2/types"
 )
 
 // Database represents an abstract database that can be used to save data inside it

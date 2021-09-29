@@ -5,10 +5,10 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 
-	"github.com/desmos-labs/juno/node"
-	nodeconfig "github.com/desmos-labs/juno/node/config"
-	"github.com/desmos-labs/juno/node/local"
-	"github.com/desmos-labs/juno/node/remote"
+	"github.com/desmos-labs/juno/v2/node"
+	nodeconfig "github.com/desmos-labs/juno/v2/node/config"
+	"github.com/desmos-labs/juno/v2/node/local"
+	"github.com/desmos-labs/juno/v2/node/remote"
 )
 
 func BuildNode(cfg nodeconfig.Config, encodingConfig *params.EncodingConfig) (node.Node, error) {

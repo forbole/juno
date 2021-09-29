@@ -8,16 +8,16 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/desmos-labs/juno/logging"
+	"github.com/desmos-labs/juno/v2/logging"
 
-	"github.com/desmos-labs/juno/types/config"
+	"github.com/desmos-labs/juno/v2/types/config"
 
 	"github.com/go-co-op/gocron"
 	tmtypes "github.com/tendermint/tendermint/types"
 
-	"github.com/desmos-labs/juno/modules"
-	"github.com/desmos-labs/juno/parser"
-	"github.com/desmos-labs/juno/types"
+	"github.com/desmos-labs/juno/v2/modules"
+	"github.com/desmos-labs/juno/v2/parser"
+	"github.com/desmos-labs/juno/v2/types"
 
 	"github.com/spf13/cobra"
 )

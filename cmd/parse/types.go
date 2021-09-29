@@ -4,14 +4,14 @@ import (
 	"github.com/cosmos/cosmos-sdk/simapp"
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 
-	"github.com/desmos-labs/juno/logging"
-	"github.com/desmos-labs/juno/node"
-	"github.com/desmos-labs/juno/types/config"
+	"github.com/desmos-labs/juno/v2/logging"
+	"github.com/desmos-labs/juno/v2/node"
+	"github.com/desmos-labs/juno/v2/types/config"
 
-	"github.com/desmos-labs/juno/database"
-	"github.com/desmos-labs/juno/database/builder"
-	"github.com/desmos-labs/juno/modules"
-	"github.com/desmos-labs/juno/modules/registrar"
+	"github.com/desmos-labs/juno/v2/database"
+	"github.com/desmos-labs/juno/v2/database/builder"
+	"github.com/desmos-labs/juno/v2/modules"
+	"github.com/desmos-labs/juno/v2/modules/registrar"
 )
 
 // Config contains all the configuration for the "parse" command

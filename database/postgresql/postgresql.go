@@ -6,15 +6,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/desmos-labs/juno/logging"
+	"github.com/desmos-labs/juno/v2/logging"
 
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 	"github.com/lib/pq"
 
 	_ "github.com/lib/pq" // nolint
 
-	"github.com/desmos-labs/juno/database"
-	"github.com/desmos-labs/juno/types"
+	"github.com/desmos-labs/juno/v2/database"
+	"github.com/desmos-labs/juno/v2/types"
 )
 
 // Builder creates a database connection with the given database connection info

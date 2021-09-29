@@ -9,12 +9,12 @@ import (
 	constypes "github.com/tendermint/tendermint/consensus/types"
 	tmjson "github.com/tendermint/tendermint/libs/json"
 
-	"github.com/desmos-labs/juno/node"
+	"github.com/desmos-labs/juno/v2/node"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/tx"
 
-	"github.com/desmos-labs/juno/types"
+	"github.com/desmos-labs/juno/v2/types"
 
 	httpclient "github.com/tendermint/tendermint/rpc/client/http"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"

@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/desmos-labs/juno/modules/pruning"
+	"github.com/desmos-labs/juno/v2/modules/pruning"
 )
 
 func TestParseConfig(t *testing.T) {

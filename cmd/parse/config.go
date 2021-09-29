@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/desmos-labs/juno/types/config"
+	"github.com/desmos-labs/juno/v2/types/config"
 
 	"github.com/spf13/cobra"
 
-	"github.com/desmos-labs/juno/types"
+	"github.com/desmos-labs/juno/v2/types"
 )
 
 // ReadConfig parses the configuration file for the executable having the give name using

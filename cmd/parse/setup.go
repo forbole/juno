@@ -3,15 +3,15 @@ package parse
 import (
 	"fmt"
 
-	nodebuilder "github.com/desmos-labs/juno/node/builder"
-	"github.com/desmos-labs/juno/types/config"
+	nodebuilder "github.com/desmos-labs/juno/v2/node/builder"
+	"github.com/desmos-labs/juno/v2/types/config"
 
-	"github.com/desmos-labs/juno/database"
+	"github.com/desmos-labs/juno/v2/database"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/desmos-labs/juno/modules"
-	modsregistrar "github.com/desmos-labs/juno/modules/registrar"
+	"github.com/desmos-labs/juno/v2/modules"
+	modsregistrar "github.com/desmos-labs/juno/v2/modules/registrar"
 )
 
 // GetParsingContext setups all the things that should be later passed to StartParsing in order

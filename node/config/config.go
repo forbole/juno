@@ -3,8 +3,8 @@ package config
 import (
 	"gopkg.in/yaml.v3"
 
-	"github.com/desmos-labs/juno/node/local"
-	"github.com/desmos-labs/juno/node/remote"
+	"github.com/desmos-labs/juno/v2/node/local"
+	"github.com/desmos-labs/juno/v2/node/remote"
 )
 
 const (

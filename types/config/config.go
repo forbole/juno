@@ -1,11 +1,12 @@
 package config
 
 import (
-	databaseconfig "github.com/desmos-labs/juno/database/config"
-	loggingconfig "github.com/desmos-labs/juno/logging/config"
-	nodeconfig "github.com/desmos-labs/juno/node/config"
-	parserconfig "github.com/desmos-labs/juno/parser/config"
 	"strings"
+
+	databaseconfig "github.com/desmos-labs/juno/v2/database/config"
+	loggingconfig "github.com/desmos-labs/juno/v2/logging/config"
+	nodeconfig "github.com/desmos-labs/juno/v2/node/config"
+	parserconfig "github.com/desmos-labs/juno/v2/parser/config"
 )
 
 var (

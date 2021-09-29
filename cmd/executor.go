@@ -5,12 +5,12 @@ import (
 	"os"
 	"path"
 
-	"github.com/desmos-labs/juno/types/config"
+	"github.com/desmos-labs/juno/v2/types/config"
 
-	initcmd "github.com/desmos-labs/juno/cmd/init"
-	parsecmd "github.com/desmos-labs/juno/cmd/parse"
+	initcmd "github.com/desmos-labs/juno/v2/cmd/init"
+	parsecmd "github.com/desmos-labs/juno/v2/cmd/parse"
 
-	"github.com/desmos-labs/juno/types"
+	"github.com/desmos-labs/juno/v2/types"
 
 	"github.com/spf13/cobra"
 	"github.com/tendermint/tendermint/libs/cli"

@@ -7,9 +7,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 
-	nodeconfig "github.com/desmos-labs/juno/node/config"
-	"github.com/desmos-labs/juno/node/local"
-	"github.com/desmos-labs/juno/node/remote"
+	nodeconfig "github.com/desmos-labs/juno/v2/node/config"
+	"github.com/desmos-labs/juno/v2/node/local"
+	"github.com/desmos-labs/juno/v2/node/remote"
 )
 
 func TestConfig_UnmarshalYAML(t *testing.T) {
