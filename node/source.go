@@ -5,8 +5,8 @@ const (
 	RemoteKeeper = "remote"
 )
 
-// Keeper represents a generic keeper that allows to read the data of a specific SDK module
-type Keeper interface {
+// Source represents a generic source that allows to read the data of a specific SDK module
+type Source interface {
 
 	// Type returns whether the keeper is a LocalKeeper or a RemoteKeeper
 	Type() string

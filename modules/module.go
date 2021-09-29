@@ -2,6 +2,7 @@ package modules
 
 import (
 	"encoding/json"
+	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/go-co-op/gocron"
@@ -24,7 +25,7 @@ type Modules []Module
 // If no modules are found, returns nil and false.
 func (m Modules) FindByName(name string) (module Module, found bool) {
 	for _, m := range m {
-		if m.Name() == name {
+		if strings.EqualFold(m.Name(), name) {
 			return m, true
 		}
 	}

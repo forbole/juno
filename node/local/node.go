@@ -2,6 +2,7 @@ package local
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"os"
 
@@ -275,13 +276,18 @@ func (cp *Node) Tx(hash string) (*sdk.TxResponse, *tx.Tx, error) {
 		return nil, nil, fmt.Errorf("transaction indexing is disabled")
 	}
 
-	r, err := cp.txIndexer.Get([]byte(hash))
+	hashBz, err := hex.DecodeString(hash)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	r, err := cp.txIndexer.Get(hashBz)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	if r == nil {
-		return nil, nil, fmt.Errorf("tx (%X) not found", hash)
+		return nil, nil, fmt.Errorf("tx %s not found", hash)
 	}
 
 	height := r.Height

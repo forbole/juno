@@ -5,6 +5,7 @@ import (
 	loggingconfig "github.com/desmos-labs/juno/logging/config"
 	nodeconfig "github.com/desmos-labs/juno/node/config"
 	parserconfig "github.com/desmos-labs/juno/parser/config"
+	"strings"
 )
 
 var (
@@ -68,4 +69,14 @@ func NewChainConfig(bech32Prefix string, modules []string) ChainConfig {
 // DefaultChainConfig returns the default instance of ChainConfig
 func DefaultChainConfig() ChainConfig {
 	return NewChainConfig("cosmos", nil)
+}
+
+func (cfg ChainConfig) IsModuleEnabled(moduleName string) bool {
+	for _, module := range cfg.Modules {
+		if strings.EqualFold(module, moduleName) {
+			return true
+		}
+	}
+
+	return false
 }

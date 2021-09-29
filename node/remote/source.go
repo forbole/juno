@@ -9,24 +9,24 @@ import (
 )
 
 var (
-	_ node.Keeper = &Keeper{}
+	_ node.Source = &Source{}
 )
 
-// Keeper implements the keeper.Keeper interface relying on a GRPC connection
-type Keeper struct {
+// Source implements the keeper.Source interface relying on a GRPC connection
+type Source struct {
 	Ctx      context.Context
 	GrpcConn *grpc.ClientConn
 }
 
-// NewKeeper returns a new Keeper instance
-func NewKeeper(config *GRPCConfig) (*Keeper, error) {
-	return &Keeper{
+// NewSource returns a new Source instance
+func NewSource(config *GRPCConfig) (*Source, error) {
+	return &Source{
 		Ctx:      context.Background(),
 		GrpcConn: MustCreateGrpcConnection(config),
 	}, nil
 }
 
 // Type implements keeper.Type
-func (k Keeper) Type() string {
+func (k Source) Type() string {
 	return node.RemoteKeeper
 }

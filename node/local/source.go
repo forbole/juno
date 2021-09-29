@@ -2,32 +2,38 @@ package local
 
 import (
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/simapp/params"
 	"os"
 	"path"
 
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
+	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/spf13/viper"
 	cfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/libs/log"
 	tmnode "github.com/tendermint/tendermint/node"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	tmstore "github.com/tendermint/tendermint/store"
-	tmtypes "github.com/tendermint/tendermint/types"
 	db "github.com/tendermint/tm-db"
 
 	"github.com/desmos-labs/juno/node"
 )
 
 var (
-	_ node.Keeper = &Keeper{}
+	_ node.Source = &Source{}
 )
 
-// Keeper represents the Keeper interface implementation that reads the data from a local node
-type Keeper struct {
+// Source represents the Source interface implementation that reads the data from a local node
+type Source struct {
 	Initialized bool
 
 	StoreDB db.DB
+
+	Codec       codec.Marshaler
+	LegacyAmino *codec.LegacyAmino
 
 	BlockStore *tmstore.BlockStore
 	Logger     log.Logger
@@ -35,10 +41,12 @@ type Keeper struct {
 
 	Keys  map[string]*sdk.KVStoreKey
 	TKeys map[string]*sdk.TransientStoreKey
+
+	ParamsKeeper paramskeeper.Keeper
 }
 
-// NewKeeper returns a new Keeper instance
-func NewKeeper(home string) (*Keeper, error) {
+// NewSource returns a new Source instance
+func NewSource(home string, encodingConfig *params.EncodingConfig) (*Source, error) {
 	levelDB, err := sdk.NewLevelDB("application", path.Join(home, "data"))
 	if err != nil {
 		return nil, err
@@ -54,14 +62,25 @@ func NewKeeper(home string) (*Keeper, error) {
 		return nil, err
 	}
 
-	return &Keeper{
+	cdc := encodingConfig.Marshaler
+	legacyAmino := encodingConfig.Amino
+
+	keys := sdk.NewKVStoreKeys(paramstypes.StoreKey)
+	tKeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
+
+	return &Source{
 		StoreDB: levelDB,
+
+		Codec:       cdc,
+		LegacyAmino: legacyAmino,
 
 		BlockStore: tmstore.NewBlockStore(blockStoreDB),
 		Logger:     log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "explorer"),
 		Cms:        store.NewCommitMultiStore(levelDB),
-		Keys:       make(map[string]*sdk.KVStoreKey),
-		TKeys:      make(map[string]*sdk.TransientStoreKey),
+		Keys:       keys,
+		TKeys:      tKeys,
+
+		ParamsKeeper: paramskeeper.NewKeeper(cdc, legacyAmino, keys[paramstypes.StoreKey], tKeys[paramstypes.TStoreKey]),
 	}, nil
 }
 
@@ -83,18 +102,32 @@ func parseConfig(home string) (*cfg.Config, error) {
 	return conf, nil
 }
 
-// Type implements keeper.Keeper
-func (k Keeper) Type() string {
+// Type implements keeper.Source
+func (k Source) Type() string {
 	return node.LocalKeeper
 }
 
+func (k Source) RegisterKey(key string) *sdk.KVStoreKey {
+	k.Keys[key] = sdk.NewKVStoreKey(key)
+	return k.Keys[key]
+}
+
+func (k Source) RegisterSubspace(moduleName string) paramstypes.Subspace {
+	subspace, ok := k.ParamsKeeper.GetSubspace(moduleName)
+	if !ok {
+		subspace = k.ParamsKeeper.Subspace(moduleName)
+	}
+
+	return subspace
+}
+
 // InitStores initializes the stores by mounting the various keys that have been specified
-func (k Keeper) InitStores() error {
+func (k Source) InitStores() error {
 	for _, key := range k.Keys {
 		k.Cms.MountStoreWithDB(key, sdk.StoreTypeIAVL, nil)
 	}
 
-	for _, tKey := range k.Keys {
+	for _, tKey := range k.TKeys {
 		k.Cms.MountStoreWithDB(tKey, sdk.StoreTypeTransient, nil)
 	}
 
@@ -104,34 +137,20 @@ func (k Keeper) InitStores() error {
 
 // LoadHeight loads the given height from the store.
 // It returns a new Context that can be used to query the data, or an error if something wrong happens.
-func (k Keeper) LoadHeight(height int64) (sdk.Context, error) {
-	// Init the stores if not done already
-	if !k.Initialized {
-		err := k.InitStores()
-		if err != nil {
-			return sdk.Context{}, fmt.Errorf("error while initializing stores: %s", err)
-		}
-	}
-
+func (k Source) LoadHeight(height int64) (sdk.Context, error) {
 	var err error
 	var cms sdk.CacheMultiStore
-	var block *tmtypes.Block
 	if height > 0 {
 		cms, err = k.Cms.CacheMultiStoreWithVersion(height)
 		if err != nil {
 			return sdk.Context{}, err
 		}
-
-		block = k.BlockStore.LoadBlock(height)
 	} else {
-		commit := k.Cms.LastCommitID()
-		cms, err = k.Cms.CacheMultiStoreWithVersion(commit.Version)
+		cms, err = k.Cms.CacheMultiStoreWithVersion(k.BlockStore.Height())
 		if err != nil {
-			return sdk.Context{}, nil
+			return sdk.Context{}, err
 		}
-
-		block = k.BlockStore.LoadBlock(k.BlockStore.Height())
 	}
 
-	return sdk.NewContext(cms, tmproto.Header{ChainID: block.ChainID, Height: block.Height}, false, k.Logger), nil
+	return sdk.NewContext(cms, tmproto.Header{}, false, k.Logger), nil
 }
