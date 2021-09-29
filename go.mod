@@ -1,6 +1,6 @@
 module github.com/desmos-labs/juno/v2
 
-go 1.13
+go 1.16
 
 require (
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
