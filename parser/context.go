@@ -13,7 +13,7 @@ import (
 
 // Context represents the context that is shared among different workers
 type Context struct {
-	Codec    codec.BinaryMarshaler
+	Codec    codec.Codec
 	Node     node.Node
 	Database database.Database
 	Logger   logging.Logger
@@ -24,7 +24,7 @@ type Context struct {
 
 // NewContext allows to build a new Worker Context instance
 func NewContext(
-	codec codec.BinaryMarshaler, queue types.HeightQueue,
+	codec codec.Codec, queue types.HeightQueue,
 	node node.Node, db database.Database, logger logging.Logger,
 	modules []modules.Module,
 ) *Context {

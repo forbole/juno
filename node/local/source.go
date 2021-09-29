@@ -33,7 +33,7 @@ type Source struct {
 
 	StoreDB db.DB
 
-	Codec       codec.Marshaler
+	Codec       codec.Codec
 	LegacyAmino *codec.LegacyAmino
 
 	BlockStore *tmstore.BlockStore

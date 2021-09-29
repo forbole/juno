@@ -8,8 +8,8 @@ import (
 	crisistypes "github.com/cosmos/cosmos-sdk/x/crisis/types"
 	evidencetypes "github.com/cosmos/cosmos-sdk/x/evidence/types"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
-	ibctransfertypes "github.com/cosmos/cosmos-sdk/x/ibc/applications/transfer/types"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/modules/apps/transfer/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -25,11 +25,11 @@ func MessageNotSupported(msg sdk.Msg) error {
 
 // MessageAddressesParser represents a function that extracts all the
 // involved addresses from a provided message (both accounts and validators)
-type MessageAddressesParser = func(cdc codec.Marshaler, msg sdk.Msg) ([]string, error)
+type MessageAddressesParser = func(cdc codec.Codec, msg sdk.Msg) ([]string, error)
 
 // JoinMessageParsers joins together all the given parsers, calling them in order
 func JoinMessageParsers(parsers ...MessageAddressesParser) MessageAddressesParser {
-	return func(cdc codec.Marshaler, msg sdk.Msg) ([]string, error) {
+	return func(cdc codec.Codec, msg sdk.Msg) ([]string, error) {
 		for _, parser := range parsers {
 			// Try getting the addresses
 			addresses, _ := parser(cdc, msg)
@@ -59,7 +59,7 @@ var CosmosMessageAddressesParser = JoinMessageParsers(
 
 // DefaultMessagesParser represents the default messages parser that simply returns the list
 // of all the signers of a message
-func DefaultMessagesParser(_ codec.Marshaler, cosmosMsg sdk.Msg) ([]string, error) {
+func DefaultMessagesParser(_ codec.Codec, cosmosMsg sdk.Msg) ([]string, error) {
 	var signers = make([]string, len(cosmosMsg.GetSigners()))
 	for index, signer := range cosmosMsg.GetSigners() {
 		signers[index] = signer.String()
@@ -69,7 +69,7 @@ func DefaultMessagesParser(_ codec.Marshaler, cosmosMsg sdk.Msg) ([]string, erro
 
 // BankMessagesParser returns the list of all the accounts involved in the given
 // message if it's related to the x/bank module
-func BankMessagesParser(_ codec.Marshaler, cosmosMsg sdk.Msg) ([]string, error) {
+func BankMessagesParser(_ codec.Codec, cosmosMsg sdk.Msg) ([]string, error) {
 	switch msg := cosmosMsg.(type) {
 	case *banktypes.MsgSend:
 		return []string{msg.ToAddress, msg.FromAddress}, nil
@@ -90,7 +90,7 @@ func BankMessagesParser(_ codec.Marshaler, cosmosMsg sdk.Msg) ([]string, error) 
 
 // CrisisMessagesParser returns the list of all the accounts involved in the given
 // message if it's related to the x/crisis module
-func CrisisMessagesParser(_ codec.Marshaler, cosmosMsg sdk.Msg) ([]string, error) {
+func CrisisMessagesParser(_ codec.Codec, cosmosMsg sdk.Msg) ([]string, error) {
 	switch msg := cosmosMsg.(type) {
 
 	case *crisistypes.MsgVerifyInvariant:
@@ -103,7 +103,7 @@ func CrisisMessagesParser(_ codec.Marshaler, cosmosMsg sdk.Msg) ([]string, error
 
 // DistributionMessagesParser returns the list of all the accounts involved in the given
 // message if it's related to the x/distribution module
-func DistributionMessagesParser(_ codec.Marshaler, cosmosMsg sdk.Msg) ([]string, error) {
+func DistributionMessagesParser(_ codec.Codec, cosmosMsg sdk.Msg) ([]string, error) {
 	switch msg := cosmosMsg.(type) {
 
 	case *distrtypes.MsgSetWithdrawAddress:
@@ -125,7 +125,7 @@ func DistributionMessagesParser(_ codec.Marshaler, cosmosMsg sdk.Msg) ([]string,
 
 // EvidenceMessagesParser returns the list of all the accounts involved in the given
 // message if it's related to the x/evidence module
-func EvidenceMessagesParser(_ codec.Marshaler, cosmosMsg sdk.Msg) ([]string, error) {
+func EvidenceMessagesParser(_ codec.Codec, cosmosMsg sdk.Msg) ([]string, error) {
 	switch msg := cosmosMsg.(type) {
 
 	case *evidencetypes.MsgSubmitEvidence:
@@ -138,7 +138,7 @@ func EvidenceMessagesParser(_ codec.Marshaler, cosmosMsg sdk.Msg) ([]string, err
 
 // GovMessagesParser returns the list of all the accounts involved in the given
 // message if it's related to the x/gov module
-func GovMessagesParser(cdc codec.Marshaler, cosmosMsg sdk.Msg) ([]string, error) {
+func GovMessagesParser(cdc codec.Codec, cosmosMsg sdk.Msg) ([]string, error) {
 	switch msg := cosmosMsg.(type) {
 
 	case *govtypes.MsgSubmitProposal:
@@ -171,7 +171,7 @@ func GovMessagesParser(cdc codec.Marshaler, cosmosMsg sdk.Msg) ([]string, error)
 
 // IBCTransferMessagesParser returns the list of all the accounts involved in the given
 // message if it's related to the x/iBCTransfer module
-func IBCTransferMessagesParser(_ codec.Marshaler, cosmosMsg sdk.Msg) ([]string, error) {
+func IBCTransferMessagesParser(_ codec.Codec, cosmosMsg sdk.Msg) ([]string, error) {
 	switch msg := cosmosMsg.(type) {
 
 	case *ibctransfertypes.MsgTransfer:
@@ -184,7 +184,7 @@ func IBCTransferMessagesParser(_ codec.Marshaler, cosmosMsg sdk.Msg) ([]string, 
 
 // SlashingMessagesParser returns the list of all the accounts involved in the given
 // message if it's related to the x/slashing module
-func SlashingMessagesParser(_ codec.Marshaler, cosmosMsg sdk.Msg) ([]string, error) {
+func SlashingMessagesParser(_ codec.Codec, cosmosMsg sdk.Msg) ([]string, error) {
 	switch msg := cosmosMsg.(type) {
 
 	case *slashingtypes.MsgUnjail:
@@ -197,7 +197,7 @@ func SlashingMessagesParser(_ codec.Marshaler, cosmosMsg sdk.Msg) ([]string, err
 
 // StakingMessagesParser returns the list of all the accounts involved in the given
 // message if it's related to the x/staking module
-func StakingMessagesParser(_ codec.Marshaler, cosmosMsg sdk.Msg) ([]string, error) {
+func StakingMessagesParser(_ codec.Codec, cosmosMsg sdk.Msg) ([]string, error) {
 	switch msg := cosmosMsg.(type) {
 
 	case *stakingtypes.MsgCreateValidator:
