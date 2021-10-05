@@ -4,10 +4,10 @@ type Config struct {
 	Workers         int64  `yaml:"workers"`
 	ParseNewBlocks  bool   `yaml:"listen_new_blocks"`
 	ParseOldBlocks  bool   `yaml:"parse_old_blocks"`
-	GenesisFilePath string `yaml:"genesis_file_path"`
+	GenesisFilePath string `yaml:"genesis_file_path,omitempty"`
 	ParseGenesis    bool   `yaml:"parse_genesis"`
 	StartHeight     int64  `yaml:"start_height"`
-	FastSync        bool   `yaml:"fast_sync"`
+	FastSync        bool   `yaml:"fast_sync,omitempty"`
 }
 
 // NewParsingConfig allows to build a new Config instance
