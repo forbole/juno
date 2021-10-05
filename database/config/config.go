@@ -6,8 +6,8 @@ type Config struct {
 	Port               int64  `yaml:"port"`
 	User               string `yaml:"user"`
 	Password           string `yaml:"password"`
-	SSLMode            string `yaml:"ssl_mode"`
-	Schema             string `yaml:"schema"`
+	SSLMode            string `yaml:"ssl_mode,omitempty"`
+	Schema             string `yaml:"schema,omitempty"`
 	MaxOpenConnections int    `yaml:"max_open_connections"`
 	MaxIdleConnections int    `yaml:"max_idle_connections"`
 }
