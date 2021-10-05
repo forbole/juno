@@ -1,6 +1,9 @@
 package v1
 
 import (
+	"fmt"
+	"io/ioutil"
+	"os"
 	"path"
 
 	"github.com/pelletier/go-toml"
@@ -22,6 +25,23 @@ type Config struct {
 	Parsing   *ParsingConfig   `toml:"parsing"`
 	Pruning   *PruningConfig   `toml:"pruning"`
 	Telemetry *TelemetryConfig `toml:"telemetry"`
+}
+
+// ReadConfig reads the config.toml file contents
+func ReadConfig() ([]byte, error) {
+	v1File := GetConfigFilePath()
+
+	// Make sure the path exists
+	if _, err := os.Stat(v1File); os.IsNotExist(err) {
+		return nil, fmt.Errorf("config v1File does not exist")
+	}
+
+	bz, err := ioutil.ReadFile(v1File)
+	if err != nil {
+		return nil, fmt.Errorf("error while reading v1 config files: %s", err)
+	}
+
+	return bz, nil
 }
 
 // ParseConfig attempts to read and parse a Juno Config from the given string bytes.

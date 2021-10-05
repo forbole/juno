@@ -2,11 +2,9 @@ package migrate
 
 import (
 	"fmt"
-	"io/ioutil"
-	"os"
-
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
+	"io/ioutil"
 
 	v1 "github.com/desmos-labs/juno/v2/cmd/migrate/v1"
 	databaseconfig "github.com/desmos-labs/juno/v2/database/config"
@@ -51,17 +49,9 @@ func MigrateCmd() *cobra.Command {
 }
 
 func MigrateConfig() (Config, error) {
-	v1File := v1.GetConfigFilePath()
-
-	// Make sure the path exists
-	if _, err := os.Stat(v1File); os.IsNotExist(err) {
-		println("Config v1File does not exist. Nothing to migrate")
-		return Config{}, nil
-	}
-
-	bz, err := ioutil.ReadFile(v1File)
+	bz, err := v1.ReadConfig()
 	if err != nil {
-		return Config{}, fmt.Errorf("error while reading v1 config files: %s", err)
+		return Config{}, nil
 	}
 
 	cfg, err := v1.ParseConfig(bz)
