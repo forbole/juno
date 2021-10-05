@@ -8,6 +8,7 @@ import (
 	"github.com/desmos-labs/juno/v2/types/config"
 
 	initcmd "github.com/desmos-labs/juno/v2/cmd/init"
+	migratecmd "github.com/desmos-labs/juno/v2/cmd/migrate"
 	parsecmd "github.com/desmos-labs/juno/v2/cmd/parse"
 
 	"github.com/desmos-labs/juno/v2/types"
@@ -41,6 +42,7 @@ func BuildDefaultExecutor(config *Config) cli.Executor {
 		VersionCmd(),
 		initcmd.InitCmd(config.GetInitConfig()),
 		parsecmd.ParseCmd(config.GetParseConfig()),
+		migratecmd.MigrateCmd(),
 	)
 
 	return PrepareRootCmd(config.GetName(), rootCmd)

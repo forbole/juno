@@ -5,6 +5,10 @@ import (
 	"github.com/desmos-labs/juno/v2/types/config"
 )
 
+const (
+	ModuleName = "telemetry"
+)
+
 var (
 	_ modules.Module                     = &Module{}
 	_ modules.AdditionalOperationsModule = &Module{}
@@ -29,7 +33,7 @@ func NewModule(cfg config.Config) *Module {
 
 // Name implements modules.Module
 func (m *Module) Name() string {
-	return "telemetry"
+	return ModuleName
 }
 
 // RunAdditionalOperations implements modules.AdditionalOperationsModule
