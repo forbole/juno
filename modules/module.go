@@ -67,25 +67,24 @@ type FastSyncModule interface {
 type GenesisModule interface {
 	// HandleGenesis allows to handle the genesis state.
 	// For convenience of use, the already-unmarshalled AppState is provided along with the full GenesisDoc.
-	// NOTE. The returned error will be logged using the logging.LogGenesisError method. All other modules' handlers
+	// NOTE. The returned error will be logged using the GenesisError method. All other modules' handlers
 	// will still be called.
 	HandleGenesis(doc *tmtypes.GenesisDoc, appState map[string]json.RawMessage) error
 }
 
 type BlockModule interface {
 	// HandleBlock allows to handle a single block.
-	// For convenience of use, all the transactions present inside the given block
-	// and the currently used database will be passed as well.
+	// For convenience of use, all the transactions present inside the given block will be passed as well.
 	// For each transaction present inside the block, HandleTx will be called as well.
-	// NOTE. The returned error will be logged using the logging.LogBlockError method. All other modules' handlers
+	// NOTE. The returned error will be logged using the BlockError method. All other modules' handlers
 	// will still be called.
-	HandleBlock(block *tmctypes.ResultBlock, txs []*types.Tx, vals *tmctypes.ResultValidators) error
+	HandleBlock(block *tmctypes.ResultBlock, results *tmctypes.ResultBlockResults, txs []*types.Tx, vals *tmctypes.ResultValidators) error
 }
 
 type TransactionModule interface {
 	// HandleTx handles a single transaction.
 	// For each message present inside the transaction, HandleMsg will be called as well.
-	// NOTE. The returned error will be logged using the logging.LogTxError method. All other modules' handlers
+	// NOTE. The returned error will be logged using the TxError method. All other modules' handlers
 	// will still be called.
 	HandleTx(tx *types.Tx) error
 }
@@ -94,7 +93,7 @@ type MessageModule interface {
 	// HandleMsg handles a single message.
 	// For convenience of usa, the index of the message inside the transaction and the transaction itself
 	// are passed as well.
-	// NOTE. The returned error will be logged using the logging.LogMsgError method. All other modules' handlers
+	// NOTE. The returned error will be logged using the MsgError method. All other modules' handlers
 	// will still be called.
 	HandleMsg(index int, msg sdk.Msg, tx *types.Tx) error
 }

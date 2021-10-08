@@ -93,6 +93,15 @@ func (d *defaultLogger) BlockError(module modules.Module, block *tmctypes.Result
 	)
 }
 
+// EventsError implements Logger
+func (d *defaultLogger) EventsError(module modules.Module, block *tmctypes.ResultBlock, err error) {
+	d.Error("error while handling block events",
+		"err", err,
+		LogKeyModule, module.Name(),
+		LogKeyHeight, block.Block.Height,
+	)
+}
+
 // TxError implements Logger
 func (d *defaultLogger) TxError(module modules.Module, tx *types.Tx, err error) {
 	d.Error("error while handling transaction",

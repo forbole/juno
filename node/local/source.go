@@ -113,6 +113,11 @@ func (k Source) RegisterKey(key string) *sdk.KVStoreKey {
 	return k.Keys[key]
 }
 
+func (k Source) RegisterTKey(key string) *sdk.TransientStoreKey {
+	k.TKeys[key] = sdk.NewTransientStoreKey(key)
+	return k.TKeys[key]
+}
+
 func (k Source) RegisterSubspace(moduleName string) paramstypes.Subspace {
 	subspace, ok := k.ParamsKeeper.GetSubspace(moduleName)
 	if !ok {

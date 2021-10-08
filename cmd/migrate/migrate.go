@@ -2,9 +2,10 @@ package migrate
 
 import (
 	"fmt"
+	"io/ioutil"
+
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
-	"io/ioutil"
 
 	v1 "github.com/desmos-labs/juno/v2/cmd/migrate/v1"
 	databaseconfig "github.com/desmos-labs/juno/v2/database/config"

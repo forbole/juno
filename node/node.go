@@ -29,6 +29,9 @@ type Node interface {
 	// Block queries for a block by height. An error is returned if the query fails.
 	Block(height int64) (*tmctypes.ResultBlock, error)
 
+	// BlockResults queries the results of a block by height. An error is returnes if the query fails
+	BlockResults(height int64) (*tmctypes.ResultBlockResults, error)
+
 	// Tx queries for a transaction from the REST client and decodes it into a sdk.Tx
 	// if the transaction exists. An error is returned if the tx doesn't exist or
 	// decoding fails.

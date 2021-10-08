@@ -108,7 +108,12 @@ func (w Worker) process(height int64) error {
 
 	block, err := w.node.Block(height)
 	if err != nil {
-		return fmt.Errorf("failed to get block from RPCConfig endpoint: %s", err)
+		return fmt.Errorf("failed to get block from node: %s", err)
+	}
+
+	events, err := w.node.BlockResults(height)
+	if err != nil {
+		return fmt.Errorf("failed to get block results from node: %s", err)
 	}
 
 	txs, err := w.node.Txs(block)
@@ -121,7 +126,7 @@ func (w Worker) process(height int64) error {
 		return fmt.Errorf("failed to get validators for block: %s", err)
 	}
 
-	return w.ExportBlock(block, txs, vals)
+	return w.ExportBlock(block, events, txs, vals)
 }
 
 // getGenesisFromRPC returns the genesis read from the RPCConfig endpoint
@@ -201,7 +206,9 @@ func (w Worker) SaveValidators(vals []*tmtypes.Validator) error {
 // ExportBlock accepts a finalized block and a corresponding set of transactions
 // and persists them to the database along with attributable metadata. An error
 // is returned if the write fails.
-func (w Worker) ExportBlock(b *tmctypes.ResultBlock, txs []*types.Tx, vals *tmctypes.ResultValidators) error {
+func (w Worker) ExportBlock(
+	b *tmctypes.ResultBlock, r *tmctypes.ResultBlockResults, txs []*types.Tx, vals *tmctypes.ResultValidators,
+) error {
 	// Save all validators
 	err := w.SaveValidators(vals.Validators)
 	if err != nil {
@@ -230,7 +237,7 @@ func (w Worker) ExportBlock(b *tmctypes.ResultBlock, txs []*types.Tx, vals *tmct
 	// Call the block handlers
 	for _, module := range w.modules {
 		if blockModule, ok := module.(modules.BlockModule); ok {
-			err = blockModule.HandleBlock(b, txs, vals)
+			err = blockModule.HandleBlock(b, r, txs, vals)
 			if err != nil {
 				w.logger.BlockError(module, b, err)
 			}
