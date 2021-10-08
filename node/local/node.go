@@ -219,6 +219,27 @@ func createAndStartIndexerService(
 	return indexerService, txIndexer, blockIndexer, nil
 }
 
+// latestHeight can be either latest committed or uncommitted (+1) height.
+func (cp *Node) getHeight(latestHeight int64, heightPtr *int64) (int64, error) {
+	if heightPtr != nil {
+		height := *heightPtr
+		if height <= 0 {
+			return 0, fmt.Errorf("height must be greater than 0, but got %d", height)
+		}
+		if height > latestHeight {
+			return 0, fmt.Errorf("height %d must be less than or equal to the current blockchain height %d",
+				height, latestHeight)
+		}
+		base := cp.blockStore.Base()
+		if height < base {
+			return 0, fmt.Errorf("height %d is not available, lowest height is %d",
+				height, base)
+		}
+		return height, nil
+	}
+	return latestHeight, nil
+}
+
 // Genesis implements node.Node
 func (cp *Node) Genesis() (*tmctypes.ResultGenesis, error) {
 	return &tmctypes.ResultGenesis{Genesis: cp.genesisDoc}, nil
@@ -246,6 +267,11 @@ func (cp *Node) LatestHeight() (int64, error) {
 
 // Validators implements node.Node
 func (cp *Node) Validators(height int64) (*tmctypes.ResultValidators, error) {
+	height, err := cp.getHeight(cp.blockStore.Height(), &height)
+	if err != nil {
+		return nil, err
+	}
+
 	valSet, err := cp.stateStore.LoadValidators(height)
 	if err != nil {
 		return nil, err
@@ -261,12 +287,39 @@ func (cp *Node) Validators(height int64) (*tmctypes.ResultValidators, error) {
 
 // Block implements node.Node
 func (cp *Node) Block(height int64) (*tmctypes.ResultBlock, error) {
+	height, err := cp.getHeight(cp.blockStore.Height(), &height)
+	if err != nil {
+		return nil, err
+	}
+
 	block := cp.blockStore.LoadBlock(height)
 	blockMeta := cp.blockStore.LoadBlockMeta(height)
 	if blockMeta == nil {
 		return &tmctypes.ResultBlock{BlockID: tmtypes.BlockID{}, Block: block}, nil
 	}
 	return &tmctypes.ResultBlock{BlockID: blockMeta.BlockID, Block: block}, nil
+}
+
+// BlockResults implements node.Node
+func (cp *Node) BlockResults(height int64) (*tmctypes.ResultBlockResults, error) {
+	height, err := cp.getHeight(cp.blockStore.Height(), &height)
+	if err != nil {
+		return nil, err
+	}
+
+	results, err := cp.stateStore.LoadABCIResponses(height)
+	if err != nil {
+		return nil, err
+	}
+
+	return &tmctypes.ResultBlockResults{
+		Height:                height,
+		TxsResults:            results.DeliverTxs,
+		BeginBlockEvents:      results.BeginBlock.Events,
+		EndBlockEvents:        results.EndBlock.Events,
+		ValidatorUpdates:      results.EndBlock.ValidatorUpdates,
+		ConsensusParamUpdates: results.EndBlock.ConsensusParamUpdates,
+	}, nil
 }
 
 // Tx implements node.Node

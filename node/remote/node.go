@@ -129,6 +129,11 @@ func (cp *Node) Block(height int64) (*tmctypes.ResultBlock, error) {
 	return cp.client.Block(cp.ctx, &height)
 }
 
+// BlockResults implements node.Node
+func (cp *Node) BlockResults(height int64) (*tmctypes.ResultBlockResults, error) {
+	return cp.client.BlockResults(cp.ctx, &height)
+}
+
 // Tx implements node.Node
 func (cp *Node) Tx(hash string) (*sdk.TxResponse, *tx.Tx, error) {
 	res, err := cp.txServiceClient.GetTx(context.Background(), &tx.GetTxRequest{Hash: hash})
