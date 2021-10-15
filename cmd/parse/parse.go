@@ -38,6 +38,16 @@ func ParseCmd(cmdCfg *Config) *cobra.Command {
 				return err
 			}
 
+			// Run all the additional operations
+			for _, module := range context.Modules {
+				if module, ok := module.(modules.AdditionalOperationsModule); ok {
+					err = module.RunAdditionalOperations()
+					if err != nil {
+						return err
+					}
+				}
+			}
+
 			return StartParsing(context)
 		},
 	}
