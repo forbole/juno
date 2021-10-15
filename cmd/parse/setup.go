@@ -10,7 +10,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/desmos-labs/juno/v2/modules"
 	modsregistrar "github.com/desmos-labs/juno/v2/modules/registrar"
 )
 
@@ -56,16 +55,6 @@ func GetParsingContext(parseConfig *Config) (*Context, error) {
 	context := modsregistrar.NewContext(cfg, sdkConfig, &encodingConfig, db, cp, parseConfig.GetLogger())
 	mods := parseConfig.GetRegistrar().BuildModules(context)
 	registeredModules := modsregistrar.GetModules(mods, cfg.Chain.Modules, parseConfig.GetLogger())
-
-	// Run all the additional operations
-	for _, module := range registeredModules {
-		if module, ok := module.(modules.AdditionalOperationsModule); ok {
-			err = module.RunAdditionalOperations()
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
 
 	return NewContext(&encodingConfig, cp, db, parseConfig.GetLogger(), registeredModules), nil
 }
