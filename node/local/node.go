@@ -4,13 +4,23 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"os"
+	"sort"
 
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/types/tx"
+	"github.com/spf13/viper"
 	cfg "github.com/tendermint/tendermint/config"
 	cs "github.com/tendermint/tendermint/consensus"
 	"github.com/tendermint/tendermint/evidence"
+	"github.com/tendermint/tendermint/libs/log"
+	tmmath "github.com/tendermint/tendermint/libs/math"
+	tmquery "github.com/tendermint/tendermint/libs/pubsub/query"
 	"github.com/tendermint/tendermint/privval"
 	"github.com/tendermint/tendermint/proxy"
+	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	sm "github.com/tendermint/tendermint/state"
 	"github.com/tendermint/tendermint/state/indexer"
 	blockidxkv "github.com/tendermint/tendermint/state/indexer/block/kv"
@@ -20,12 +30,6 @@ import (
 	"github.com/tendermint/tendermint/state/txindex/null"
 	"github.com/tendermint/tendermint/store"
 	tmtypes "github.com/tendermint/tendermint/types"
-
-	"github.com/cosmos/cosmos-sdk/client"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/tx"
-	"github.com/spf13/viper"
-	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/forbole/juno/v2/node"
 	"github.com/forbole/juno/v2/types"
@@ -40,6 +44,12 @@ import (
 	dbm "github.com/tendermint/tm-db"
 )
 
+const (
+	// see README
+	defaultPerPage = 30
+	maxPerPage     = 100
+)
+
 var (
 	_ node.Node = &Node{}
 )
@@ -47,6 +57,7 @@ var (
 // Node represents the node implementation that uses a local node
 type Node struct {
 	ctx      context.Context
+	codec    codec.Marshaler
 	txConfig client.TxConfig
 
 	// config
@@ -63,7 +74,7 @@ type Node struct {
 }
 
 // NewNode returns a new Node instance
-func NewNode(config *Details, txConfig client.TxConfig) (*Node, error) {
+func NewNode(config *Details, txConfig client.TxConfig, codec codec.Marshaler) (*Node, error) {
 	// Load the config
 	viper.SetConfigFile(path.Join(config.Home, "config", "config.yaml"))
 	tmCfg, err := ParseConfig()
@@ -144,6 +155,7 @@ func NewNode(config *Details, txConfig client.TxConfig) (*Node, error) {
 
 	return &Node{
 		ctx:      context.Background(),
+		codec:    codec,
 		txConfig: txConfig,
 
 		tmCfg:      tmCfg,
@@ -240,6 +252,50 @@ func (cp *Node) getHeight(latestHeight int64, heightPtr *int64) (int64, error) {
 	return latestHeight, nil
 }
 
+func validatePerPage(perPagePtr *int) int {
+	if perPagePtr == nil { // no per_page parameter
+		return defaultPerPage
+	}
+
+	perPage := *perPagePtr
+	if perPage < 1 {
+		return defaultPerPage
+	} else if perPage > maxPerPage {
+		return maxPerPage
+	}
+	return perPage
+}
+
+func validatePage(pagePtr *int, perPage, totalCount int) (int, error) {
+	if perPage < 1 {
+		panic(fmt.Sprintf("zero or negative perPage: %d", perPage))
+	}
+
+	if pagePtr == nil { // no page parameter
+		return 1, nil
+	}
+
+	pages := ((totalCount - 1) / perPage) + 1
+	if pages == 0 {
+		pages = 1 // one page (even if it's empty)
+	}
+	page := *pagePtr
+	if page <= 0 || page > pages {
+		return 1, fmt.Errorf("page should be within [1, %d] range, given %d", pages, page)
+	}
+
+	return page, nil
+}
+
+func validateSkipCount(page, perPage int) int {
+	skipCount := (page - 1) * perPage
+	if skipCount < 0 {
+		return 0
+	}
+
+	return skipCount
+}
+
 // Genesis implements node.Node
 func (cp *Node) Genesis() (*tmctypes.ResultGenesis, error) {
 	return &tmctypes.ResultGenesis{Genesis: cp.genesisDoc}, nil
@@ -323,24 +379,24 @@ func (cp *Node) BlockResults(height int64) (*tmctypes.ResultBlockResults, error)
 }
 
 // Tx implements node.Node
-func (cp *Node) Tx(hash string) (*sdk.TxResponse, *tx.Tx, error) {
+func (cp *Node) Tx(hash string) (*types.Tx, error) {
 	// if index is disabled, return error
 	if _, ok := cp.txIndexer.(*null.TxIndex); ok {
-		return nil, nil, fmt.Errorf("transaction indexing is disabled")
+		return nil, fmt.Errorf("transaction indexing is disabled")
 	}
 
 	hashBz, err := hex.DecodeString(hash)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	r, err := cp.txIndexer.Get(hashBz)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	if r == nil {
-		return nil, nil, fmt.Errorf("tx %s not found", hash)
+		return nil, fmt.Errorf("tx %s not found", hash)
 	}
 
 	height := r.Height
@@ -356,40 +412,111 @@ func (cp *Node) Tx(hash string) (*sdk.TxResponse, *tx.Tx, error) {
 
 	resBlock, err := cp.Block(resTx.Height)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	txResponse, err := makeTxResult(cp.txConfig, resTx, resBlock)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	protoTx, ok := txResponse.Tx.GetCachedValue().(*tx.Tx)
 	if !ok {
-		return nil, nil, fmt.Errorf("expected %T, got %T", tx.Tx{}, txResponse.Tx.GetCachedValue())
+		return nil, fmt.Errorf("expected %T, got %T", tx.Tx{}, txResponse.Tx.GetCachedValue())
 	}
 
-	return txResponse, protoTx, nil
+	// Decode messages
+	for _, msg := range protoTx.Body.Messages {
+		var stdMsg sdk.Msg
+		err = cp.codec.UnpackAny(msg, &stdMsg)
+		if err != nil {
+			return nil, fmt.Errorf("error while unpacking message: %s", err)
+		}
+	}
+
+	convTx, err := types.NewTx(txResponse, protoTx)
+	if err != nil {
+		return nil, fmt.Errorf("error converting transaction: %s", err.Error())
+	}
+
+	return convTx, nil
 }
 
 // Txs implements node.Node
 func (cp *Node) Txs(block *tmctypes.ResultBlock) ([]*types.Tx, error) {
 	txResponses := make([]*types.Tx, len(block.Block.Txs))
 	for i, tmTx := range block.Block.Txs {
-		txResponse, txObj, err := cp.Tx(fmt.Sprintf("%X", tmTx.Hash()))
+		txResponse, err := cp.Tx(fmt.Sprintf("%X", tmTx.Hash()))
 		if err != nil {
 			return nil, err
 		}
 
-		convTx, err := types.NewTx(txResponse, txObj)
-		if err != nil {
-			return nil, fmt.Errorf("error converting transaction: %s", err.Error())
-		}
-
-		txResponses[i] = convTx
+		txResponses[i] = txResponse
 	}
 
 	return txResponses, nil
+}
+
+// TxSearch implements node.Node
+func (cp *Node) TxSearch(query string, pagePtr *int, perPagePtr *int, orderBy string) (*tmctypes.ResultTxSearch, error) {
+	q, err := tmquery.New(query)
+	if err != nil {
+		return nil, err
+	}
+
+	results, err := cp.txIndexer.Search(cp.ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	// sort results (must be done before pagination)
+	switch orderBy {
+	case "desc":
+		sort.Slice(results, func(i, j int) bool {
+			if results[i].Height == results[j].Height {
+				return results[i].Index > results[j].Index
+			}
+			return results[i].Height > results[j].Height
+		})
+	case "asc", "":
+		sort.Slice(results, func(i, j int) bool {
+			if results[i].Height == results[j].Height {
+				return results[i].Index < results[j].Index
+			}
+			return results[i].Height < results[j].Height
+		})
+	default:
+		return nil, fmt.Errorf("expected order_by to be either `asc` or `desc` or empty")
+	}
+
+	// paginate results
+	totalCount := len(results)
+	perPage := validatePerPage(perPagePtr)
+
+	page, err := validatePage(pagePtr, perPage, totalCount)
+	if err != nil {
+		return nil, err
+	}
+
+	skipCount := validateSkipCount(page, perPage)
+	pageSize := tmmath.MinInt(perPage, totalCount-skipCount)
+
+	apiResults := make([]*ctypes.ResultTx, 0, pageSize)
+	for i := skipCount; i < skipCount+pageSize; i++ {
+		r := results[i]
+
+		var proof tmtypes.TxProof
+		apiResults = append(apiResults, &ctypes.ResultTx{
+			Hash:     tmtypes.Tx(r.Tx).Hash(),
+			Height:   r.Height,
+			Index:    r.Index,
+			TxResult: r.Result,
+			Tx:       r.Tx,
+			Proof:    proof,
+		})
+	}
+
+	return &ctypes.ResultTxSearch{Txs: apiResults, TotalCount: totalCount}, nil
 }
 
 // SubscribeEvents implements node.Node

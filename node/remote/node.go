@@ -3,6 +3,8 @@ package remote
 import (
 	"context"
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"net/http"
 	"time"
 
@@ -11,7 +13,6 @@ import (
 
 	"github.com/forbole/juno/v2/node"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/tx"
 
 	"github.com/forbole/juno/v2/types"
@@ -29,12 +30,13 @@ var (
 // chain SDK REST client that allows for essential data queries.
 type Node struct {
 	ctx             context.Context
+	codec           codec.Marshaler
 	client          *httpclient.HTTP
 	txServiceClient tx.ServiceClient
 }
 
 // NewNode allows to build a new Node instance
-func NewNode(cfg *Details) (*Node, error) {
+func NewNode(cfg *Details, codec codec.Marshaler) (*Node, error) {
 	httpClient, err := jsonrpcclient.DefaultHTTPClient(cfg.RPC.Address)
 	if err != nil {
 		return nil, err
@@ -63,7 +65,9 @@ func NewNode(cfg *Details) (*Node, error) {
 	}
 
 	return &Node{
-		ctx:             context.Background(),
+		ctx:   context.Background(),
+		codec: codec,
+
 		client:          rpcClient,
 		txServiceClient: tx.NewServiceClient(grpcConnection),
 	}, nil
@@ -135,32 +139,47 @@ func (cp *Node) BlockResults(height int64) (*tmctypes.ResultBlockResults, error)
 }
 
 // Tx implements node.Node
-func (cp *Node) Tx(hash string) (*sdk.TxResponse, *tx.Tx, error) {
+func (cp *Node) Tx(hash string) (*types.Tx, error) {
 	res, err := cp.txServiceClient.GetTx(context.Background(), &tx.GetTxRequest{Hash: hash})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	return res.TxResponse, res.Tx, nil
+
+	// Decode messages
+	for _, msg := range res.Tx.Body.Messages {
+		var stdMsg sdk.Msg
+		err = cp.codec.UnpackAny(msg, &stdMsg)
+		if err != nil {
+			return nil, fmt.Errorf("error while unpacking message: %s", err)
+		}
+	}
+
+	convTx, err := types.NewTx(res.TxResponse, res.Tx)
+	if err != nil {
+		return nil, fmt.Errorf("error converting transaction: %s", err.Error())
+	}
+
+	return convTx, nil
 }
 
 // Txs implements node.Node
 func (cp *Node) Txs(block *tmctypes.ResultBlock) ([]*types.Tx, error) {
 	txResponses := make([]*types.Tx, len(block.Block.Txs))
 	for i, tmTx := range block.Block.Txs {
-		txResponse, txObj, err := cp.Tx(fmt.Sprintf("%X", tmTx.Hash()))
+		txResponse, err := cp.Tx(fmt.Sprintf("%X", tmTx.Hash()))
 		if err != nil {
 			return nil, err
 		}
 
-		convTx, err := types.NewTx(txResponse, txObj)
-		if err != nil {
-			return nil, fmt.Errorf("error converting transaction: %s", err.Error())
-		}
-
-		txResponses[i] = convTx
+		txResponses[i] = txResponse
 	}
 
 	return txResponses, nil
+}
+
+// TxSearch implements node.Node
+func (cp *Node) TxSearch(query string, page *int, perPage *int, orderBy string) (*tmctypes.ResultTxSearch, error) {
+	return cp.client.TxSearch(cp.ctx, query, false, page, perPage, orderBy)
 }
 
 // SubscribeEvents implements node.Node
