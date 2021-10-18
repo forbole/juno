@@ -27,8 +27,8 @@ import (
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/libs/log"
 
-	"github.com/desmos-labs/juno/v2/node"
-	"github.com/desmos-labs/juno/v2/types"
+	"github.com/forbole/juno/v2/node"
+	"github.com/forbole/juno/v2/types"
 
 	"path"
 	"time"

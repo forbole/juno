@@ -3,12 +3,12 @@ package main
 import (
 	"os"
 
-	"github.com/desmos-labs/juno/v2/cmd/parse"
+	"github.com/forbole/juno/v2/cmd/parse"
 
-	"github.com/desmos-labs/juno/v2/modules/messages"
-	"github.com/desmos-labs/juno/v2/modules/registrar"
+	"github.com/forbole/juno/v2/modules/messages"
+	"github.com/forbole/juno/v2/modules/registrar"
 
-	"github.com/desmos-labs/juno/v2/cmd"
+	"github.com/forbole/juno/v2/cmd"
 )
 
 func main() {

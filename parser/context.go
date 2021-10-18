@@ -3,12 +3,12 @@ package parser
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
 
-	"github.com/desmos-labs/juno/v2/logging"
-	"github.com/desmos-labs/juno/v2/node"
+	"github.com/forbole/juno/v2/logging"
+	"github.com/forbole/juno/v2/node"
 
-	"github.com/desmos-labs/juno/v2/database"
-	"github.com/desmos-labs/juno/v2/modules"
-	"github.com/desmos-labs/juno/v2/types"
+	"github.com/forbole/juno/v2/database"
+	"github.com/forbole/juno/v2/modules"
+	"github.com/forbole/juno/v2/types"
 )
 
 // Context represents the context that is shared among different workers

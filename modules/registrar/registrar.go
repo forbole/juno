@@ -4,20 +4,20 @@ import (
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/desmos-labs/juno/v2/node"
+	"github.com/forbole/juno/v2/node"
 
-	"github.com/desmos-labs/juno/v2/modules/telemetry"
+	"github.com/forbole/juno/v2/modules/telemetry"
 
-	"github.com/desmos-labs/juno/v2/logging"
+	"github.com/forbole/juno/v2/logging"
 
-	"github.com/desmos-labs/juno/v2/types/config"
+	"github.com/forbole/juno/v2/types/config"
 
-	"github.com/desmos-labs/juno/v2/modules/pruning"
+	"github.com/forbole/juno/v2/modules/pruning"
 
-	"github.com/desmos-labs/juno/v2/modules"
-	"github.com/desmos-labs/juno/v2/modules/messages"
+	"github.com/forbole/juno/v2/modules"
+	"github.com/forbole/juno/v2/modules/messages"
 
-	"github.com/desmos-labs/juno/v2/database"
+	"github.com/forbole/juno/v2/database"
 )
 
 // Context represents the context of the modules registrar
