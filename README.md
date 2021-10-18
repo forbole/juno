@@ -6,8 +6,8 @@
 
 > This branch is intended to be used with Cosmos SDK `v0.40.x`.
 
-[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/desmos-labs/juno/Tests)](https://github.com/desmos-labs/juno/actions?query=workflow%3ATests)
-[![Go Report Card](https://goreportcard.com/badge/github.com/desmos-labs/juno)](https://goreportcard.com/report/github.com/desmos-labs/juno)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/desmos-labs/juno/Tests)](https://github.com/forbole/juno/actions?query=workflow%3ATests)
+[![Go Report Card](https://goreportcard.com/badge/github.com/forbole/juno)](https://goreportcard.com/report/github.com/forbole/juno)
 [![Codecov](https://img.shields.io/codecov/c/github/desmos-labs/juno)](https://codecov.io/gh/desmos-labs/juno/branch/cosmos-v0.40.x)
 
 > Juno is a Cosmos Hub blockchain data aggregator and exporter that provides the ability for developers and clients to query for indexed chain data.
