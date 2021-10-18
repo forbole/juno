@@ -1,12 +1,12 @@
 package pruning
 
 import (
-	"github.com/desmos-labs/juno/v2/types/config"
+	"github.com/forbole/juno/v2/types/config"
 
-	"github.com/desmos-labs/juno/v2/logging"
+	"github.com/forbole/juno/v2/logging"
 
-	"github.com/desmos-labs/juno/v2/database"
-	"github.com/desmos-labs/juno/v2/modules"
+	"github.com/forbole/juno/v2/database"
+	"github.com/forbole/juno/v2/modules"
 )
 
 var (

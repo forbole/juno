@@ -7,15 +7,15 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 
-	v1 "github.com/desmos-labs/juno/v2/cmd/migrate/v1"
-	databaseconfig "github.com/desmos-labs/juno/v2/database/config"
-	loggingconfig "github.com/desmos-labs/juno/v2/logging/config"
-	"github.com/desmos-labs/juno/v2/modules/pruning"
-	"github.com/desmos-labs/juno/v2/modules/telemetry"
-	nodeconfig "github.com/desmos-labs/juno/v2/node/config"
-	"github.com/desmos-labs/juno/v2/node/remote"
-	parserconfig "github.com/desmos-labs/juno/v2/parser/config"
-	"github.com/desmos-labs/juno/v2/types/config"
+	v1 "github.com/forbole/juno/v2/cmd/migrate/v1"
+	databaseconfig "github.com/forbole/juno/v2/database/config"
+	loggingconfig "github.com/forbole/juno/v2/logging/config"
+	"github.com/forbole/juno/v2/modules/pruning"
+	"github.com/forbole/juno/v2/modules/telemetry"
+	nodeconfig "github.com/forbole/juno/v2/node/config"
+	"github.com/forbole/juno/v2/node/remote"
+	parserconfig "github.com/forbole/juno/v2/parser/config"
+	"github.com/forbole/juno/v2/types/config"
 )
 
 type Config struct {

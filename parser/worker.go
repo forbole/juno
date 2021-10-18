@@ -5,24 +5,24 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/desmos-labs/juno/v2/logging"
+	"github.com/forbole/juno/v2/logging"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 
-	"github.com/desmos-labs/juno/v2/database"
-	"github.com/desmos-labs/juno/v2/types/config"
+	"github.com/forbole/juno/v2/database"
+	"github.com/forbole/juno/v2/types/config"
 
 	tmjson "github.com/tendermint/tendermint/libs/json"
 
-	"github.com/desmos-labs/juno/v2/modules"
+	"github.com/forbole/juno/v2/modules"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 
-	"github.com/desmos-labs/juno/v2/node"
-	"github.com/desmos-labs/juno/v2/types"
+	"github.com/forbole/juno/v2/node"
+	"github.com/forbole/juno/v2/types"
 )
 
 // Worker defines a job consumer that is responsible for getting and
