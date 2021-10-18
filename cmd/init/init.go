@@ -15,7 +15,7 @@ const (
 
 // InitCmd returns the command that should be run in order to properly initialize BDJuno
 func InitCmd(cfg *Config) *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "init",
 		Short: "Initializes the configuration files",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -48,4 +48,8 @@ func InitCmd(cfg *Config) *cobra.Command {
 			return config.Write(yamlCfg, configFilePath)
 		},
 	}
+
+	cmd.Flags().Bool(flagReplace, false, "overrides any existing configuration")
+
+	return cmd
 }
