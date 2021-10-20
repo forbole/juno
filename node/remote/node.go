@@ -3,10 +3,11 @@ package remote
 import (
 	"context"
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"net/http"
 	"time"
+
+	"github.com/cosmos/cosmos-sdk/codec"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	constypes "github.com/tendermint/tendermint/consensus/types"
 	tmjson "github.com/tendermint/tendermint/libs/json"
@@ -30,13 +31,13 @@ var (
 // chain SDK REST client that allows for essential data queries.
 type Node struct {
 	ctx             context.Context
-	codec           codec.Marshaler
+	codec           codec.Codec
 	client          *httpclient.HTTP
 	txServiceClient tx.ServiceClient
 }
 
 // NewNode allows to build a new Node instance
-func NewNode(cfg *Details, codec codec.Marshaler) (*Node, error) {
+func NewNode(cfg *Details, codec codec.Codec) (*Node, error) {
 	httpClient, err := jsonrpcclient.DefaultHTTPClient(cfg.RPC.Address)
 	if err != nil {
 		return nil, err
