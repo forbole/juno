@@ -100,11 +100,6 @@ func StartParsing(ctx *Context) error {
 	// Listen for and trap any OS signal to gracefully shutdown and exit
 	trapSignal(ctx)
 
-	if cfg.ParseGenesis {
-		// Add the genesis to the queue if requested
-		exportQueue <- 0
-	}
-
 	if cfg.ParseOldBlocks {
 		go enqueueMissingBlocks(exportQueue, ctx)
 	}
