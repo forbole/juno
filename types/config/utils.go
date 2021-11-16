@@ -16,11 +16,6 @@ func GetConfigFilePath() string {
 	return path.Join(HomePath, "config.yaml")
 }
 
-// GetGenesisFilePath returns the path to the genesis file
-func GetGenesisFilePath() string {
-	return path.Join(HomePath, "genesis.json")
-}
-
 // Write allows to write the given configuration into the file present at the given path
 func Write(cfg Config, path string) error {
 	bz, err := yaml.Marshal(&cfg)
