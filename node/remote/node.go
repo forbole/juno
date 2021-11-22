@@ -112,9 +112,10 @@ func (cp *Node) Validators(height int64) (*tmctypes.ResultValidators, error) {
 	}
 
 	page := 1
+	perPage := 100
 	stop := false
 	for !stop {
-		result, err := cp.client.Validators(cp.ctx, &height, &page, nil)
+		result, err := cp.client.Validators(cp.ctx, &height, &page, &perPage)
 		if err != nil {
 			return nil, err
 		}
@@ -123,7 +124,7 @@ func (cp *Node) Validators(height int64) (*tmctypes.ResultValidators, error) {
 		vals.Total = result.Total
 
 		page += 1
-		stop = vals.Count == vals.Total
+		stop = vals.Count == len(vals.Validators)
 	}
 
 	return vals, nil
