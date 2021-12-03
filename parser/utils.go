@@ -39,6 +39,7 @@ func sumGasTxs(txs []*types.Tx) uint64 {
 	return totalGas
 }
 
+// GetGenesisDocAndState reads the genesis from node or file and returns genesis doc and state
 func GetGenesisDocAndState(genesisPath string, node node.Node) (*tmtypes.GenesisDoc, map[string]json.RawMessage, error) {
 	var genesisDoc *tmtypes.GenesisDoc
 	if strings.TrimSpace(genesisPath) != "" {
