@@ -41,7 +41,6 @@ func sumGasTxs(txs []*types.Tx) uint64 {
 
 func GetGenesisDocAndState(genesisPath string, node node.Node) (*tmtypes.GenesisDoc, map[string]json.RawMessage, error) {
 	var genesisDoc *tmtypes.GenesisDoc
-	var err error
 	if strings.TrimSpace(genesisPath) != "" {
 		bz, err := tmos.ReadFile(genesisPath)
 		if err != nil {
@@ -62,7 +61,7 @@ func GetGenesisDocAndState(genesisPath string, node node.Node) (*tmtypes.Genesis
 	}
 
 	var genesisState map[string]json.RawMessage
-	err = json.Unmarshal(genesisDoc.AppState, &genesisState)
+	err := json.Unmarshal(genesisDoc.AppState, &genesisState)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to unmarshal genesis state: %s", err)
 	}
