@@ -43,48 +43,29 @@ func GetGenesisDocAndState(genesisPath string, node node.Node) (*tmtypes.Genesis
 	var genesisDoc *tmtypes.GenesisDoc
 	var err error
 	if strings.TrimSpace(genesisPath) != "" {
-		genesisDoc, err = getGenesisFromFilePath(genesisPath)
+		bz, err := tmos.ReadFile(genesisPath)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, fmt.Errorf("failed to read genesis file: %s", err)
 		}
+
+		err = tmjson.Unmarshal(bz, &genesisDoc)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to unmarshal genesis doc: %s", err)
+		}
+
 	} else {
-		genesisDoc, err = getGenesisFromRPC(node)
+		response, err := node.Genesis()
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, fmt.Errorf("failed to get genesis: %s", err)
 		}
+		genesisDoc = response.Genesis
 	}
 
 	var genesisState map[string]json.RawMessage
 	err = json.Unmarshal(genesisDoc.AppState, &genesisState)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error while unmarshalling genesis state: %s", err)
+		return nil, nil, fmt.Errorf("failed to unmarshal genesis state: %s", err)
 	}
 
 	return genesisDoc, genesisState, nil
-}
-
-// getGenesisFromFilePath tries reading the genesis doc from the given path
-func getGenesisFromFilePath(path string) (*tmtypes.GenesisDoc, error) {
-	bz, err := tmos.ReadFile(path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read genesis file: %s", err)
-	}
-
-	var genDoc tmtypes.GenesisDoc
-	err = tmjson.Unmarshal(bz, &genDoc)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal genesis doc: %s", err)
-	}
-
-	return &genDoc, nil
-}
-
-// getGenesisFromRPC returns the genesis read from the RPCConfig endpoint
-func getGenesisFromRPC(node node.Node) (*tmtypes.GenesisDoc, error) {
-	response, err := node.Genesis()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get genesis: %s", err)
-	}
-
-	return response.Genesis, nil
 }
