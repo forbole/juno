@@ -84,12 +84,12 @@ func (w Worker) process(height int64) error {
 	if height == 0 {
 		cfg := config.Cfg.Parser
 
-		genesis, _, err := GetGenesisDocAndState(cfg.GenesisFilePath, w.node)
+		genesisDoc, genesisState, err := GetGenesisDocAndState(cfg.GenesisFilePath, w.node)
 		if err != nil {
 			return fmt.Errorf("failed to get genesis: %s", err)
 		}
 
-		return w.HandleGenesis(genesis)
+		return w.HandleGenesis(genesisDoc, genesisState)
 	}
 
 	w.logger.Debug("processing block", "height", height)
@@ -119,16 +119,11 @@ func (w Worker) process(height int64) error {
 
 // HandleGenesis accepts a GenesisDoc and calls all the registered genesis handlers
 // in the order in which they have been registered.
-func (w Worker) HandleGenesis(genesis *tmtypes.GenesisDoc) error {
-	var appState map[string]json.RawMessage
-	if err := json.Unmarshal(genesis.AppState, &appState); err != nil {
-		return fmt.Errorf("error unmarshalling genesis doc: %s", err)
-	}
-
+func (w Worker) HandleGenesis(genesisDoc *tmtypes.GenesisDoc, appState map[string]json.RawMessage) error {
 	// Call the genesis handlers
 	for _, module := range w.modules {
 		if genesisModule, ok := module.(modules.GenesisModule); ok {
-			if err := genesisModule.HandleGenesis(genesis, appState); err != nil {
+			if err := genesisModule.HandleGenesis(genesisDoc, appState); err != nil {
 				w.logger.GenesisError(module, err)
 			}
 		}
