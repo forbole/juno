@@ -3,7 +3,6 @@ package parser
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/forbole/juno/v2/logging"
 
@@ -12,17 +11,15 @@ import (
 	"github.com/forbole/juno/v2/database"
 	"github.com/forbole/juno/v2/types/config"
 
-	tmjson "github.com/tendermint/tendermint/libs/json"
-
 	"github.com/forbole/juno/v2/modules"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	tmos "github.com/tendermint/tendermint/libs/os"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/forbole/juno/v2/node"
 	"github.com/forbole/juno/v2/types"
+	"github.com/forbole/juno/v2/types/utils"
 )
 
 // Worker defines a job consumer that is responsible for getting and
@@ -88,20 +85,12 @@ func (w Worker) process(height int64) error {
 	if height == 0 {
 		cfg := config.Cfg.Parser
 
-		var genesis *tmtypes.GenesisDoc
-		if strings.TrimSpace(cfg.GenesisFilePath) != "" {
-			genesis, err = w.getGenesisFromFilePath(cfg.GenesisFilePath)
-			if err != nil {
-				return err
-			}
-		} else {
-			genesis, err = w.getGenesisFromRPC()
-			if err != nil {
-				return err
-			}
+		genesisDoc, genesisState, err := utils.GetGenesisDocAndState(cfg.GenesisFilePath, w.node)
+		if err != nil {
+			return fmt.Errorf("failed to get genesis: %s", err)
 		}
 
-		return w.HandleGenesis(genesis)
+		return w.HandleGenesis(genesisDoc, genesisState)
 	}
 
 	w.logger.Debug("processing block", "height", height)
@@ -129,48 +118,13 @@ func (w Worker) process(height int64) error {
 	return w.ExportBlock(block, events, txs, vals)
 }
 
-// getGenesisFromRPC returns the genesis read from the RPCConfig endpoint
-func (w Worker) getGenesisFromRPC() (*tmtypes.GenesisDoc, error) {
-	w.logger.Debug("getting genesis from RPCConfig")
-
-	response, err := w.node.Genesis()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get genesis: %s", err)
-	}
-
-	return response.Genesis, nil
-}
-
-// getGenesisFromFilePath tries reading the genesis doc from the given path
-func (w Worker) getGenesisFromFilePath(path string) (*tmtypes.GenesisDoc, error) {
-	w.logger.Debug("reading genesis from file", "path", path)
-
-	bz, err := tmos.ReadFile(path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read genesis file: %s", err)
-	}
-
-	var genDoc tmtypes.GenesisDoc
-	err = tmjson.Unmarshal(bz, &genDoc)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal genesis doc: %s", err)
-	}
-
-	return &genDoc, nil
-}
-
 // HandleGenesis accepts a GenesisDoc and calls all the registered genesis handlers
 // in the order in which they have been registered.
-func (w Worker) HandleGenesis(genesis *tmtypes.GenesisDoc) error {
-	var appState map[string]json.RawMessage
-	if err := json.Unmarshal(genesis.AppState, &appState); err != nil {
-		return fmt.Errorf("error unmarshalling genesis doc: %s", err)
-	}
-
+func (w Worker) HandleGenesis(genesisDoc *tmtypes.GenesisDoc, appState map[string]json.RawMessage) error {
 	// Call the genesis handlers
 	for _, module := range w.modules {
 		if genesisModule, ok := module.(modules.GenesisModule); ok {
-			if err := genesisModule.HandleGenesis(genesis, appState); err != nil {
+			if err := genesisModule.HandleGenesis(genesisDoc, appState); err != nil {
 				w.logger.GenesisError(module, err)
 			}
 		}

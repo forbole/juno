@@ -113,7 +113,7 @@ A remote node is the default implementation of a node. It relies on both an RPC 
 | `insecure` | `boolean` | Whether the gRPC endpoint is insecure or not | `false` |
 
 ### Local node
-A local node reads the data to be parsed from a local directory referred to as `home`. If you want to use this kind of node, you need to set the [`node`](#node) type to `remote` and then set the following attributes of the configuration.
+A local node reads the data to be parsed from a local directory referred to as `home`. If you want to use this kind of node, you need to set the [`node`](#node) type to `local` and then set the following attributes of the configuration.
 
 | Attribute | Type | Description | Example |
 | :-------: | :---: | :--------- | :------ |
@@ -129,6 +129,7 @@ A local node reads the data to be parsed from a local directory referred to as `
 | `parse_old_blocks` | `boolean` | Whether Juno should parse old chain blocks or not | `true` | 
 | `start_height` | `integer` | Height at which Juno should start parsing old blocks | `250000` | 
 | `workers` | `integer` | Number of works that will be used to fetch the data and store it inside the database | `5` |
+| `genesis_file_path` | `string` | Path of the genesis file to be parsed | `'/bdjuno/.bdjuno/genesis/genesis.json'` |
 
 ## `database`
 This section contains all the different configuration related to the PostgreSQL database where Juno will write the data.
