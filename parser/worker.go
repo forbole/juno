@@ -19,6 +19,7 @@ import (
 
 	"github.com/forbole/juno/v2/node"
 	"github.com/forbole/juno/v2/types"
+	"github.com/forbole/juno/v2/types/utils"
 )
 
 // Worker defines a job consumer that is responsible for getting and
@@ -84,7 +85,7 @@ func (w Worker) process(height int64) error {
 	if height == 0 {
 		cfg := config.Cfg.Parser
 
-		genesisDoc, genesisState, err := GetGenesisDocAndState(cfg.GenesisFilePath, w.node)
+		genesisDoc, genesisState, err := utils.GetGenesisDocAndState(cfg.GenesisFilePath, w.node)
 		if err != nil {
 			return fmt.Errorf("failed to get genesis: %s", err)
 		}
