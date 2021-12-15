@@ -12,7 +12,6 @@ import (
 
 	modsregistrar "github.com/forbole/juno/v2/modules/registrar"
 
-	// contexts "github.com/forbole/juno/v2/parser/context"
 	"context"
 )
 
@@ -26,7 +25,6 @@ func GetParsingContext(parseConfig *Config) (*Context, error) {
 	// Build the codec
 	encodingConfig := parseConfig.GetEncodingConfigBuilder()()
 
-
 	sealedCfg, err := sdk.GetSealedConfig(context.Background())
 	if err != nil {
 		return nil, err
@@ -34,7 +32,7 @@ func GetParsingContext(parseConfig *Config) (*Context, error) {
 
 	// If sealedCfg is null it means the config has not been sealed yet
 	if sealedCfg == nil {
-	// Setup the SDK configuration
+		// Setup the SDK configuration
 		sdkConfig = sdk.GetConfig()
 		parseConfig.GetSetupConfig()(cfg, sdkConfig)
 		sdkConfig.Seal()
