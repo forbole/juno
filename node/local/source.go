@@ -4,14 +4,16 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"reflect"
+	"unsafe"
+
+	"github.com/cosmos/cosmos-sdk/simapp"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
-	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/spf13/viper"
 	cfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/libs/log"
@@ -39,11 +41,6 @@ type Source struct {
 	BlockStore *tmstore.BlockStore
 	Logger     log.Logger
 	Cms        sdk.CommitMultiStore
-
-	Keys  map[string]*sdk.KVStoreKey
-	TKeys map[string]*sdk.TransientStoreKey
-
-	ParamsKeeper paramskeeper.Keeper
 }
 
 // NewSource returns a new Source instance
@@ -63,25 +60,15 @@ func NewSource(home string, encodingConfig *params.EncodingConfig) (*Source, err
 		return nil, err
 	}
 
-	cdc := encodingConfig.Marshaler
-	legacyAmino := encodingConfig.Amino
-
-	keys := sdk.NewKVStoreKeys(paramstypes.StoreKey)
-	tKeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
-
 	return &Source{
 		StoreDB: levelDB,
 
-		Codec:       cdc,
-		LegacyAmino: legacyAmino,
+		Codec:       encodingConfig.Marshaler,
+		LegacyAmino: encodingConfig.Amino,
 
 		BlockStore: tmstore.NewBlockStore(blockStoreDB),
 		Logger:     log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "explorer"),
 		Cms:        store.NewCommitMultiStore(levelDB),
-		Keys:       keys,
-		TKeys:      tKeys,
-
-		ParamsKeeper: paramskeeper.NewKeeper(cdc, legacyAmino, keys[paramstypes.StoreKey], tKeys[paramstypes.TStoreKey]),
 	}, nil
 }
 
@@ -108,36 +95,65 @@ func (k Source) Type() string {
 	return node.LocalKeeper
 }
 
-func (k Source) RegisterKey(key string) *sdk.KVStoreKey {
-	k.Keys[key] = sdk.NewKVStoreKey(key)
-	return k.Keys[key]
+func getFieldUsingReflection(app simapp.App, fieldName string) interface{} {
+	fv := reflect.ValueOf(app).Elem().FieldByName(fieldName)
+	return reflect.NewAt(fv.Type(), unsafe.Pointer(fv.UnsafeAddr())).Elem().Interface()
 }
 
-func (k Source) RegisterTKey(key string) *sdk.TransientStoreKey {
-	k.TKeys[key] = sdk.NewTransientStoreKey(key)
-	return k.TKeys[key]
-}
-
-func (k Source) RegisterSubspace(moduleName string) paramstypes.Subspace {
-	subspace, ok := k.ParamsKeeper.GetSubspace(moduleName)
+// MountKVStores allows to register the KV stores using the same KVStoreKey instances
+// that are used inside the given app. To do so, this method uses the reflection to access
+// the field with the specified name inside the given app. Such field must be of type
+// map[string]*sdk.KVStoreKey and is commonly named something similar to "keys"
+func (k Source) MountKVStores(app simapp.App, fieldName string) error {
+	keys, ok := getFieldUsingReflection(app, fieldName).(map[string]*sdk.KVStoreKey)
 	if !ok {
-		subspace = k.ParamsKeeper.Subspace(moduleName)
+		return fmt.Errorf("error while getting keys")
 	}
 
-	return subspace
-}
-
-// InitStores initializes the stores by mounting the various keys that have been specified
-func (k Source) InitStores() error {
-	for _, key := range k.Keys {
+	for _, key := range keys {
 		k.Cms.MountStoreWithDB(key, sdk.StoreTypeIAVL, nil)
 	}
 
-	for _, tKey := range k.TKeys {
-		k.Cms.MountStoreWithDB(tKey, sdk.StoreTypeTransient, nil)
+	return nil
+}
+
+// MountTransientStores allows to register the Transient stores using the same TransientStoreKey instances
+// that are used inside the given app. To do so, this method uses the reflection to access
+// the field with the specified name inside the given app. Such field must be of type
+// map[string]*sdk.TransientStoreKey and is commonly named something similar to "tkeys"
+func (k Source) MountTransientStores(app simapp.App, fieldName string) error {
+	tkeys, ok := getFieldUsingReflection(app, fieldName).(map[string]*sdk.TransientStoreKey)
+	if !ok {
+		return fmt.Errorf("error while getting transient keys")
 	}
 
-	// Load the latest version to properly init all the stores
+	for _, key := range tkeys {
+		k.Cms.MountStoreWithDB(key, sdk.StoreTypeTransient, nil)
+	}
+
+	return nil
+}
+
+// MountMemoryStores allows to register the Memory stores using the same MemoryStoreKey instances
+// that are used inside the given app. To do so, this method uses the reflection to access
+// the field with the specified name inside the given app. Such field must be of type
+// map[string]*sdk.MemoryStoreKey and is commonly named something similar to "memkeys"
+func (k Source) MountMemoryStores(app simapp.App, fieldName string) error {
+	memKeys, ok := getFieldUsingReflection(app, fieldName).(map[string]*sdk.MemoryStoreKey)
+	if !ok {
+		return fmt.Errorf("error while getting memory keys")
+	}
+
+	for _, key := range memKeys {
+		k.Cms.MountStoreWithDB(key, sdk.StoreTypeMemory, nil)
+	}
+
+	return nil
+}
+
+// InitStores initializes the stores by mounting the various keys that have been specified.
+// This method MUST be called before using any method that relies on the local storage somehow.
+func (k Source) InitStores() error {
 	return k.Cms.LoadLatestVersion()
 }
 
