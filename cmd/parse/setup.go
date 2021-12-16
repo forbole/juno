@@ -2,6 +2,7 @@ package parse
 
 import (
 	"fmt"
+	"reflect"
 
 	nodebuilder "github.com/forbole/juno/v2/node/builder"
 	"github.com/forbole/juno/v2/types/config"
@@ -23,9 +24,11 @@ func GetParsingContext(parseConfig *Config) (*Context, error) {
 	encodingConfig := parseConfig.GetEncodingConfigBuilder()()
 
 	// Setup the SDK configuration
-	sdkConfig := sdk.GetConfig()
-	parseConfig.GetSetupConfig()(cfg, sdkConfig)
-	sdkConfig.Seal()
+	sdkConfig, sealed := getConfig()
+	if !sealed {
+		parseConfig.GetSetupConfig()(cfg, sdkConfig)
+		sdkConfig.Seal()
+	}
 
 	// Get the db
 	databaseCtx := database.NewContext(cfg.Database, &encodingConfig, parseConfig.GetLogger())
@@ -57,4 +60,11 @@ func GetParsingContext(parseConfig *Config) (*Context, error) {
 	registeredModules := modsregistrar.GetModules(mods, cfg.Chain.Modules, parseConfig.GetLogger())
 
 	return NewContext(&encodingConfig, cp, db, parseConfig.GetLogger(), registeredModules), nil
+}
+
+// getConfig returns the SDK Config instance as well as if it's sealed or not
+func getConfig() (config *sdk.Config, sealed bool) {
+	sdkConfig := sdk.GetConfig()
+	fv := reflect.ValueOf(sdkConfig).Elem().FieldByName("sealed")
+	return sdkConfig, fv.Bool()
 }
