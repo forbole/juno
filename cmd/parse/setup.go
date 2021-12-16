@@ -11,6 +11,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	modsregistrar "github.com/forbole/juno/v2/modules/registrar"
+
+	"context"
 )
 
 // GetParsingContext setups all the things that should be later passed to StartParsing in order
@@ -18,14 +20,23 @@ import (
 func GetParsingContext(parseConfig *Config) (*Context, error) {
 	// Get the global config
 	cfg := config.Cfg
+	var sdkConfig *sdk.Config
 
 	// Build the codec
 	encodingConfig := parseConfig.GetEncodingConfigBuilder()()
 
-	// Setup the SDK configuration
-	sdkConfig := sdk.GetConfig()
-	parseConfig.GetSetupConfig()(cfg, sdkConfig)
-	sdkConfig.Seal()
+	sealedCfg, err := sdk.GetSealedConfig(context.Background())
+	if err != nil {
+		return nil, err
+	}
+
+	// If sealedCfg is null it means the config has not been sealed yet
+	if sealedCfg == nil {
+		// Setup the SDK configuration
+		sdkConfig = sdk.GetConfig()
+		parseConfig.GetSetupConfig()(cfg, sdkConfig)
+		sdkConfig.Seal()
+	}
 
 	// Get the db
 	databaseCtx := database.NewContext(cfg.Database, &encodingConfig, parseConfig.GetLogger())
@@ -52,8 +63,8 @@ func GetParsingContext(parseConfig *Config) (*Context, error) {
 	}
 
 	// Get the modules
-	context := modsregistrar.NewContext(cfg, sdkConfig, &encodingConfig, db, cp, parseConfig.GetLogger())
-	mods := parseConfig.GetRegistrar().BuildModules(context)
+	moduleContext := modsregistrar.NewContext(cfg, sdkConfig, &encodingConfig, db, cp, parseConfig.GetLogger())
+	mods := parseConfig.GetRegistrar().BuildModules(moduleContext)
 	registeredModules := modsregistrar.GetModules(mods, cfg.Chain.Modules, parseConfig.GetLogger())
 
 	return NewContext(&encodingConfig, cp, db, parseConfig.GetLogger(), registeredModules), nil
