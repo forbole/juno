@@ -67,6 +67,31 @@ type Database struct {
 	Logger         logging.Logger
 }
 
+// RunTx allows to run a transaction inside this database instance
+func (db *Database) RunTx(fn func(tx *sql.Tx) error) error {
+	tx, err := db.Sql.Begin()
+	if err != nil {
+		return fmt.Errorf("error while beginning database transaction: %s", err)
+	}
+
+	err = fn(tx)
+	if err != nil {
+		if rbError := tx.Rollback(); rbError != nil {
+			return fmt.Errorf("error while rolling back database transaction; tx err: %s, rb err: %s", err, rbError)
+		}
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return fmt.Errorf("error while committing transaction: %s", err)
+	}
+
+	return nil
+}
+
+// -------------------------------------------------------------------------------------------------------------------
+
 // LastBlockHeight implements database.Database
 func (db *Database) LastBlockHeight() (int64, error) {
 	var height int64
