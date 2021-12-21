@@ -7,8 +7,6 @@ import (
 	"reflect"
 	"unsafe"
 
-	"github.com/cosmos/cosmos-sdk/simapp"
-
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 
@@ -95,7 +93,7 @@ func (k Source) Type() string {
 	return node.LocalKeeper
 }
 
-func getFieldUsingReflection(app simapp.App, fieldName string) interface{} {
+func getFieldUsingReflection(app interface{}, fieldName string) interface{} {
 	fv := reflect.ValueOf(app).Elem().FieldByName(fieldName)
 	return reflect.NewAt(fv.Type(), unsafe.Pointer(fv.UnsafeAddr())).Elem().Interface()
 }
@@ -104,7 +102,7 @@ func getFieldUsingReflection(app simapp.App, fieldName string) interface{} {
 // that are used inside the given app. To do so, this method uses the reflection to access
 // the field with the specified name inside the given app. Such field must be of type
 // map[string]*sdk.KVStoreKey and is commonly named something similar to "keys"
-func (k Source) MountKVStores(app simapp.App, fieldName string) error {
+func (k Source) MountKVStores(app interface{}, fieldName string) error {
 	keys, ok := getFieldUsingReflection(app, fieldName).(map[string]*sdk.KVStoreKey)
 	if !ok {
 		return fmt.Errorf("error while getting keys")
@@ -121,7 +119,7 @@ func (k Source) MountKVStores(app simapp.App, fieldName string) error {
 // that are used inside the given app. To do so, this method uses the reflection to access
 // the field with the specified name inside the given app. Such field must be of type
 // map[string]*sdk.TransientStoreKey and is commonly named something similar to "tkeys"
-func (k Source) MountTransientStores(app simapp.App, fieldName string) error {
+func (k Source) MountTransientStores(app interface{}, fieldName string) error {
 	tkeys, ok := getFieldUsingReflection(app, fieldName).(map[string]*sdk.TransientStoreKey)
 	if !ok {
 		return fmt.Errorf("error while getting transient keys")
@@ -138,7 +136,7 @@ func (k Source) MountTransientStores(app simapp.App, fieldName string) error {
 // that are used inside the given app. To do so, this method uses the reflection to access
 // the field with the specified name inside the given app. Such field must be of type
 // map[string]*sdk.MemoryStoreKey and is commonly named something similar to "memkeys"
-func (k Source) MountMemoryStores(app simapp.App, fieldName string) error {
+func (k Source) MountMemoryStores(app interface{}, fieldName string) error {
 	memKeys, ok := getFieldUsingReflection(app, fieldName).(map[string]*sdk.MemoryStoreKey)
 	if !ok {
 		return fmt.Errorf("error while getting memory keys")
