@@ -1,6 +1,7 @@
 package remote
 
 import (
+	"context"
 	"crypto/tls"
 	"regexp"
 	"strconv"
@@ -22,6 +23,15 @@ func GetHeightRequestHeader(height int64) grpc.CallOption {
 		grpctypes.GRPCBlockHeightHeader: strconv.FormatInt(height, 10),
 	})
 	return grpc.Header(&header)
+}
+
+// GetHeightRequestContext adds the height to the context for querying the state at a given height
+func GetHeightRequestContext(context context.Context, height int64) context.Context {
+	return metadata.AppendToOutgoingContext(
+		context,
+		grpctypes.GRPCBlockHeightHeader,
+		strconv.FormatInt(height, 10),
+	)
 }
 
 // MustCreateGrpcConnection creates a new gRPC connection using the provided configuration and panics on error
