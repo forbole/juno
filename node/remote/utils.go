@@ -17,14 +17,6 @@ var (
 	HTTPProtocols = regexp.MustCompile("https?://")
 )
 
-// GetHeightRequestHeader returns the grpc.CallOption to query the state at a given height
-func GetHeightRequestHeader(height int64) grpc.CallOption {
-	header := metadata.New(map[string]string{
-		grpctypes.GRPCBlockHeightHeader: strconv.FormatInt(height, 10),
-	})
-	return grpc.Header(&header)
-}
-
 // GetHeightRequestContext adds the height to the context for querying the state at a given height
 func GetHeightRequestContext(context context.Context, height int64) context.Context {
 	return metadata.AppendToOutgoingContext(
