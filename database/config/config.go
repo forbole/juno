@@ -10,12 +10,14 @@ type Config struct {
 	Schema             string `yaml:"schema,omitempty"`
 	MaxOpenConnections int    `yaml:"max_open_connections"`
 	MaxIdleConnections int    `yaml:"max_idle_connections"`
+	PartitionSize      int    `yaml:"partition_size"`
 }
 
 func NewDatabaseConfig(
 	name, host string, port int64, user string, password string,
 	sslMode string, schema string,
 	maxOpenConnections int, maxIdleConnections int,
+	partitionSize int,
 ) Config {
 	return Config{
 		Name:               name,
@@ -27,6 +29,7 @@ func NewDatabaseConfig(
 		Schema:             schema,
 		MaxOpenConnections: maxOpenConnections,
 		MaxIdleConnections: maxIdleConnections,
+		PartitionSize:      partitionSize,
 	}
 }
 
@@ -42,5 +45,6 @@ func DefaultDatabaseConfig() Config {
 		"public",
 		1,
 		1,
+		100000,
 	)
 }

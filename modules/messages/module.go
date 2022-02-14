@@ -33,6 +33,6 @@ func (m *Module) Name() string {
 }
 
 // HandleMsg implements modules.MessageModule
-func (m *Module) HandleMsg(index int, msg sdk.Msg, tx *types.Tx) error {
-	return HandleMsg(index, msg, tx, m.parser, m.cdc, m.db)
+func (m *Module) HandleMsg(index int, msg sdk.Msg, tx *types.Tx, msgPartitionID int64) error {
+	return HandleMsg(index, msg, tx, m.parser, m.cdc, m.db, msgPartitionID)
 }

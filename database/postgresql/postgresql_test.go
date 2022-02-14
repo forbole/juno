@@ -42,6 +42,7 @@ func (suite *DbTestSuite) SetupTest() {
 		"public",
 		-1,
 		-1,
+		100000,
 	)
 	db, err := postgres.Builder(database.NewContext(dbCfg, &codec, logging.DefaultLogger()))
 	suite.Require().NoError(err)

@@ -17,14 +17,15 @@ func GetConfigFilePath() string {
 }
 
 type Config struct {
-	RPC       *RPCConfig       `toml:"rpc"`
-	Grpc      *GrpcConfig      `toml:"grpc"`
-	Cosmos    *CosmosConfig    `toml:"cosmos"`
-	Database  *DatabaseConfig  `toml:"database"`
-	Logging   *LoggingConfig   `toml:"logging"`
-	Parsing   *ParsingConfig   `toml:"parsing"`
-	Pruning   *PruningConfig   `toml:"pruning"`
-	Telemetry *TelemetryConfig `toml:"telemetry"`
+	RPC           *RPCConfig       `toml:"rpc"`
+	Grpc          *GrpcConfig      `toml:"grpc"`
+	Cosmos        *CosmosConfig    `toml:"cosmos"`
+	Database      *DatabaseConfig  `toml:"database"`
+	Logging       *LoggingConfig   `toml:"logging"`
+	Parsing       *ParsingConfig   `toml:"parsing"`
+	Pruning       *PruningConfig   `toml:"pruning"`
+	Telemetry     *TelemetryConfig `toml:"telemetry"`
+	PartitionSize int              `toml:"partition_size"`
 }
 
 // ReadConfig reads the config.toml file contents
@@ -78,6 +79,7 @@ type DatabaseConfig struct {
 	Schema             string `toml:"schema"`
 	MaxOpenConnections int    `toml:"max_open_connections"`
 	MaxIdleConnections int    `toml:"max_idle_connections"`
+	PartitionSize      int    `toml:"partition_size"`
 }
 
 type LoggingConfig struct {

@@ -12,7 +12,7 @@ import (
 // HandleMsg represents a message handler that stores the given message inside the proper database table
 func HandleMsg(
 	index int, msg sdk.Msg, tx *types.Tx,
-	parseAddresses MessageAddressesParser, cdc codec.Marshaler, db database.Database,
+	parseAddresses MessageAddressesParser, cdc codec.Marshaler, db database.Database, msgPartitionID int64,
 ) error {
 	// Get the involved addresses
 	addresses, err := parseAddresses(cdc, msg)
@@ -32,5 +32,6 @@ func HandleMsg(
 		proto.MessageName(msg),
 		string(bz),
 		addresses,
+		msgPartitionID,
 	))
 }

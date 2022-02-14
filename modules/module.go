@@ -95,5 +95,5 @@ type MessageModule interface {
 	// are passed as well.
 	// NOTE. The returned error will be logged using the MsgError method. All other modules' handlers
 	// will still be called.
-	HandleMsg(index int, msg sdk.Msg, tx *types.Tx) error
+	HandleMsg(index int, msg sdk.Msg, tx *types.Tx, msgPartitionID int64) error
 }
