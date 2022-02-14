@@ -122,13 +122,9 @@ VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING`
 
 // CreateTxPartition implements database.Database
 func (db *Database) CreatePartition(table string, height int64) (int64, error) {
-	fmt.Println("partition size: ", config.Cfg.Database.PartitionSize)
 
 	partitionId := height / int64(config.Cfg.Database.PartitionSize)
-	fmt.Println("partition id: ", partitionId)
-
 	partitionTable := fmt.Sprintf("%s_%d", table, partitionId)
-	fmt.Println("Create partition table: ", partitionTable)
 
 	stmt := fmt.Sprintf(
 		"CREATE TABLE IF NOT EXISTS %s PARTITION OF %s FOR VALUES IN (%d)",
@@ -136,8 +132,6 @@ func (db *Database) CreatePartition(table string, height int64) (int64, error) {
 		table,
 		partitionId,
 	)
-	fmt.Println("stmt: ", stmt)
-
 	_, err := db.Sql.Exec(stmt)
 
 	if err != nil {
