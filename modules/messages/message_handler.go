@@ -1,6 +1,8 @@
 package messages
 
 import (
+	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gogo/protobuf/proto"
@@ -30,6 +32,8 @@ func HandleMsg(
 	if err != nil {
 		return err
 	}
+
+	fmt.Println("tx_hash, index, partition_id: ", tx.TxHash, index, msgPartitionID)
 
 	return db.SaveMessage(types.NewMessage(
 		tx.TxHash,
