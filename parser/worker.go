@@ -272,15 +272,10 @@ func (w Worker) ExportTxs(txs []*types.Tx, height int64) error {
 					return fmt.Errorf("error while unpacking message: %s", err)
 				}
 
-				msgPartitionID, err := w.db.CreatePartition("msg", height)
-				if err != nil {
-					return err
-				}
-
 				// Call the handlers
 				for _, module := range w.modules {
 					if messageModule, ok := module.(modules.MessageModule); ok {
-						err = messageModule.HandleMsg(i, stdMsg, tx, msgPartitionID)
+						err = messageModule.HandleMsg(i, stdMsg, tx)
 						if err != nil {
 							w.logger.MsgError(module, tx, stdMsg, err)
 						}
