@@ -241,7 +241,7 @@ func (w Worker) ExportCommit(commit *tmtypes.Commit, vals *tmctypes.ResultValida
 func (w Worker) ExportTxs(txs []*types.Tx, height int64) error {
 	if len(txs) > 0 {
 		// create partition table if not exist for transaction
-		partitionId, err := w.db.CreatePartition("tx", height)
+		partitionId, err := w.db.CreatePartition("transaction", height)
 		if err != nil {
 			return err
 		}
