@@ -131,8 +131,9 @@ func (db *Database) CreatePartition(table string, height int64) (int64, error) {
 	fmt.Println("Create partition table: ", partitionTable)
 
 	stmt := fmt.Sprintf(
-		"CREATE TABLE IF NOT EXISTS %s PARTITION OF transaction FOR VALUES IN (%d)",
+		"CREATE TABLE IF NOT EXISTS %s PARTITION OF %s FOR VALUES IN (%d)",
 		partitionTable,
+		table,
 		partitionId,
 	)
 	fmt.Println("stmt: ", stmt)
