@@ -42,5 +42,6 @@ func HandleMsg(
 		string(bz),
 		addresses,
 		msgPartitionID,
+		tx.Height,
 	))
 }

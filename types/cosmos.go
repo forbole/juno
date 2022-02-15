@@ -140,10 +140,11 @@ type Message struct {
 	Value       string
 	Addresses   []string
 	PartitionID int64
+	Height      int64
 }
 
 // NewMessage allows to build a new Message instance
-func NewMessage(txHash string, index int, msgType string, value string, addresses []string, partitionID int64) *Message {
+func NewMessage(txHash string, index int, msgType string, value string, addresses []string, partitionID int64, height int64) *Message {
 	return &Message{
 		TxHash:      txHash,
 		Index:       index,
@@ -151,5 +152,6 @@ func NewMessage(txHash string, index int, msgType string, value string, addresse
 		Value:       value,
 		Addresses:   addresses,
 		PartitionID: partitionID,
+		Height:      height,
 	}
 }
