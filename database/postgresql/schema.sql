@@ -63,7 +63,7 @@ CREATE TABLE message
     index                       BIGINT NOT NULL,
     type                        TEXT   NOT NULL,
     value                       JSONB  NOT NULL,
-    involved_accounts_addresses TEXT[] NOT NULL,
+    involved_accounts_addresses TEXT[] NULL,
 
     /* Psql partition */
     partition_id BIGINT REFERENCES transaction (partition_id)
