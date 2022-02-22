@@ -111,23 +111,19 @@ func (cp *Node) Validators(height int64) (*tmctypes.ResultValidators, error) {
 		BlockHeight: height,
 	}
 
-	maxPages := 2 // maximum number of pages to query
 	currentPage := 1
 	perPage := 100 // maximum 100 entries per page
 	stop := false
 	for !stop {
-		if currentPage <= maxPages {
-			result, err := cp.client.Validators(cp.ctx, &height, &currentPage, &perPage)
-			if err != nil {
-				return nil, err
-			}
-			vals.Validators = append(vals.Validators, result.Validators...)
-			vals.Count += result.Count
-			vals.Total = result.Total
-			currentPage += 1
+		result, err := cp.client.Validators(cp.ctx, &height, &currentPage, &perPage)
+		if err != nil {
+			return nil, err
 		}
+		vals.Validators = append(vals.Validators, result.Validators...)
+		vals.Count += result.Count
+		vals.Total = result.Total
+		currentPage += 1
 		stop = vals.Count == vals.Total
-
 	}
 
 	return vals, nil
