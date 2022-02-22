@@ -112,7 +112,7 @@ func (cp *Node) Validators(height int64) (*tmctypes.ResultValidators, error) {
 	}
 
 	page := 1
-	perPage := 100
+	perPage := 100 // maximum 100 entries per page
 	stop := false
 	for !stop {
 		result, err := cp.client.Validators(cp.ctx, &height, &page, &perPage)
@@ -122,9 +122,8 @@ func (cp *Node) Validators(height int64) (*tmctypes.ResultValidators, error) {
 		vals.Validators = append(vals.Validators, result.Validators...)
 		vals.Count += result.Count
 		vals.Total = result.Total
-
 		page += 1
-		stop = vals.Count == len(vals.Validators)
+		stop = vals.Count == vals.Total
 	}
 
 	return vals, nil
