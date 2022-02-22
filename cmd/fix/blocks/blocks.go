@@ -11,9 +11,13 @@ import (
 	"github.com/forbole/juno/v2/types/config"
 )
 
+const (
+	flagForce = "force"
+)
+
 // blocksCmd returns a Cobra command that allows to fix missing blocks in database
 func blocksCmd(parseConfig *parse.Config) *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "all",
 		Short: "Fix missing blocks and transactions in database from the start height",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -31,10 +35,17 @@ func blocksCmd(parseConfig *parse.Config) *cobra.Command {
 				return fmt.Errorf("error while getting chain latest block height: %s", err)
 			}
 
+			force, _ := cmd.Flags().GetBool(flagForce)
+
 			k := config.Cfg.Parser.StartHeight
-			fmt.Printf("Refetching missing blocks and transactions from height %d ... \n", k)
+			fmt.Printf("Refetching missing blocks and transactions from height %d... \n", k)
 			for ; k <= height; k++ {
-				err := worker.Process(k)
+				if force {
+					err = worker.Process(k)
+				} else {
+					err = worker.ProcessIfNotExists(k)
+				}
+
 				if err != nil {
 					return fmt.Errorf("error while re-fetching block %d: %s", k, err)
 				}
@@ -43,4 +54,8 @@ func blocksCmd(parseConfig *parse.Config) *cobra.Command {
 			return nil
 		},
 	}
+
+	cmd.Flags().Bool(flagForce, false, "If set, forces the fetch of blocks by overwriting any existing one")
+
+	return cmd
 }
