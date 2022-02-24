@@ -24,11 +24,11 @@ type Database interface {
 
 	// SaveTx will be called to save each transaction contained inside a block.
 	// An error is returned if the operation fails.
-	SaveTx(tx *types.Tx, partition_id int64) error
+	SaveTx(tx *types.Tx) error
 
-	// CreateTxPartition create tx postgres partition table if not already exist.
+	// SaveTxInDatabase inserts single transaction contained inside a block into database
 	// An error is returned if the operation fails.
-	CreatePartition(table string, height int64) (int64, error)
+	SaveTxInDatabase(tx *types.Tx) error
 
 	// HasValidator returns true if a given validator by consensus address exists.
 	// An error is returned if the operation fails.
@@ -46,8 +46,26 @@ type Database interface {
 	// An error is returned if the operation fails.
 	SaveMessage(msg *types.Message) error
 
+	// SaveMessageInDatabase inserts single message into database
+	// An error is returned if the operation fails.
+	SaveMessageInDatabase(msg *types.Message) error
+
 	// Close closes the connection to the database
 	Close()
+}
+
+type PostgreSQLDatabase interface {
+	// SaveTxInsidePartition stores signle transaction inside partition of transaction table.
+	// An error is returned if the operation fails.
+	SaveTxInsidePartition(tx *types.Tx, partitionId int64) error
+
+	// SaveMessageInsidePartition stores a single message inside partition of message table.
+	// An error is returned if the operation fails.
+	SaveMessageInsidePartition(msg *types.Message, partitionId int64) error
+
+	// CreateTxPartition create tx postgres partition table if not already exist.
+	// An error is returned if the operation fails.
+	CreatePartition(table string, partitionId int64) error
 }
 
 // PruningDb represents a database that supports pruning properly

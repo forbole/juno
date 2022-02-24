@@ -14,10 +14,6 @@ func HandleMsg(
 	index int, msg sdk.Msg, tx *types.Tx,
 	parseAddresses MessageAddressesParser, cdc codec.Marshaler, db database.Database,
 ) error {
-	msgPartitionID, err := db.CreatePartition("message", tx.Height)
-	if err != nil {
-		return err
-	}
 
 	// Get the involved addresses
 	addresses, err := parseAddresses(cdc, msg)
@@ -37,7 +33,6 @@ func HandleMsg(
 		proto.MessageName(msg),
 		string(bz),
 		addresses,
-		msgPartitionID,
 		tx.Height,
 	))
 }

@@ -120,29 +120,74 @@ VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING`
 	return err
 }
 
-// CreateTxPartition implements database.Database
-func (db *Database) CreatePartition(table string, height int64) (int64, error) {
-
-	partitionId := height / int64(config.Cfg.Database.PartitionSize)
-	partitionTable := fmt.Sprintf("%s_%d", table, partitionId)
-
-	stmt := fmt.Sprintf(
-		"CREATE TABLE IF NOT EXISTS %s PARTITION OF %s FOR VALUES IN (%d)",
-		partitionTable,
-		table,
-		partitionId,
-	)
-	_, err := db.Sql.Exec(stmt)
-
-	if err != nil {
-		return 0, err
+func (db *Database) SaveTx(tx *types.Tx) error {
+	partitionSize := int64(config.Cfg.Database.PartitionSize)
+	if partitionSize > 0 {
+		partitionId := tx.Height / partitionSize
+		err := db.CreatePartition("transaction", partitionId)
+		if err != nil {
+			return err
+		}
+		return db.SaveTxInsidePartition(tx, partitionId)
 	}
 
-	return partitionId, nil
+	return db.SaveTxInDatabase(tx)
 }
 
-// SaveTx implements database.Database
-func (db *Database) SaveTx(tx *types.Tx, partitionId int64) error {
+// SaveTxInDatabase implements database.Database
+func (db *Database) SaveTxInDatabase(tx *types.Tx) error {
+
+	sqlStatement := `
+INSERT INTO transaction 
+    (hash, height, success, messages, memo, signatures, signer_infos, fee, gas_wanted, gas_used, raw_log, logs) 
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT DO NOTHING`
+
+	var sigs = make([]string, len(tx.Signatures))
+	for index, sig := range tx.Signatures {
+		sigs[index] = base64.StdEncoding.EncodeToString(sig)
+	}
+
+	var msgs = make([]string, len(tx.Body.Messages))
+	for index, msg := range tx.Body.Messages {
+		bz, err := db.EncodingConfig.Marshaler.MarshalJSON(msg)
+		if err != nil {
+			return err
+		}
+		msgs[index] = string(bz)
+	}
+	msgsBz := fmt.Sprintf("[%s]", strings.Join(msgs, ","))
+
+	feeBz, err := db.EncodingConfig.Marshaler.MarshalJSON(tx.AuthInfo.Fee)
+	if err != nil {
+		return fmt.Errorf("failed to JSON encode tx fee: %s", err)
+	}
+
+	var sigInfos = make([]string, len(tx.AuthInfo.SignerInfos))
+	for index, info := range tx.AuthInfo.SignerInfos {
+		bz, err := db.EncodingConfig.Marshaler.MarshalJSON(info)
+		if err != nil {
+			return err
+		}
+		sigInfos[index] = string(bz)
+	}
+	sigInfoBz := fmt.Sprintf("[%s]", strings.Join(sigInfos, ","))
+
+	logsBz, err := db.EncodingConfig.Amino.MarshalJSON(tx.Logs)
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Sql.Exec(sqlStatement,
+		tx.TxHash, tx.Height, tx.Successful(),
+		msgsBz, tx.Body.Memo, pq.Array(sigs),
+		sigInfoBz, string(feeBz),
+		tx.GasWanted, tx.GasUsed, tx.RawLog, string(logsBz),
+	)
+	return err
+}
+
+// SaveTxInsidePartition implements database.PostgreSQLDatabase
+func (db *Database) SaveTxInsidePartition(tx *types.Tx, partitionId int64) error {
 	sqlStatement := `
 INSERT INTO transaction 
 (hash, height, success, messages, memo, signatures, signer_infos, fee, gas_wanted, gas_used, raw_log, logs, partition_id) 
@@ -191,6 +236,25 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) ON CONFLICT DO N
 		partitionId,
 	)
 	return err
+}
+
+// CreateTxPartition implements database.PostgreSQLDatabase
+func (db *Database) CreatePartition(table string, partitionId int64) error {
+	partitionTable := fmt.Sprintf("%s_%d", table, partitionId)
+
+	stmt := fmt.Sprintf(
+		"CREATE TABLE IF NOT EXISTS %s PARTITION OF %s FOR VALUES IN (%d)",
+		partitionTable,
+		table,
+		partitionId,
+	)
+	_, err := db.Sql.Exec(stmt)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // HasValidator implements database.Database
@@ -245,13 +309,37 @@ func (db *Database) SaveCommitSignatures(signatures []*types.CommitSig) error {
 	return err
 }
 
-// SaveMessage implements database.Database
 func (db *Database) SaveMessage(msg *types.Message) error {
+	partitionSize := int64(config.Cfg.Database.PartitionSize)
+	if partitionSize > 0 {
+		partitionId := msg.Height / partitionSize
+		err := db.CreatePartition("message", partitionId)
+		if err != nil {
+			return err
+		}
+		return db.SaveMessageInsidePartition(msg, partitionId)
+	}
+
+	return db.SaveMessageInDatabase(msg)
+}
+
+// SaveMessageInDatabase implements database.Database
+func (db *Database) SaveMessageInDatabase(msg *types.Message) error {
+	stmt := `
+INSERT INTO message(transaction_hash, index, type, value, involved_accounts_addresses) 
+VALUES ($1, $2, $3, $4, $5)`
+
+	_, err := db.Sql.Exec(stmt, msg.TxHash, msg.Index, msg.Type, msg.Value, pq.Array(msg.Addresses))
+	return err
+}
+
+// SaveMessageInsidePartition implements database.PostgreSQLDatabase
+func (db *Database) SaveMessageInsidePartition(msg *types.Message, partitionId int64) error {
 	stmt := `
 INSERT INTO message(transaction_hash, index, type, value, involved_accounts_addresses, partition_id, height) 
 VALUES ($1, $2, $3, $4, $5, $6, $7)`
 
-	_, err := db.Sql.Exec(stmt, msg.TxHash, msg.Index, msg.Type, msg.Value, pq.Array(msg.Addresses), msg.PartitionID, msg.Height)
+	_, err := db.Sql.Exec(stmt, msg.TxHash, msg.Index, msg.Type, msg.Value, pq.Array(msg.Addresses), partitionId, msg.Height)
 	return err
 }
 
