@@ -131,12 +131,6 @@ func (db *Database) SaveTx(tx *types.Tx) error {
 		return db.SaveTxInsidePartition(tx, partitionId)
 	}
 
-	return db.SaveTxInDatabase(tx)
-}
-
-// SaveTxInDatabase implements database.Database
-func (db *Database) SaveTxInDatabase(tx *types.Tx) error {
-
 	sqlStatement := `
 INSERT INTO transaction 
     (hash, height, success, messages, memo, signatures, signer_infos, fee, gas_wanted, gas_used, raw_log, logs) 
@@ -320,11 +314,6 @@ func (db *Database) SaveMessage(msg *types.Message) error {
 		return db.SaveMessageInsidePartition(msg, partitionId)
 	}
 
-	return db.SaveMessageInDatabase(msg)
-}
-
-// SaveMessageInDatabase implements database.Database
-func (db *Database) SaveMessageInDatabase(msg *types.Message) error {
 	stmt := `
 INSERT INTO message(transaction_hash, index, type, value, involved_accounts_addresses) 
 VALUES ($1, $2, $3, $4, $5)`
