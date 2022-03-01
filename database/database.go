@@ -63,7 +63,7 @@ type PostgreSQLDatabase interface {
 	// An error is returned if the operation fails.
 	SaveMessageInsidePartition(msg *types.Message, partitionId int64) error
 
-	// CreateTxPartition create tx postgres partition table if not already exist.
+	// CreatePartition creates postgreSQL partition table if not already exists.
 	// An error is returned if the operation fails.
 	CreatePartition(table string, partitionId int64) error
 }
