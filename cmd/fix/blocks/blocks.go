@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	flagForce       = "force"
-	flagStartHeight = "start"
-	flagEndHeight   = "end"
+	flagForce = "force"
+	flagStart = "start"
+	flagEnd   = "end"
 )
 
 // blocksCmd returns a Cobra command that allows to fix missing blocks in database
@@ -32,27 +32,28 @@ func blocksCmd(parseConfig *parse.Config) *cobra.Command {
 			workerCtx := parser.NewContext(parseCtx.EncodingConfig.Marshaler, nil, parseCtx.Node, parseCtx.Database, parseCtx.Logger, parseCtx.Modules)
 			worker := parser.NewWorker(0, workerCtx)
 
-			// Get the start height, set to flag height if flagStartHeight is set
+			// Get the flag values
+			startFlag, _ := cmd.Flags().GetInt64(flagStart)
+			endFlag, _ := cmd.Flags().GetInt64(flagEnd)
+			force, _ := cmd.Flags().GetBool(flagForce)
+
+			// Get the start height, default to the config's height; use flagStart if set
 			startHeight := config.Cfg.Parser.StartHeight
-			startFlag, _ := cmd.Flags().GetInt64(flagStartHeight)
 			if startFlag > 0 {
 				startHeight = startFlag
 			}
 
-			// Get the end height, default to node latest height; set to flag height if flagEndHeight is set
-			height, err := parseCtx.Node.LatestHeight()
+			// Get the end height, default to the node latest height; use flagEnd if set
+			endHeight, err := parseCtx.Node.LatestHeight()
 			if err != nil {
 				return fmt.Errorf("error while getting chain latest block height: %s", err)
 			}
-			endFlag, _ := cmd.Flags().GetInt64(flagEndHeight)
 			if endFlag > 0 {
-				height = endFlag
+				endHeight = endFlag
 			}
 
-			force, _ := cmd.Flags().GetBool(flagForce)
-
-			fmt.Printf("Refetching missing blocks and transactions from height %d to %d \n", startHeight, height)
-			for k := startHeight; k <= height; k++ {
+			fmt.Printf("Refetching missing blocks and transactions from height %d to %d \n", startHeight, endHeight)
+			for k := startHeight; k <= endHeight; k++ {
 				if force {
 					err = worker.Process(k)
 				} else {
@@ -69,8 +70,8 @@ func blocksCmd(parseConfig *parse.Config) *cobra.Command {
 	}
 
 	cmd.Flags().Bool(flagForce, false, "If set, forces the fetch of blocks by overwriting any existing ones")
-	cmd.Flags().Int64(flagStartHeight, 0, "Set the start height from which the refetching blocks starts")
-	cmd.Flags().Int64(flagEndHeight, 0, "Set the end height to which the refetching blocks finishes")
+	cmd.Flags().Int64(flagStart, 0, "Set the start height from which the refetching blocks starts")
+	cmd.Flags().Int64(flagEnd, 0, "Set the end height to which the refetching blocks finishes")
 
 	return cmd
 }
