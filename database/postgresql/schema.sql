@@ -50,7 +50,7 @@ CREATE TABLE transaction
     raw_log      TEXT,
     logs         JSONB,
      /* Psql partition */
-    partition_id BIGINT NOT NULL,
+    partition_id BIGINT NOT NULL  DEFAULT 0,
     UNIQUE (hash, partition_id)
 )PARTITION BY LIST(partition_id);
 CREATE INDEX transaction_hash_index ON transaction (hash);
