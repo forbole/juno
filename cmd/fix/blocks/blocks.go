@@ -4,11 +4,11 @@ import (
 	"fmt"
 
 	"github.com/forbole/juno/v2/cmd/parse"
+	"github.com/forbole/juno/v2/types/config"
 
 	"github.com/spf13/cobra"
 
 	"github.com/forbole/juno/v2/parser"
-	"github.com/forbole/juno/v2/types/config"
 )
 
 const (
@@ -39,13 +39,21 @@ func blocksCmd(parseConfig *parse.Config) *cobra.Command {
 			}
 
 			force, _ := cmd.Flags().GetBool(flagForce)
-			startHeight, _ := cmd.Flags().GetInt64(flagStartHeight)
-			endHeight, _ := cmd.Flags().GetInt64(flagEndHeight)
+
+			startHeight := config.Cfg.Parser.StartHeight
+			startFlag, _ := cmd.Flags().GetInt64(flagStartHeight)
+			if startFlag > 0 {
+				// Get start flag height if set
+				startHeight = startFlag
+			}
+
+			endFlag, _ := cmd.Flags().GetInt64(flagEndHeight)
+			if endFlag > 0 {
+				// Get end flag height if set
+				height = endFlag
+			}
 
 			k := startHeight
-			if endHeight > 0 {
-				height = endHeight
-			}
 
 			fmt.Printf("Refetching missing blocks and transactions from height %d to %d \n", k, height)
 			for ; k <= height; k++ {
@@ -65,7 +73,7 @@ func blocksCmd(parseConfig *parse.Config) *cobra.Command {
 	}
 
 	cmd.Flags().Bool(flagForce, false, "If set, forces the fetch of blocks by overwriting any existing one")
-	cmd.Flags().Int64(flagStartHeight, config.Cfg.Parser.StartHeight, "If set, parses from the configured height")
+	cmd.Flags().Int64(flagStartHeight, 0, "If set, parses from the configured height")
 	cmd.Flags().Int64(flagEndHeight, 0, "If set, parses up to the configured height")
 
 	return cmd
