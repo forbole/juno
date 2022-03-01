@@ -32,29 +32,26 @@ func blocksCmd(parseConfig *parse.Config) *cobra.Command {
 			workerCtx := parser.NewContext(parseCtx.EncodingConfig.Marshaler, nil, parseCtx.Node, parseCtx.Database, parseCtx.Logger, parseCtx.Modules)
 			worker := parser.NewWorker(0, workerCtx)
 
-			// Get latest height
+			// Get start height, set to flag height if flagStartHeight is set
+			startHeight := config.Cfg.Parser.StartHeight
+			startFlag, _ := cmd.Flags().GetInt64(flagStartHeight)
+			if startFlag > 0 {
+				startHeight = startFlag
+			}
+
+			// Get end height, default to node latest height; set to flag height if flagEndHeight is set
 			height, err := parseCtx.Node.LatestHeight()
 			if err != nil {
 				return fmt.Errorf("error while getting chain latest block height: %s", err)
 			}
-
-			force, _ := cmd.Flags().GetBool(flagForce)
-
-			startHeight := config.Cfg.Parser.StartHeight
-			startFlag, _ := cmd.Flags().GetInt64(flagStartHeight)
-			if startFlag > 0 {
-				// Get start flag height if set
-				startHeight = startFlag
-			}
-
 			endFlag, _ := cmd.Flags().GetInt64(flagEndHeight)
 			if endFlag > 0 {
-				// Get end flag height if set
 				height = endFlag
 			}
 
-			k := startHeight
+			force, _ := cmd.Flags().GetBool(flagForce)
 
+			k := startHeight
 			fmt.Printf("Refetching missing blocks and transactions from height %d to %d \n", k, height)
 			for ; k <= height; k++ {
 				if force {
