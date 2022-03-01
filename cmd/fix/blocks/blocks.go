@@ -32,14 +32,14 @@ func blocksCmd(parseConfig *parse.Config) *cobra.Command {
 			workerCtx := parser.NewContext(parseCtx.EncodingConfig.Marshaler, nil, parseCtx.Node, parseCtx.Database, parseCtx.Logger, parseCtx.Modules)
 			worker := parser.NewWorker(0, workerCtx)
 
-			// Get start height, set to flag height if flagStartHeight is set
+			// Get the start height, set to flag height if flagStartHeight is set
 			startHeight := config.Cfg.Parser.StartHeight
 			startFlag, _ := cmd.Flags().GetInt64(flagStartHeight)
 			if startFlag > 0 {
 				startHeight = startFlag
 			}
 
-			// Get end height, default to node latest height; set to flag height if flagEndHeight is set
+			// Get the end height, default to node latest height; set to flag height if flagEndHeight is set
 			height, err := parseCtx.Node.LatestHeight()
 			if err != nil {
 				return fmt.Errorf("error while getting chain latest block height: %s", err)
@@ -68,9 +68,9 @@ func blocksCmd(parseConfig *parse.Config) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().Bool(flagForce, false, "If set, forces the fetch of blocks by overwriting any existing one")
-	cmd.Flags().Int64(flagStartHeight, 0, "If set, parses from the configured height")
-	cmd.Flags().Int64(flagEndHeight, 0, "If set, parses up to the configured height")
+	cmd.Flags().Bool(flagForce, false, "If set, forces the fetch of blocks by overwriting any existing ones")
+	cmd.Flags().Int64(flagStartHeight, 0, "Set the start height from which the refetching blocks starts")
+	cmd.Flags().Int64(flagEndHeight, 0, "Set the end height to which the refetching blocks finishes")
 
 	return cmd
 }
