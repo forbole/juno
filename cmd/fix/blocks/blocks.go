@@ -33,14 +33,14 @@ func blocksCmd(parseConfig *parse.Config) *cobra.Command {
 			worker := parser.NewWorker(0, workerCtx)
 
 			// Get the flag values
-			startFlag, _ := cmd.Flags().GetInt64(flagStart)
-			endFlag, _ := cmd.Flags().GetInt64(flagEnd)
+			start, _ := cmd.Flags().GetInt64(flagStart)
+			end, _ := cmd.Flags().GetInt64(flagEnd)
 			force, _ := cmd.Flags().GetBool(flagForce)
 
 			// Get the start height, default to the config's height; use flagStart if set
 			startHeight := config.Cfg.Parser.StartHeight
-			if startFlag > 0 {
-				startHeight = startFlag
+			if start > 0 {
+				startHeight = start
 			}
 
 			// Get the end height, default to the node latest height; use flagEnd if set
@@ -48,8 +48,8 @@ func blocksCmd(parseConfig *parse.Config) *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("error while getting chain latest block height: %s", err)
 			}
-			if endFlag > 0 {
-				endHeight = endFlag
+			if end > 0 {
+				endHeight = end
 			}
 
 			fmt.Printf("Refetching missing blocks and transactions from height %d to %d \n", startHeight, endHeight)
@@ -70,8 +70,8 @@ func blocksCmd(parseConfig *parse.Config) *cobra.Command {
 	}
 
 	cmd.Flags().Bool(flagForce, false, "If set, forces the fetch of blocks by overwriting any existing ones")
-	cmd.Flags().Int64(flagStart, 0, "Set the height from which the refetching blocks starts")
-	cmd.Flags().Int64(flagEnd, 0, "Set the height to which the refetching blocks finishes")
+	cmd.Flags().Int64(flagStart, 0, "Set the height from which the refetching starts")
+	cmd.Flags().Int64(flagEnd, 0, "Set the height to which the refetching finishes")
 
 	return cmd
 }
