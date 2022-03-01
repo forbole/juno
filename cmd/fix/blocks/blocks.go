@@ -21,7 +21,7 @@ const (
 func blocksCmd(parseConfig *parse.Config) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "all",
-		Short: "Fix missing blocks and transactions in database from the start height",
+		Short: "Fix missing blocks and transactions in database",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			parseCtx, err := parse.GetParsingContext(parseConfig)
@@ -70,8 +70,8 @@ func blocksCmd(parseConfig *parse.Config) *cobra.Command {
 	}
 
 	cmd.Flags().Bool(flagForce, false, "If set, forces the fetch of blocks by overwriting any existing ones")
-	cmd.Flags().Int64(flagStart, 0, "Set the start height from which the refetching blocks starts")
-	cmd.Flags().Int64(flagEnd, 0, "Set the end height to which the refetching blocks finishes")
+	cmd.Flags().Int64(flagStart, 0, "Set the height from which the refetching blocks starts")
+	cmd.Flags().Int64(flagEnd, 0, "Set the height to which the refetching blocks finishes")
 
 	return cmd
 }
