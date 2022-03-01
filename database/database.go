@@ -46,20 +46,6 @@ type Database interface {
 	Close()
 }
 
-type PostgreSQLDatabase interface {
-	// SaveTxInsidePartition stores signle transaction inside partition of transaction table.
-	// An error is returned if the operation fails.
-	SaveTxInsidePartition(tx *types.Tx, partitionId int64) error
-
-	// SaveMessageInsidePartition stores a single message inside partition of message table.
-	// An error is returned if the operation fails.
-	SaveMessageInsidePartition(msg *types.Message, partitionId int64) error
-
-	// CreatePartition creates postgreSQL partition table if not already exists.
-	// An error is returned if the operation fails.
-	CreatePartition(table string, partitionId int64) error
-}
-
 // PruningDb represents a database that supports pruning properly
 type PruningDb interface {
 	// Prune prunes the data for the given height, returning any error
