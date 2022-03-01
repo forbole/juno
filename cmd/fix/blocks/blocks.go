@@ -51,9 +51,8 @@ func blocksCmd(parseConfig *parse.Config) *cobra.Command {
 
 			force, _ := cmd.Flags().GetBool(flagForce)
 
-			k := startHeight
-			fmt.Printf("Refetching missing blocks and transactions from height %d to %d \n", k, height)
-			for ; k <= height; k++ {
+			fmt.Printf("Refetching missing blocks and transactions from height %d to %d \n", startHeight, height)
+			for k := startHeight; k <= height; k++ {
 				if force {
 					err = worker.Process(k)
 				} else {
