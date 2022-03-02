@@ -69,7 +69,7 @@ func blocksCmd(parseConfig *parse.Config) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().Bool(flagForce, false, "If set, forces the fetch of blocks by overwriting any existing ones")
+cmd.Flags().Bool(flagForce, false, "If set to true forces bdjuno to refetch all blocks from given height including overwriting any existing ones in database (default false)")
 	cmd.Flags().Int64(flagStart, 0, "Set the height from which the refetching starts")
 	cmd.Flags().Int64(flagEnd, 0, "Set the height to which the refetching finishes")
 
