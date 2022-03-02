@@ -169,8 +169,8 @@ func enqueueNewBlocks(exportQueue types.HeightQueue, ctx *Context) {
 
 	// Enqueue upcoming heights
 	for {
-		fmt.Println("sleeping time: ", config.Cfg.Parser.AvgBlockTime*time.Second)
-		time.Sleep(config.Cfg.Parser.AvgBlockTime * time.Second)
+		fmt.Println("sleeping time: ", config.Cfg.Parser.AvgBlockTime)
+		time.Sleep(config.Cfg.Parser.AvgBlockTime)
 		fmt.Println("woke up")
 		latestBlockHeight, err := ctx.Node.LatestHeight()
 		if err != nil {
