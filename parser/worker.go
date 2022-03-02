@@ -55,7 +55,7 @@ func (w Worker) Start() {
 	logging.WorkerCount.Inc()
 
 	for i := range w.queue {
-		if err := w.Process(i); err != nil {
+		if err := w.ProcessIfNotExists(i); err != nil {
 			// re-enqueue any failed job
 			// TODO: Implement exponential backoff or max retries for a block height.
 			go func() {
@@ -68,10 +68,10 @@ func (w Worker) Start() {
 	}
 }
 
-// Process defines the job consumer workflow. It will fetch a block for a given
-// height and associated metadata and export it to a database. It returns an
+// ProcessIfNotExists defines the job consumer workflow. It will fetch a block for a given
+// height and associated metadata and export it to a database if it does not exist yet. It returns an
 // error if any export process fails.
-func (w Worker) Process(height int64) error {
+func (w Worker) ProcessIfNotExists(height int64) error {
 	exists, err := w.db.HasBlock(height)
 	if err != nil {
 		return fmt.Errorf("error while searching for block: %s", err)
@@ -82,6 +82,12 @@ func (w Worker) Process(height int64) error {
 		return nil
 	}
 
+	return w.Process(height)
+}
+
+// Process fetches  a block for a given height and associated metadata and export it to a database.
+// It returns an error if any export process fails.
+func (w Worker) Process(height int64) error {
 	if height == 0 {
 		cfg := config.Cfg.Parser
 
