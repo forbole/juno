@@ -179,12 +179,10 @@ func enqueueNewBlocks(exportQueue types.HeightQueue, ctx *Context) {
 		}
 
 		if currHeight < latestBlockHeight {
-			go func() {
-				for ; currHeight <= latestBlockHeight; currHeight++ {
-					ctx.Logger.Debug("enqueueing new block", "height", currHeight)
-					exportQueue <- currHeight
-				}
-			}()
+			for ; currHeight <= latestBlockHeight; currHeight++ {
+				ctx.Logger.Debug("enqueueing new block", "height", currHeight)
+				exportQueue <- currHeight
+			}
 		}
 
 		fmt.Println("time passed: ", time.Since(timeNow).Seconds())
