@@ -8,6 +8,7 @@ type Config struct {
 	ParseGenesis    bool   `yaml:"parse_genesis"`
 	StartHeight     int64  `yaml:"start_height"`
 	FastSync        bool   `yaml:"fast_sync,omitempty"`
+	// AvgBlockTime    time.Duration `yaml:"average_block_time"`
 }
 
 // NewParsingConfig allows to build a new Config instance
