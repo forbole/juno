@@ -150,5 +150,6 @@ func NewMessage(txHash string, index int, msgType string, value string, addresse
 		Type:      msgType,
 		Value:     value,
 		Addresses: addresses,
+		Height:    height,
 	}
 }

@@ -31,7 +31,7 @@ CREATE INDEX pre_commit_height_index ON pre_commit (height);
 
 CREATE TABLE transaction
 (
-    hash         TEXT    NOT NULL UNIQUE PRIMARY KEY,
+    hash         TEXT    NOT NULL,
     height       BIGINT  NOT NULL REFERENCES block (height),
     success      BOOLEAN NOT NULL,
 
@@ -51,7 +51,9 @@ CREATE TABLE transaction
     logs         JSONB,
 
     /* PSQL partition */
-    partition_id BIGINT  NOT NULL DEFAULT 0
+    partition_id BIGINT  NOT NULL DEFAULT 0,
+
+    CONSTRAINT unique_tx UNIQUE (hash, partition_id)
 ) PARTITION BY LIST (partition_id);
 CREATE INDEX transaction_hash_index ON transaction (hash);
 CREATE INDEX transaction_height_index ON transaction (height);
@@ -59,7 +61,7 @@ CREATE INDEX transaction_partition_id_index ON transaction (partition_id);
 
 CREATE TABLE message
 (
-    transaction_hash            TEXT   NOT NULL REFERENCES transaction (hash),
+    transaction_hash            TEXT   NOT NULL,
     index                       BIGINT NOT NULL,
     type                        TEXT   NOT NULL,
     value                       JSONB  NOT NULL,
@@ -68,7 +70,8 @@ CREATE TABLE message
     /* PSQL partition */
     partition_id                BIGINT NOT NULL DEFAULT 0,
 
-    CONSTRAINT unique_message_per_tx UNIQUE (transaction_hash, index)
+    FOREIGN KEY (transaction_hash, partition_id) REFERENCES transaction (hash, partition_id),
+    CONSTRAINT unique_message_per_tx UNIQUE (transaction_hash, index, partition_id)
 ) PARTITION BY LIST (partition_id);
 CREATE INDEX message_transaction_hash_index ON message (transaction_hash);
 CREATE INDEX message_type_index ON message (type);

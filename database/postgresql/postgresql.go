@@ -271,13 +271,12 @@ func (db *Database) SaveMessage(msg *types.Message) error {
 func (db *Database) saveMessageInsidePartition(msg *types.Message, partitionID int64) error {
 	stmt := `
 INSERT INTO message(transaction_hash, index, type, value, involved_accounts_addresses, partition_id) 
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+VALUES ($1, $2, $3, $4, $5, $6)
 ON CONFLICT ON CONSTRAINT unique_message_per_tx DO UPDATE SET
 	type = excluded.type,
 	value = excluded.value,
 	involved_accounts_addresses = excluded.involved_accounts_addresses,
-	partition_id = excluded.partition_id, 
-	height = excluded.height`
+	partition_id = excluded.partition_id`
 
 	_, err := db.Sql.Exec(stmt, msg.TxHash, msg.Index, msg.Type, msg.Value, pq.Array(msg.Addresses), partitionID)
 	return err
