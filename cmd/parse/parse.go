@@ -13,7 +13,6 @@ import (
 	"github.com/forbole/juno/v2/types/config"
 
 	"github.com/go-co-op/gocron"
-	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/forbole/juno/v2/modules"
 	"github.com/forbole/juno/v2/parser"
@@ -110,7 +109,7 @@ func StartParsing(ctx *Context) error {
 	}
 
 	if cfg.ParseNewBlocks {
-		go startNewBlockListener(exportQueue, ctx)
+		go enqueueNewBlocks(exportQueue, ctx)
 	}
 
 	// Block main process (signal capture will call WaitGroup's Done)
@@ -153,25 +152,33 @@ func enqueueMissingBlocks(exportQueue types.HeightQueue, ctx *Context) {
 	}
 }
 
-// startNewBlockListener subscribes to new block events via the Tendermint RPCConfig
-// and enqueues each new block height onto the provided queue. It blocks as new
-// blocks are incoming.
-func startNewBlockListener(exportQueue types.HeightQueue, ctx *Context) {
-	eventCh, cancel, err := ctx.Node.SubscribeNewBlocks("juno-new-blocks-listener")
-	defer cancel()
-
+// enqueueNewBlocks enqueues new block heights onto the provided queue.
+func enqueueNewBlocks(exportQueue types.HeightQueue, ctx *Context) {
+	// Get the latest height
+	currHeight, err := ctx.Node.LatestHeight()
 	if err != nil {
-		panic(fmt.Errorf("failed to subscribe to new blocks: %s", err))
+		panic(fmt.Errorf("failed to get last block from RPCConfig client: %s", err))
 	}
 
-	ctx.Logger.Info("listening for new block events...")
+	// Enqueue latest block height
+	ctx.Logger.Debug("enqueueing new block", "height", currHeight)
+	exportQueue <- currHeight
 
-	for e := range eventCh {
-		newBlock := e.Data.(tmtypes.EventDataNewBlock).Block
-		height := newBlock.Header.Height
+	// Enqueue coming heights
+	for {
+		latestBlockHeight, err := ctx.Node.LatestHeight()
+		if err != nil {
+			panic(fmt.Errorf("failed to get last block from RPCConfig client: %s", err))
+		}
 
-		ctx.Logger.Debug("enqueueing new block", "height", height)
-		exportQueue <- height
+		if latestBlockHeight > currHeight {
+			for height := currHeight; height <= latestBlockHeight; height++ {
+				ctx.Logger.Debug("enqueueing new block", "height", height)
+				exportQueue <- height
+				height++
+				currHeight = height
+			}
+		}
 	}
 }
 
