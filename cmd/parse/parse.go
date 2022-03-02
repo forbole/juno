@@ -169,7 +169,6 @@ func enqueueNewBlocks(exportQueue types.HeightQueue, ctx *Context) {
 
 	// Enqueue upcoming heights
 	for {
-		fmt.Println("avgBlockTime: ", config.Cfg.Parser.AvgBlockTime)
 		time.Sleep(config.Cfg.Parser.AvgBlockTime * time.Second)
 		latestBlockHeight, err := ctx.Node.LatestHeight()
 		if err != nil {
@@ -177,10 +176,13 @@ func enqueueNewBlocks(exportQueue types.HeightQueue, ctx *Context) {
 		}
 
 		if currHeight < latestBlockHeight {
-			for ; currHeight <= latestBlockHeight; currHeight++ {
-				ctx.Logger.Debug("enqueueing new block", "height", currHeight)
-				exportQueue <- currHeight
-			}
+			go func() {
+				for ; currHeight <= latestBlockHeight; currHeight++ {
+					ctx.Logger.Debug("enqueueing new block", "height", currHeight)
+					exportQueue <- currHeight
+					fmt.Println("exportQueue: ", exportQueue)
+				}
+			}()
 		}
 	}
 }
