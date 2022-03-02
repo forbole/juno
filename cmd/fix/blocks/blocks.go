@@ -71,7 +71,7 @@ func blocksCmd(parseConfig *parse.Config) *cobra.Command {
 
 cmd.Flags().Bool(flagForce, false, "If set to true forces bdjuno to refetch all blocks from given height including overwriting any existing ones in database (default false)")
 	cmd.Flags().Int64(flagStart, 0, "Set the height to start refetching missing blocks from")
-	cmd.Flags().Int64(flagEnd, 0, "Set the height to which the refetching finishes")
+	cmd.Flags().Int64(flagEnd, 0, "Set the height to finish refetching missing blocks at")
 
 	return cmd
 }
