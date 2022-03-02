@@ -172,7 +172,6 @@ func enqueueNewBlocks(exportQueue types.HeightQueue, ctx *Context) {
 		fmt.Println("Sleep")
 		timeNow := time.Now()
 		time.Sleep(config.Cfg.Parser.AvgBlockTime)
-		fmt.Println("time passed: ", time.Since(timeNow).Seconds())
 
 		latestBlockHeight, err := ctx.Node.LatestHeight()
 		if err != nil {
@@ -187,6 +186,8 @@ func enqueueNewBlocks(exportQueue types.HeightQueue, ctx *Context) {
 				}
 			}()
 		}
+
+		fmt.Println("time passed: ", time.Since(timeNow).Seconds())
 	}
 }
 
