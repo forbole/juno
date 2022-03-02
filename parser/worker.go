@@ -68,7 +68,7 @@ func (w Worker) Start() {
 	}
 }
 
-// process defines the job consumer workflow. It will fetch a block for a given
+// Process defines the job consumer workflow. It will fetch a block for a given
 // height and associated metadata and export it to a database. It returns an
 // error if any export process fails.
 func (w Worker) Process(height int64) error {
@@ -198,11 +198,8 @@ func (w Worker) ExportBlock(
 		}
 	}
 
-	if len(txs) > 0 {
-		// Export the transactions
-		return w.ExportTxs(txs)
-	}
-	return nil
+	// Export the transactions
+	return w.ExportTxs(txs)
 }
 
 // ExportCommit accepts a block commitment and a corresponding set of
@@ -242,7 +239,6 @@ func (w Worker) ExportCommit(commit *tmtypes.Commit, vals *tmctypes.ResultValida
 // ExportTxs accepts a slice of transactions and persists then inside the database.
 // An error is returned if the write fails.
 func (w Worker) ExportTxs(txs []*types.Tx) error {
-
 	// Handle all the transactions inside the block
 	for _, tx := range txs {
 		// Save the transaction itself
