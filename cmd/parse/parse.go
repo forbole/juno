@@ -164,13 +164,13 @@ func enqueueNewBlocks(exportQueue types.HeightQueue, ctx *Context) {
 	ctx.Logger.Debug("enqueueing new block", "height", currHeight)
 	exportQueue <- currHeight
 
-	// Skip enqueued height
+	// Skip already enqueued height
 	currHeight += 1
 
 	// Enqueue upcoming heights
 	for {
-		// time.Sleep(config.Cfg.Parser.AvgBlockTime * time.Second)
-		time.Sleep(6 * time.Second)
+		fmt.Println("avgBlockTime: ", config.Cfg.Parser.AvgBlockTime)
+		time.Sleep(config.Cfg.Parser.AvgBlockTime * time.Second)
 		latestBlockHeight, err := ctx.Node.LatestHeight()
 		if err != nil {
 			panic(fmt.Errorf("failed to get last block from RPCConfig client: %s", err))
