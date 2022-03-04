@@ -93,6 +93,7 @@ func MigrateConfig() (Config, error) {
 			cfg.Database.MaxOpenConnections,
 			cfg.Database.MaxIdleConnections,
 			0,
+			0,
 		),
 		parserconfig.NewParsingConfig(
 			cfg.Parsing.Workers,
