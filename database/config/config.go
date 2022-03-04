@@ -11,7 +11,7 @@ type Config struct {
 	MaxOpenConnections int    `yaml:"max_open_connections"`
 	MaxIdleConnections int    `yaml:"max_idle_connections"`
 	PartitionSize      int64  `yaml:"partition_size"`
-	Limit 			   int64 `yaml:"limit"`
+	Limit 			   int64  `yaml:"partition_limit"`
 }
 
 func NewDatabaseConfig(
