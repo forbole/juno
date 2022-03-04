@@ -69,7 +69,7 @@ CREATE TABLE message
 
     /* PSQL partition */
     partition_id                BIGINT NOT NULL DEFAULT 0,
-
+    height                      BIGINT NOT NULL,
     FOREIGN KEY (transaction_hash, partition_id) REFERENCES transaction (hash, partition_id),
     CONSTRAINT unique_message_per_tx UNIQUE (transaction_hash, index, partition_id)
 ) PARTITION BY LIST (partition_id);
