@@ -42,10 +42,9 @@ func MigrateConfigCmd() *cobra.Command {
 
 			bz, err := yaml.Marshal(&v2Config)
 			if err != nil {
-				return fmt.Errorf("error while serializing v2 config: %s", err)
+				return fmt.Errorf("error while serializing v3 config: %s", err)
 			}
 
-			// ss := migratetopartition.main()
 			v2File := config.GetConfigFilePath()
 			return ioutil.WriteFile(v2File, bz, 0666)
 		},

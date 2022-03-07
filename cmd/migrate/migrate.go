@@ -5,7 +5,7 @@ import (
 	"github.com/forbole/juno/v2/cmd/parse"
 )
 
-// NewFixCmd returns the Cobra command allowing to fix some BDJuno bugs without having to re-sync the whole database
+// MigrateCmd returns the Cobra command allowing to migrate config and tables to v3 version
 func MigrateCmd(parseConfig *parse.Config) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:               "migrate",

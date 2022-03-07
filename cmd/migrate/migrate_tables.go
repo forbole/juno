@@ -55,9 +55,7 @@ func MigrateTablesCmd(parseConfig *parse.Config) *cobra.Command {
 
 			offset += batchSize
 		}
-		
 		fmt.Println("--- Table migration completed ---")
-
 
 		// DROP old messages_by_address function
 		err = db.DropMessageByAddressFunc()
@@ -65,18 +63,15 @@ func MigrateTablesCmd(parseConfig *parse.Config) *cobra.Command {
 				return fmt.Errorf("error while creating messages_by_address function: %s", err)
 		}
 
-
 		// CREATE new messages_by_address function
 		err = db.CreateMessageByAddressFunc()
 		if err != nil {
 				return fmt.Errorf("error while creating messages_by_address function: %s", err)
 		}
-
 		fmt.Println("--- Migration completed ---")
 
 			return nil
 		},
 	}
-
 	return cmd
 }

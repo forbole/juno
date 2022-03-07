@@ -14,7 +14,8 @@ func Builder(ctx *database.Context) (database.Database, error) {
 }
 
 // MigrateDbBuilder represents a generic MigrateDb implementation that build the proper database
-// instance based on the configuration the user has specified and is used for postgresql table migration
+// instance based on the configuration the user has specified and that is used to perform
+// postgresql table migration
 func MigrateDbBuilder(ctx *database.Context) (database.MigrateDb, error) {
 	return migrate.MigrateDbBuilder(ctx)
 }

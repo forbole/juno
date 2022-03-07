@@ -26,7 +26,6 @@ func PrepareTablesCmd(parseConfig *parse.Config) *cobra.Command {
 		if err != nil {
 			return fmt.Errorf("Error while getting the db: %s", err)
 		}
-
 		fmt.Println("--- Preparing tables ---")
 
 		// ALTER tables and indexes adding "_old" tag
@@ -40,7 +39,6 @@ func PrepareTablesCmd(parseConfig *parse.Config) *cobra.Command {
 		if err != nil {
 			return fmt.Errorf("Error while creating tables:  %s", err)
 		}
-
 		fmt.Println("--- Preparing tables completed ---")
 
 			return nil
