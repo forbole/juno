@@ -12,7 +12,7 @@ import (
 func PrepareTablesCmd(parseConfig *parse.Config) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "prepare-tables",
-		Short: "Prepare transaction and message tables for postgresql partition",
+		Short: "Prepare transaction and message tables for v3 upgrade (implements postgresql partition)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 		// Get config		
 		cfg := config.Cfg
@@ -22,14 +22,14 @@ func PrepareTablesCmd(parseConfig *parse.Config) *cobra.Command {
 		
 		// Get the db	
 		databaseCtx := database.NewContext(cfg.Database, &encodingConfig, parseConfig.GetLogger())
-		db, err := parseConfig.GetDBBuilder()(databaseCtx)
+		db, err := parseConfig.GetMigrateDbDBBuilder()(databaseCtx)
 		if err != nil {
 			return fmt.Errorf("Error while getting the db: %s", err)
 		}
 
 		fmt.Println("--- Preparing tables ---")
 
-		// ALTER tables and indexes to add "_old" tags
+		// ALTER tables and indexes adding "_old" tag
 		err = db.AlterTables()
 		if err != nil {
 			return fmt.Errorf("Error while altering tables: %s", err)

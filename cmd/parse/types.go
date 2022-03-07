@@ -21,6 +21,7 @@ type Config struct {
 	encodingConfigBuilder EncodingConfigBuilder
 	setupCfg              SdkConfigSetup
 	buildDb               database.Builder
+	MigrateDb		  	  database.MigrateDbBuilder
 	logger                logging.Logger
 }
 
@@ -97,6 +98,14 @@ func (cfg *Config) GetDBBuilder() database.Builder {
 		return builder.Builder
 	}
 	return cfg.buildDb
+}
+
+// GetMigrateDbDBBuilder returns the MigrateDb builder to be used
+func (cfg *Config) GetMigrateDbDBBuilder() database.MigrateDbBuilder {
+	if cfg.MigrateDb == nil {
+		return builder.MigrateDbBuilder
+	}
+	return cfg.MigrateDb
 }
 
 // WithLogger sets the logger to be used while parsing the data

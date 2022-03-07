@@ -33,7 +33,7 @@ type Config struct {
 func MigrateCmd() *cobra.Command {
 	return &cobra.Command{
 		Use: "migrate-config",
-		Short: "Run migration from v1 to v3",
+		Short: "Migrate config.toml file from v1 to v3",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v2Config, err := MigrateConfig()
 			if err != nil {

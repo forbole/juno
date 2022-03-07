@@ -9,7 +9,7 @@ import (
 func NewMigrateCmd(parseConfig *parse.Config) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:               "migrate",
-		Short:             "Migrate config or tables to higher version",
+		Short:             "Migrate to latest version",
 		PersistentPreRunE: runPersistentPreRuns(parse.ReadConfig(parseConfig)),
 	}
 

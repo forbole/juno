@@ -8,6 +8,7 @@ import (
 	databaseconfig "github.com/forbole/juno/v2/database/config"
 
 	"github.com/forbole/juno/v2/types"
+	txrow "github.com/forbole/juno/v2/database/migrate/utils"
 )
 
 // Database represents an abstract database that can be used to save data inside it
@@ -46,6 +47,29 @@ type Database interface {
 	Close()
 }
 
+
+type MigrateDb interface {
+	// AlterTables alters transaction and message table and indexes adding '_old' tag
+	// An error is returned if the operation fails.
+	AlterTables() error 
+
+	// CreateTables creates new transaction and message table with partition
+	// An error is returned if the operation fails.
+	CreateTables() error
+
+	// SelectRows fetches transactions list from transaction_old table
+	// An error is returned if the operation fails.
+	SelectRows(limit int64, offset int64) ([]txrow.TransactionRow, error) 
+
+	// CreateMessageByAddressFunc creates or replaces (if already exists) message_by_address function
+	// An error is returned if the operation fails.
+	CreateMessageByAddressFunc() error 
+
+	// InsertTransactions inserts txs into partitioned transaction table
+	// An error is returned if the operation fails.
+	InsertTransactions(txRows []txrow.TransactionRow) error
+}
+
 // PruningDb represents a database that supports pruning properly
 type PruningDb interface {
 	// Prune prunes the data for the given height, returning any error
@@ -76,3 +100,5 @@ func NewContext(cfg databaseconfig.Config, encodingConfig *params.EncodingConfig
 
 // Builder represents a method that allows to build any database from a given codec and configuration
 type Builder func(ctx *Context) (Database, error)
+
+type MigrateDbBuilder func(ctx *Context) (MigrateDb, error)

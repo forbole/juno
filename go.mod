@@ -12,6 +12,7 @@ require (
 	github.com/golang/glog v1.0.0 // indirect
 	github.com/google/btree v1.0.1 // indirect
 	github.com/gorilla/mux v1.8.0
+	github.com/jmoiron/sqlx v1.3.4
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/lib/pq v1.9.0
 	github.com/pelletier/go-toml v1.9.3
