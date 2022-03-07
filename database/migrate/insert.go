@@ -17,7 +17,7 @@ func (db *MigrateDb) InsertTransactions(txRows []types.TransactionRow) error {
 	for i, tx := range txRows {
 		partitionSize := config.Cfg.Database.PartitionSize
 		if partitionSize == 0 {
-			return fmt.Errorf("Partition size is set to 0. Skipping transaction table partition.")
+			return fmt.Errorf("Partition size is set to 0. Skipping migration.")
 		}
 		
 		// Create transaction partition table if not exists
@@ -60,7 +60,7 @@ func (db *MigrateDb) InsertMessages(tx types.TransactionRow) error {
 
 	partitionSize := config.Cfg.Database.PartitionSize
 	if partitionSize == 0 {
-		return fmt.Errorf("Partition size is set to 0. Skipping message table partition.")
+			return fmt.Errorf("Partition size is set to 0. Skipping migration.")
 	}
 
 	partitionID := tx.Height / partitionSize

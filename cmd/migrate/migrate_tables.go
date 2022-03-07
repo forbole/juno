@@ -30,7 +30,7 @@ func MigrateTablesCmd(parseConfig *parse.Config) *cobra.Command {
 		}
 		limit := config.Cfg.Database.Limit
 		if limit == 0 {
-			return fmt.Errorf("Partition limit is set to 0. Skipping migration..")
+			return fmt.Errorf("Partition limit is set to 0. Skipping migration.")
 		}
 		offset := int64(0)
 		
