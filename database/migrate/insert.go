@@ -15,8 +15,13 @@ func (db *MigrateDb) InsertTransactions(txRows []types.TransactionRow) error {
 `
 	var params []interface{}
 	for i, tx := range txRows {
+		partitionSize := config.Cfg.Database.PartitionSize
+		if partitionSize == 0 {
+			return fmt.Errorf("Partition size is set to 0. Skipping transaction table partition.")
+		}
+		
 		// Create transaction partition table if not exists
-		partitionID := tx.Height / config.Cfg.Database.PartitionSize
+		partitionID := tx.Height / partitionSize
 		err := db.CreatePartitionTable("transaction", partitionID)
 		if err != nil {
 			return fmt.Errorf("error while creating transaction partition table: %s", err)
@@ -52,7 +57,13 @@ func (db *MigrateDb) InsertTransactions(txRows []types.TransactionRow) error {
 }
 
 func (db *MigrateDb) InsertMessages(tx types.TransactionRow) error {
-	partitionID := tx.Height / config.Cfg.Database.PartitionSize
+
+	partitionSize := config.Cfg.Database.PartitionSize
+	if partitionSize == 0 {
+		return fmt.Errorf("Partition size is set to 0. Skipping message table partition.")
+	}
+
+	partitionID := tx.Height / partitionSize
 	// Create message partition table if not exists
 	err := db.CreatePartitionTable("message", partitionID)
 	if err != nil {
