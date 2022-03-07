@@ -59,7 +59,7 @@ type MigrateDb interface {
 
 	// SelectRows fetches transactions list from transaction_old table
 	// An error is returned if the operation fails.
-	SelectRows(limit int64, offset int64) ([]txrow.TransactionRow, error) 
+	SelectRows(batchSize int64, offset int64) ([]txrow.TransactionRow, error) 
 
 	// DropMessageByAddressFunc drops/removes message_by_address function
 	// An error is returned if the operation fails.

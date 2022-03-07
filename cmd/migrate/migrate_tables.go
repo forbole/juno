@@ -28,16 +28,16 @@ func MigrateTablesCmd(parseConfig *parse.Config) *cobra.Command {
 		if err != nil {
 			return fmt.Errorf("Error while getting the db: %s", err)
 		}
-		limit := config.Cfg.Database.Limit
-		if limit == 0 {
-			return fmt.Errorf("Partition limit is set to 0. Skipping migration.")
+		batchSize := config.Cfg.Database.PartitionBatchSize
+		if batchSize == 0 {
+			return fmt.Errorf("Partition batch size is set to 0. Skipping migration.")
 		}
 		offset := int64(0)
 		
 
 		for {
 			// SELECT rows from transaction_old table
-			txRows, err := db.SelectRows(limit, offset)
+			txRows, err := db.SelectRows(batchSize, offset)
 			if err != nil {
 				return fmt.Errorf("error while selecting transaction rows: %s", err)
 			}
@@ -45,7 +45,7 @@ func MigrateTablesCmd(parseConfig *parse.Config) *cobra.Command {
 				break
 			}
 
-			fmt.Printf("--- Migrating data from row %v to row %v --- \n", offset, offset+limit)
+			fmt.Printf("--- Migrating data from row %v to row %v --- \n", offset, offset+batchSize)
 
 			// INSERT INTO transaction and message tables
 			err = db.InsertTransactions(txRows)
@@ -53,7 +53,7 @@ func MigrateTablesCmd(parseConfig *parse.Config) *cobra.Command {
 				return fmt.Errorf("error while inserting data: %s", err)
 			}
 
-			offset += limit
+			offset += batchSize
 		}
 		
 		fmt.Println("--- Table migration completed ---")
