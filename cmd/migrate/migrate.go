@@ -6,7 +6,7 @@ import (
 )
 
 // NewFixCmd returns the Cobra command allowing to fix some BDJuno bugs without having to re-sync the whole database
-func NewMigrateCmd(parseConfig *parse.Config) *cobra.Command {
+func MigrateCmd(parseConfig *parse.Config) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:               "migrate",
 		Short:             "Migrate to latest version",
@@ -14,7 +14,7 @@ func NewMigrateCmd(parseConfig *parse.Config) *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		MigrateCmd(),
+		MigrateConfigCmd(),
 		MigrateTablesCmd(parseConfig),
 		PrepareTablesCmd(parseConfig),
 	)

@@ -29,8 +29,8 @@ type Config struct {
 }
 
 
-// MigrateCmd returns the command that should be run when we want to migrate from v1 to v3
-func MigrateCmd() *cobra.Command {
+// MigrateConfigCmd returns a Cobra command that allows to migrate config file from v1 to v3
+func MigrateConfigCmd() *cobra.Command {
 	return &cobra.Command{
 		Use: "migrate-config",
 		Short: "Migrate config.toml file from v1 to v3",

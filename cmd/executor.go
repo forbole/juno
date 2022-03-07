@@ -44,7 +44,7 @@ func BuildDefaultExecutor(config *Config) cli.Executor {
 		initcmd.InitCmd(config.GetInitConfig()),
 		parsecmd.ParseCmd(config.GetParseConfig()),
 		fixcmd.NewFixCmd(config.GetParseConfig()),
-		migratecmd.NewMigrateCmd(config.GetParseConfig()),
+		migratecmd.MigrateCmd(config.GetParseConfig()),
 	)
 
 	return PrepareRootCmd(config.GetName(), rootCmd)
