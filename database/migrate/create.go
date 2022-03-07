@@ -98,7 +98,7 @@ func (db *MigrateDb) CreatePartitionTable(table string, partitionID int64) error
 }
 
 func (db *MigrateDb) CreateMessageByAddressFunc() error {
-	fmt.Println("Replace messages_by_address() function")
+	fmt.Println("CREATE FUNCTION messages_by_address()")
 
 	_, err := db.Sqlx.Exec(`CREATE OR REPLACE FUNCTION messages_by_address(
 		addresses TEXT [],

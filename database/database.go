@@ -61,7 +61,11 @@ type MigrateDb interface {
 	// An error is returned if the operation fails.
 	SelectRows(limit int64, offset int64) ([]txrow.TransactionRow, error) 
 
-	// CreateMessageByAddressFunc creates or replaces (if already exists) message_by_address function
+	// DropMessageByAddressFunc drops/removes message_by_address function
+	// An error is returned if the operation fails.
+	DropMessageByAddressFunc() error
+
+	// CreateMessageByAddressFunc creates new message_by_address function
 	// An error is returned if the operation fails.
 	CreateMessageByAddressFunc() error 
 
