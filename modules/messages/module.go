@@ -4,9 +4,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/forbole/juno/v2/database"
-	"github.com/forbole/juno/v2/modules"
-	"github.com/forbole/juno/v2/types"
+	"github.com/forbole/juno/v3/database"
+	"github.com/forbole/juno/v3/modules"
+	"github.com/forbole/juno/v3/types"
 )
 
 var _ modules.Module = &Module{}

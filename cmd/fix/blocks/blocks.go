@@ -3,12 +3,12 @@ package blocks
 import (
 	"fmt"
 
-	"github.com/forbole/juno/v2/cmd/parse"
-	"github.com/forbole/juno/v2/types/config"
+	"github.com/forbole/juno/v3/cmd/parse"
 
 	"github.com/spf13/cobra"
 
-	"github.com/forbole/juno/v2/parser"
+	"github.com/forbole/juno/v3/parser"
+	"github.com/forbole/juno/v3/types/config"
 )
 
 const (
@@ -23,7 +23,6 @@ func blocksCmd(parseConfig *parse.Config) *cobra.Command {
 		Use:   "all",
 		Short: "Fix missing blocks and transactions in database",
 		RunE: func(cmd *cobra.Command, args []string) error {
-
 			parseCtx, err := parse.GetParsingContext(parseConfig)
 			if err != nil {
 				return err
@@ -69,7 +68,7 @@ func blocksCmd(parseConfig *parse.Config) *cobra.Command {
 		},
 	}
 
-cmd.Flags().Bool(flagForce, false, "If set to true forces bdjuno to refetch all blocks from given height including overwriting any existing ones in database (default false)")
+	cmd.Flags().Bool(flagForce, false, "If set to true forces bdjuno to refetch all blocks from given height including overwriting any existing ones in database (default false)")
 	cmd.Flags().Int64(flagStart, 0, "Set the height to start refetching missing blocks from")
 	cmd.Flags().Int64(flagEnd, 0, "Set the height to finish refetching missing blocks at")
 
