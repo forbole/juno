@@ -2,6 +2,7 @@ package blocks
 
 import (
 	"fmt"
+	"github.com/rs/zerolog/log"
 
 	"github.com/forbole/juno/v3/cmd/parse"
 
@@ -22,6 +23,12 @@ func blocksCmd(parseConfig *parse.Config) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "all",
 		Short: "Fix missing blocks and transactions in database",
+		Long: fmt.Sprintf(`Refetch all the blocks in the specified range and stores them inside the database. 
+You can specify a custom blocks range by using the %s and %s flags. 
+By default, all the blocks fetched from the node will not be stored inside the database if they are already present. 
+You can override this behaviour using the %s flag. If this is set, even the blocks already present inside the database 
+will be replaced with the data downloaded from the node.
+`, flagStart, flagEnd, flagForce),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			parseCtx, err := parse.GetParsingContext(parseConfig)
 			if err != nil {
@@ -51,7 +58,8 @@ func blocksCmd(parseConfig *parse.Config) *cobra.Command {
 				endHeight = end
 			}
 
-			fmt.Printf("Refetching missing blocks and transactions from height %d to %d \n", startHeight, endHeight)
+			log.Info().Int64("start height", startHeight).Int64("end height", endHeight).
+				Msg("getting blocks and transactions")
 			for k := startHeight; k <= endHeight; k++ {
 				if force {
 					err = worker.Process(k)
@@ -68,9 +76,9 @@ func blocksCmd(parseConfig *parse.Config) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().Bool(flagForce, false, "If set to true forces bdjuno to refetch all blocks from given height including overwriting any existing ones in database (default false)")
-	cmd.Flags().Int64(flagStart, 0, "Set the height to start refetching missing blocks from")
-	cmd.Flags().Int64(flagEnd, 0, "Set the height to finish refetching missing blocks at")
+	cmd.Flags().Bool(flagForce, false, "Whether or not to overwrite any existing ones in database (default false)")
+	cmd.Flags().Int64(flagStart, 0, "Height from which to start getting missing blocks. If 0, the start height inside the config will be used instead")
+	cmd.Flags().Int64(flagEnd, 0, "Height at which to finish getting missing. If 0, the latest height available inside the node will be used instead")
 
 	return cmd
 }
