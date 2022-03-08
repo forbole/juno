@@ -3,9 +3,9 @@ package fix
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/forbole/juno/v2/cmd/parse"
+	"github.com/forbole/juno/v3/cmd/parse"
 
-	fixblocks "github.com/forbole/juno/v2/cmd/fix/blocks"
+	fixblocks "github.com/forbole/juno/v3/cmd/fix/blocks"
 )
 
 // NewFixCmd returns the Cobra command allowing to fix some BDJuno bugs without having to re-sync the whole database
