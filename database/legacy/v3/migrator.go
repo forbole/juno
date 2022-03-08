@@ -3,8 +3,8 @@ package v3
 import (
 	"github.com/jmoiron/sqlx"
 
-	"github.com/forbole/juno/v2/database"
-	"github.com/forbole/juno/v2/database/postgresql"
+	"github.com/forbole/juno/v3/database"
+	"github.com/forbole/juno/v3/database/postgresql"
 )
 
 var _ database.Migrator = &Migrator{}

@@ -5,9 +5,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	v2 "github.com/forbole/juno/v2/cmd/migrate/v2"
-	v3 "github.com/forbole/juno/v2/cmd/migrate/v3"
-	"github.com/forbole/juno/v2/cmd/parse"
+	v2 "github.com/forbole/juno/v3/cmd/migrate/v2"
+	v3 "github.com/forbole/juno/v3/cmd/migrate/v3"
+	"github.com/forbole/juno/v3/cmd/parse"
 )
 
 type Migrator func(parseCfg *parse.Config) error

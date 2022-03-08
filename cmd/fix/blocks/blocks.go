@@ -3,12 +3,12 @@ package blocks
 import (
 	"fmt"
 
-	"github.com/forbole/juno/v2/cmd/parse"
+	"github.com/forbole/juno/v3/cmd/parse"
 
 	"github.com/spf13/cobra"
 
-	"github.com/forbole/juno/v2/parser"
-	"github.com/forbole/juno/v2/types/config"
+	"github.com/forbole/juno/v3/parser"
+	"github.com/forbole/juno/v3/types/config"
 )
 
 const (

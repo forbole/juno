@@ -6,13 +6,13 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	v2 "github.com/forbole/juno/v2/cmd/migrate/v2"
-	"github.com/forbole/juno/v2/cmd/parse"
-	"github.com/forbole/juno/v2/database"
-	databaseconfig "github.com/forbole/juno/v2/database/config"
-	v3db "github.com/forbole/juno/v2/database/legacy/v3"
-	"github.com/forbole/juno/v2/database/postgresql"
-	"github.com/forbole/juno/v2/types/config"
+	v2 "github.com/forbole/juno/v3/cmd/migrate/v2"
+	"github.com/forbole/juno/v3/cmd/parse"
+	"github.com/forbole/juno/v3/database"
+	databaseconfig "github.com/forbole/juno/v3/database/config"
+	v3db "github.com/forbole/juno/v3/database/legacy/v3"
+	"github.com/forbole/juno/v3/database/postgresql"
+	"github.com/forbole/juno/v3/types/config"
 )
 
 // RunMigration runs the migrations from v2 to v3

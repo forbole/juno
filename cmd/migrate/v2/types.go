@@ -1,12 +1,12 @@
 package v2
 
 import (
-	loggingconfig "github.com/forbole/juno/v2/logging/config"
-	"github.com/forbole/juno/v2/modules/pruning"
-	"github.com/forbole/juno/v2/modules/telemetry"
-	nodeconfig "github.com/forbole/juno/v2/node/config"
-	parserconfig "github.com/forbole/juno/v2/parser/config"
-	"github.com/forbole/juno/v2/types/config"
+	loggingconfig "github.com/forbole/juno/v3/logging/config"
+	"github.com/forbole/juno/v3/modules/pruning"
+	"github.com/forbole/juno/v3/modules/telemetry"
+	nodeconfig "github.com/forbole/juno/v3/node/config"
+	parserconfig "github.com/forbole/juno/v3/parser/config"
+	"github.com/forbole/juno/v3/types/config"
 )
 
 type Config struct {

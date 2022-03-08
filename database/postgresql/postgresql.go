@@ -6,16 +6,16 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/forbole/juno/v2/logging"
+	"github.com/forbole/juno/v3/logging"
 
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 	"github.com/lib/pq"
 
 	_ "github.com/lib/pq" // nolint
 
-	"github.com/forbole/juno/v2/database"
-	"github.com/forbole/juno/v2/types"
-	"github.com/forbole/juno/v2/types/config"
+	"github.com/forbole/juno/v3/database"
+	"github.com/forbole/juno/v3/types"
+	"github.com/forbole/juno/v3/types/config"
 )
 
 // Builder creates a database connection with the given database connection info

@@ -3,7 +3,7 @@ package v1
 import (
 	"github.com/pelletier/go-toml"
 
-	"github.com/forbole/juno/v2/cmd/migrate/utils"
+	"github.com/forbole/juno/v3/cmd/migrate/utils"
 )
 
 // ParseConfig attempts to read and parse a Juno Config from the given string bytes.

@@ -3,7 +3,7 @@ package v2
 import (
 	"gopkg.in/yaml.v3"
 
-	"github.com/forbole/juno/v2/cmd/migrate/utils"
+	"github.com/forbole/juno/v3/cmd/migrate/utils"
 )
 
 // ParseConfig attempts to read and parse a Juno Config from the given string bytes.

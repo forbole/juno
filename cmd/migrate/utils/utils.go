@@ -6,7 +6,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/forbole/juno/v2/types/config"
+	"github.com/forbole/juno/v3/types/config"
 )
 
 // GetConfigFilePath returns the path to the configuration file given the executable name

@@ -4,18 +4,18 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	v1 "github.com/forbole/juno/v2/cmd/migrate/v1"
-	"github.com/forbole/juno/v2/cmd/parse"
+	v1 "github.com/forbole/juno/v3/cmd/migrate/v1"
+	"github.com/forbole/juno/v3/cmd/parse"
 
 	"gopkg.in/yaml.v3"
 
-	loggingconfig "github.com/forbole/juno/v2/logging/config"
-	"github.com/forbole/juno/v2/modules/pruning"
-	"github.com/forbole/juno/v2/modules/telemetry"
-	nodeconfig "github.com/forbole/juno/v2/node/config"
-	"github.com/forbole/juno/v2/node/remote"
-	parserconfig "github.com/forbole/juno/v2/parser/config"
-	"github.com/forbole/juno/v2/types/config"
+	loggingconfig "github.com/forbole/juno/v3/logging/config"
+	"github.com/forbole/juno/v3/modules/pruning"
+	"github.com/forbole/juno/v3/modules/telemetry"
+	nodeconfig "github.com/forbole/juno/v3/node/config"
+	"github.com/forbole/juno/v3/node/remote"
+	parserconfig "github.com/forbole/juno/v3/parser/config"
+	"github.com/forbole/juno/v3/types/config"
 )
 
 // RunMigration runs the migration that migrates the data from v1 to v2
