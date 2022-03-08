@@ -3,7 +3,7 @@ package blocks
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/forbole/juno/v2/cmd/parse"
+	"github.com/forbole/juno/v3/cmd/parse"
 )
 
 // NewBlocksCmd returns the Cobra command that allows to fix all the things related to blocks
