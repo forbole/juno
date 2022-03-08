@@ -8,15 +8,15 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/forbole/juno/v2/logging"
+	"github.com/forbole/juno/v3/logging"
 
-	"github.com/forbole/juno/v2/types/config"
+	"github.com/forbole/juno/v3/types/config"
 
 	"github.com/go-co-op/gocron"
 
-	"github.com/forbole/juno/v2/modules"
-	"github.com/forbole/juno/v2/parser"
-	"github.com/forbole/juno/v2/types"
+	"github.com/forbole/juno/v3/modules"
+	"github.com/forbole/juno/v3/parser"
+	"github.com/forbole/juno/v3/types"
 
 	"github.com/spf13/cobra"
 )
