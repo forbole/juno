@@ -14,7 +14,6 @@ import (
 	"github.com/forbole/juno/v3/modules/telemetry"
 	nodeconfig "github.com/forbole/juno/v3/node/config"
 	"github.com/forbole/juno/v3/node/remote"
-	parserconfig "github.com/forbole/juno/v3/parser/config"
 	"github.com/forbole/juno/v3/types/config"
 )
 
@@ -70,7 +69,7 @@ func migrateConfig() (Config, error) {
 			MaxOpenConnections: cfg.Database.MaxOpenConnections,
 			MaxIdleConnections: cfg.Database.MaxIdleConnections,
 		},
-		Parser: parserconfig.Config{
+		Parser: ParserConfig{
 			Workers:         cfg.Parsing.Workers,
 			ParseNewBlocks:  cfg.Parsing.ParseNewBlocks,
 			ParseOldBlocks:  cfg.Parsing.ParseOldBlocks,

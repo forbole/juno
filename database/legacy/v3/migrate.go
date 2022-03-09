@@ -25,6 +25,13 @@ func (db *Migrator) Migrate() error {
 		return nil
 	}
 
+	// Prepare the migration
+	log.Info().Msg("preparing the tables for the migration")
+	err := db.PrepareMigration()
+	if err != nil {
+		return err
+	}
+
 	// Migrate the transactions
 	log.Info().Msg("migrating transactions")
 	var offset int64
@@ -52,7 +59,7 @@ func (db *Migrator) Migrate() error {
 	// Migrate the messages_by_address function
 	log.Info().Msg("migrating messages_by_address")
 
-	err := db.deleteOldMessagesByAddressFunction()
+	err = db.deleteOldMessagesByAddressFunction()
 	if err != nil {
 		return fmt.Errorf("error while creating messages_by_address function: %s", err)
 	}

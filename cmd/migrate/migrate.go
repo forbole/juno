@@ -2,6 +2,7 @@ package migrate
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 
@@ -19,6 +20,14 @@ var (
 	}
 )
 
+func getVersions() []string {
+	var versions []string
+	for key := range migrations {
+		versions = append(versions, key)
+	}
+	return versions
+}
+
 // MigrateCmd returns the Cobra command allowing to migrate config and tables to v3 version
 func MigrateCmd(appName string, parseConfig *parse.Config) *cobra.Command {
 	return &cobra.Command{
@@ -29,9 +38,18 @@ If you are upgrading from a very old version to the latest one, migrations must 
 (eg. to migrate from v1 to v3 you need to do v1 -> v2 and then v2 -> v3). 
 `,
 		Example: fmt.Sprintf("%s migrate v3", appName),
+		Args:    cobra.RangeArgs(0, 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			version := args[0]
+			cmd.SetOut(os.Stdout)
+			if len(args) == 0 {
+				cmd.Println("Please specify a version to migrate to. Available versions:")
+				for _, version := range getVersions() {
+					cmd.Println("-", version)
+				}
+				return nil
+			}
 
+			version := args[0]
 			migrator, ok := migrations[version]
 			if !ok {
 				return fmt.Errorf("migration for version %s not found", version)

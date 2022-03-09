@@ -3,6 +3,9 @@ package v3
 import (
 	"fmt"
 	"io/ioutil"
+	"time"
+
+	parserconfig "github.com/forbole/juno/v3/parser/config"
 
 	"gopkg.in/yaml.v3"
 
@@ -21,6 +24,12 @@ func RunMigration(parseConfig *parse.Config) error {
 	cfg, err := migrateConfig()
 	if err != nil {
 		return fmt.Errorf("error while migrating config: %s", err)
+	}
+
+	// Refresh the global configuration
+	err = parse.UpdatedGlobalCfg(parseConfig)
+	if err != nil {
+		return err
 	}
 
 	bz, err := yaml.Marshal(&cfg)
@@ -48,6 +57,22 @@ func migrateConfig() (Config, error) {
 		return Config{}, fmt.Errorf("error while reading v2 config: %s", err)
 	}
 
+	// Get the new fields added inside the various configurations
+	var partitionSize int64
+	if cfg.Database.PartitionSize != nil {
+		partitionSize = *cfg.Database.PartitionSize
+	}
+
+	var partitionBatchSize int64
+	if cfg.Database.PartitionBatchSize != nil {
+		partitionBatchSize = *cfg.Database.PartitionBatchSize
+	}
+
+	var averageBlockTime = 3 * time.Second
+	if cfg.Parser.AvgBlockTime != nil {
+		averageBlockTime = *cfg.Parser.AvgBlockTime
+	}
+
 	return Config{
 		Node:  cfg.Node,
 		Chain: cfg.Chain,
@@ -61,10 +86,19 @@ func migrateConfig() (Config, error) {
 			Schema:             cfg.Database.Schema,
 			MaxOpenConnections: cfg.Database.MaxOpenConnections,
 			MaxIdleConnections: cfg.Database.MaxIdleConnections,
-			PartitionSize:      0,
-			PartitionBatchSize: 0,
+			PartitionSize:      partitionSize,
+			PartitionBatchSize: partitionBatchSize,
 		},
-		Parser:    cfg.Parser,
+		Parser: parserconfig.Config{
+			Workers:         cfg.Parser.Workers,
+			ParseNewBlocks:  cfg.Parser.ParseNewBlocks,
+			ParseOldBlocks:  cfg.Parser.ParseOldBlocks,
+			GenesisFilePath: cfg.Parser.GenesisFilePath,
+			ParseGenesis:    cfg.Parser.ParseGenesis,
+			StartHeight:     cfg.Parser.StartHeight,
+			FastSync:        cfg.Parser.FastSync,
+			AvgBlockTime:    averageBlockTime,
+		},
 		Logging:   cfg.Logging,
 		Telemetry: cfg.Telemetry,
 		Pruning:   cfg.Pruning,
@@ -85,5 +119,4 @@ func migrateDb(cfg Config, parseConfig *parse.Config) error {
 	// Build the migrator and perform the migrations
 	migrator := v3db.NewMigrator(db.(*postgresql.Database))
 	return migrator.Migrate()
-
 }

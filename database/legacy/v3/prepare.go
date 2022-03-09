@@ -76,9 +76,10 @@ CREATE TABLE transaction
 	raw_log      TEXT,
 	logs         JSONB,
 
-	/* Psql partition */
+	/* PSQL partition */
 	partition_id BIGINT NOT NULL,
-	UNIQUE (hash, partition_id)
+	
+	CONSTRAINT unique_tx UNIQUE (hash, partition_id)
 ) PARTITION BY LIST(partition_id);
 CREATE INDEX transaction_hash_index ON transaction (hash);
 CREATE INDEX transaction_height_index ON transaction (height);
@@ -95,16 +96,18 @@ func (db *Migrator) createNewMessagesTable() error {
 	stmt := fmt.Sprintf(`
 CREATE TABLE message
 (
-	  transaction_hash            TEXT   NOT NULL,
-	  index                       BIGINT NOT NULL,
-	  type                        TEXT   NOT NULL,
-	  value                       JSONB  NOT NULL,
-	  involved_accounts_addresses TEXT[] NOT NULL,
+	transaction_hash            TEXT   NOT NULL,
+	index                       BIGINT NOT NULL,
+	type                        TEXT   NOT NULL,
+	value                       JSONB  NOT NULL,
+	involved_accounts_addresses TEXT[] NOT NULL,
+	height                      BIGINT NOT NULL,
 
-	  /* Psql partition */
-	  partition_id                BIGINT NOT NULL,
-	  height                      BIGINT NOT NULL,
-	  FOREIGN KEY (transaction_hash, partition_id) REFERENCES transaction (hash, partition_id)
+	/* PSQL partition */
+	partition_id                BIGINT NOT NULL,
+	
+	FOREIGN KEY (transaction_hash, partition_id) REFERENCES transaction (hash, partition_id),  
+	CONSTRAINT unique_message_per_tx UNIQUE (transaction_hash, index, partition_id),
 ) PARTITION BY LIST(partition_id);
 CREATE INDEX message_transaction_hash_index ON message (transaction_hash);
 CREATE INDEX message_type_index ON message (type);

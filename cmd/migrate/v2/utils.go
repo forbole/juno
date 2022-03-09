@@ -1,24 +1,31 @@
 package v2
 
 import (
+	"fmt"
+	"io/ioutil"
+	"os"
+	"path"
+
 	"gopkg.in/yaml.v3"
 
-	"github.com/forbole/juno/v3/cmd/migrate/utils"
+	"github.com/forbole/juno/v3/types/config"
 )
 
-// ParseConfig attempts to read and parse a Juno Config from the given string bytes.
-// An error reading or parsing the Config results in a panic.
-func ParseConfig(configData []byte) (Config, error) {
-	var cfg Config
-	err := yaml.Unmarshal(configData, &cfg)
-	return cfg, err
-}
-
+// GetConfig returns the configuration reading it from the config.yaml file present inside the home directory
 func GetConfig() (Config, error) {
-	bz, err := utils.ReadConfig()
-	if err != nil {
-		return Config{}, nil
+	file := path.Join(config.HomePath, "config.yaml")
+
+	// Make sure the path exists
+	if _, err := os.Stat(file); os.IsNotExist(err) {
+		return Config{}, fmt.Errorf("config file does not exist")
 	}
 
-	return ParseConfig(bz)
+	bz, err := ioutil.ReadFile(file)
+	if err != nil {
+		return Config{}, fmt.Errorf("error while reading config files: %s", err)
+	}
+
+	var cfg Config
+	err = yaml.Unmarshal(bz, &cfg)
+	return cfg, err
 }

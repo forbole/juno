@@ -2,6 +2,7 @@ package blocks
 
 import (
 	"fmt"
+
 	"github.com/rs/zerolog/log"
 
 	"github.com/forbole/juno/v3/cmd/parse"
