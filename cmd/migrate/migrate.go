@@ -3,6 +3,7 @@ package migrate
 import (
 	"fmt"
 	"io/ioutil"
+	"time"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
@@ -98,6 +99,7 @@ func MigrateConfig() (Config, error) {
 			cfg.Parsing.GenesisFilePath,
 			cfg.Parsing.StartHeight,
 			cfg.Parsing.FastSync,
+			5*time.Second,
 		),
 		loggingconfig.NewLoggingConfig(
 			cfg.Logging.LogLevel,

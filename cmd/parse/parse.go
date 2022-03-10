@@ -13,7 +13,6 @@ import (
 	"github.com/forbole/juno/v3/types/config"
 
 	"github.com/go-co-op/gocron"
-	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/forbole/juno/v3/modules"
 	"github.com/forbole/juno/v3/parser"
@@ -110,7 +109,7 @@ func StartParsing(ctx *Context) error {
 	}
 
 	if cfg.ParseNewBlocks {
-		go startNewBlockListener(exportQueue, ctx)
+		go enqueueNewBlocks(exportQueue, ctx)
 	}
 
 	// Block main process (signal capture will call WaitGroup's Done)
@@ -153,25 +152,26 @@ func enqueueMissingBlocks(exportQueue types.HeightQueue, ctx *Context) {
 	}
 }
 
-// startNewBlockListener subscribes to new block events via the Tendermint RPCConfig
-// and enqueues each new block height onto the provided queue. It blocks as new
-// blocks are incoming.
-func startNewBlockListener(exportQueue types.HeightQueue, ctx *Context) {
-	eventCh, cancel, err := ctx.Node.SubscribeNewBlocks("juno-new-blocks-listener")
-	defer cancel()
-
+// enqueueNewBlocks enqueues new block heights onto the provided queue.
+func enqueueNewBlocks(exportQueue types.HeightQueue, ctx *Context) {
+	currHeight, err := ctx.Node.LatestHeight()
 	if err != nil {
-		panic(fmt.Errorf("failed to subscribe to new blocks: %s", err))
+		panic(fmt.Errorf("failed to get last block from RPCConfig client: %s", err))
 	}
 
-	ctx.Logger.Info("listening for new block events...")
+	// Enqueue upcoming heights
+	for {
+		latestBlockHeight, err := ctx.Node.LatestHeight()
+		if err != nil {
+			panic(fmt.Errorf("failed to get last block from RPCConfig client: %s", err))
+		}
 
-	for e := range eventCh {
-		newBlock := e.Data.(tmtypes.EventDataNewBlock).Block
-		height := newBlock.Header.Height
-
-		ctx.Logger.Debug("enqueueing new block", "height", height)
-		exportQueue <- height
+		// Enqueue all heights from the current height up to the latest height
+		for ; currHeight <= latestBlockHeight; currHeight++ {
+			ctx.Logger.Debug("enqueueing new block", "height", currHeight)
+			exportQueue <- currHeight
+		}
+		time.Sleep(config.Cfg.Parser.AvgBlockTime)
 	}
 }
 
