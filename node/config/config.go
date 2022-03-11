@@ -40,7 +40,7 @@ func (s *Config) UnmarshalYAML(n *yaml.Node) error {
 		return err
 	}
 
-	switch s.Type {
+	switch obj.Type {
 	case TypeRemote:
 		s.Details = new(remote.Details)
 	case TypeLocal:
@@ -52,14 +52,14 @@ func (s *Config) UnmarshalYAML(n *yaml.Node) error {
 	return obj.Details.Decode(s.Details)
 }
 
-func (s *Config) MarshalYAML() (interface{}, error) {
+func (s Config) MarshalYAML() (interface{}, error) {
 	type S Config
 	type T struct {
-		*S      `yaml:",inline"`
+		S       `yaml:",inline"`
 		Details Details `yaml:"config"`
 	}
 
-	obj := &T{S: (*S)(s)}
+	obj := &T{S: S(s)}
 	obj.Details = s.Details
 
 	return obj, nil
