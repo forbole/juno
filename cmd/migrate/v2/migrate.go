@@ -21,7 +21,7 @@ import (
 func RunMigration(_ *parse.Config) error {
 	v2Config, err := migrateConfig()
 	if err != nil {
-		return nil
+		return err
 	}
 
 	bz, err := yaml.Marshal(&v2Config)
