@@ -11,25 +11,30 @@ import (
 	"github.com/forbole/juno/v3/types"
 )
 
-// ReadConfig parses the configuration file for the executable having the give name using
-// the provided configuration parser
+// ReadConfig represents a Cobra cmd function allowing to read the config before executing the command itself
 func ReadConfig(cfg *Config) types.CobraCmdFunc {
 	return func(_ *cobra.Command, _ []string) error {
-		file := config.GetConfigFilePath()
-
-		// Make sure the path exists
-		if _, err := os.Stat(file); os.IsNotExist(err) {
-			return fmt.Errorf("config file does not exist. Make sure you have run the init command")
-		}
-
-		// Read the config
-		cfg, err := config.Read(file, cfg.GetConfigParser())
-		if err != nil {
-			return err
-		}
-
-		// Set the global configuration
-		config.Cfg = cfg
-		return nil
+		return UpdatedGlobalCfg(cfg)
 	}
+}
+
+// UpdatedGlobalCfg parses the configuration file using the provided configuration and sets the
+// parsed config as the global one
+func UpdatedGlobalCfg(cfg *Config) error {
+	file := config.GetConfigFilePath()
+
+	// Make sure the path exists
+	if _, err := os.Stat(file); os.IsNotExist(err) {
+		return fmt.Errorf("config file does not exist. Make sure you have run the init command")
+	}
+
+	// Read the config
+	junoCfg, err := config.Read(file, cfg.GetConfigParser())
+	if err != nil {
+		return err
+	}
+
+	// Set the global configuration
+	config.Cfg = junoCfg
+	return nil
 }

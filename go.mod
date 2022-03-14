@@ -7,6 +7,7 @@ require (
 	github.com/go-co-op/gocron v0.3.3
 	github.com/gogo/protobuf v1.3.3
 	github.com/gorilla/mux v1.8.0
+	github.com/jmoiron/sqlx v1.3.4
 	github.com/lib/pq v1.9.0
 	github.com/pelletier/go-toml v1.9.3
 	github.com/prometheus/client_golang v1.11.0
