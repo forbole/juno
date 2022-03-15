@@ -5,12 +5,13 @@ import (
 	"io/ioutil"
 	"time"
 
+	"github.com/forbole/juno/v3/cmd/parse/types"
+
 	parserconfig "github.com/forbole/juno/v3/parser/config"
 
 	"gopkg.in/yaml.v3"
 
 	v2 "github.com/forbole/juno/v3/cmd/migrate/v2"
-	"github.com/forbole/juno/v3/cmd/parse"
 	"github.com/forbole/juno/v3/database"
 	databaseconfig "github.com/forbole/juno/v3/database/config"
 	v3db "github.com/forbole/juno/v3/database/legacy/v3"
@@ -19,7 +20,7 @@ import (
 )
 
 // RunMigration runs the migrations from v2 to v3
-func RunMigration(parseConfig *parse.Config) error {
+func RunMigration(parseConfig *types.Config) error {
 	// Migrate the config
 	cfg, err := migrateConfig()
 	if err != nil {
@@ -27,7 +28,7 @@ func RunMigration(parseConfig *parse.Config) error {
 	}
 
 	// Refresh the global configuration
-	err = parse.UpdatedGlobalCfg(parseConfig)
+	err = types.UpdatedGlobalCfg(parseConfig)
 	if err != nil {
 		return err
 	}
@@ -105,7 +106,7 @@ func migrateConfig() (Config, error) {
 	}, nil
 }
 
-func migrateDb(cfg Config, parseConfig *parse.Config) error {
+func migrateDb(cfg Config, parseConfig *types.Config) error {
 	// Build the codec
 	encodingConfig := parseConfig.GetEncodingConfigBuilder()()
 

@@ -3,18 +3,18 @@ package blocks
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/forbole/juno/v3/cmd/parse"
+	"github.com/forbole/juno/v3/cmd/parse/types"
 )
 
 // NewBlocksCmd returns the Cobra command that allows to fix all the things related to blocks
-func NewBlocksCmd(parseConfig *parse.Config) *cobra.Command {
+func NewBlocksCmd(parseConfig *types.Config) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "blocks",
 		Short: "Fix things related to blocks and transactions",
 	}
 
 	cmd.AddCommand(
-		blocksCmd(parseConfig),
+		newAllCmd(parseConfig),
 	)
 
 	return cmd

@@ -1,4 +1,4 @@
-package parse
+package start
 
 import (
 	"fmt"
@@ -7,6 +7,8 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	parsecmdtypes "github.com/forbole/juno/v3/cmd/parse/types"
 
 	"github.com/forbole/juno/v3/logging"
 
@@ -25,14 +27,14 @@ var (
 	waitGroup sync.WaitGroup
 )
 
-// ParseCmd returns the command that should be run when we want to start parsing a chain state.
-func ParseCmd(cmdCfg *Config) *cobra.Command {
+// NewStartCmd returns the command that should be run when we want to start parsing a chain state.
+func NewStartCmd(cmdCfg *parsecmdtypes.Config) *cobra.Command {
 	return &cobra.Command{
-		Use:     "parse",
+		Use:     "start",
 		Short:   "Start parsing the blockchain data",
-		PreRunE: ReadConfig(cmdCfg),
+		PreRunE: parsecmdtypes.ReadConfigPreRunE(cmdCfg),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			context, err := GetParsingContext(cmdCfg)
+			context, err := parsecmdtypes.GetParserContext(config.Cfg, cmdCfg)
 			if err != nil {
 				return err
 			}
@@ -53,7 +55,7 @@ func ParseCmd(cmdCfg *Config) *cobra.Command {
 }
 
 // StartParsing represents the function that should be called when the parse command is executed
-func StartParsing(ctx *Context) error {
+func StartParsing(ctx *parser.Context) error {
 	// Get the config
 	cfg := config.Cfg.Parser
 	logging.StartHeight.Add(float64(cfg.StartHeight))
@@ -74,10 +76,9 @@ func StartParsing(ctx *Context) error {
 	exportQueue := types.NewQueue(25)
 
 	// Create workers
-	workerCtx := parser.NewContext(ctx.EncodingConfig.Marshaler, exportQueue, ctx.Node, ctx.Database, ctx.Logger, ctx.Modules)
 	workers := make([]parser.Worker, cfg.Workers, cfg.Workers)
 	for i := range workers {
-		workers[i] = parser.NewWorker(i, workerCtx)
+		workers[i] = parser.NewWorker(ctx, exportQueue, i)
 	}
 
 	waitGroup.Add(1)
@@ -119,7 +120,7 @@ func StartParsing(ctx *Context) error {
 
 // enqueueMissingBlocks enqueues jobs (block heights) for missed blocks starting
 // at the startHeight up until the latest known height.
-func enqueueMissingBlocks(exportQueue types.HeightQueue, ctx *Context) {
+func enqueueMissingBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
 	// Get the config
 	cfg := config.Cfg.Parser
 
@@ -153,7 +154,7 @@ func enqueueMissingBlocks(exportQueue types.HeightQueue, ctx *Context) {
 }
 
 // enqueueNewBlocks enqueues new block heights onto the provided queue.
-func enqueueNewBlocks(exportQueue types.HeightQueue, ctx *Context) {
+func enqueueNewBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
 	currHeight, err := ctx.Node.LatestHeight()
 	if err != nil {
 		panic(fmt.Errorf("failed to get last block from RPCConfig client: %s", err))
@@ -177,7 +178,7 @@ func enqueueNewBlocks(exportQueue types.HeightQueue, ctx *Context) {
 
 // trapSignal will listen for any OS signal and invoke Done on the main
 // WaitGroup allowing the main process to gracefully exit.
-func trapSignal(ctx *Context) {
+func trapSignal(ctx *parser.Context) {
 	var sigCh = make(chan os.Signal)
 
 	signal.Notify(sigCh, syscall.SIGTERM)
