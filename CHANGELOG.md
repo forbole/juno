@@ -1,4 +1,7 @@
 ## v3.0.0
+#### Note
+Some changes included in this version are **breaking** due to the command renames. Extra precaution needs to be used when updating to this version.
+
 ### Migrating
 To migrate to this version you can run the following command: 
 ```
