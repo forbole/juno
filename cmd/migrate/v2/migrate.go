@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/forbole/juno/v3/cmd/parse/types"
+	parsecmdtypes "github.com/forbole/juno/v3/cmd/parse/types"
 
 	"gopkg.in/yaml.v3"
 
@@ -19,7 +19,7 @@ import (
 )
 
 // RunMigration runs the migration that migrates the data from v1 to v2
-func RunMigration(_ *types.Config) error {
+func RunMigration(_ *parsecmdtypes.Config) error {
 	v2Config, err := migrateConfig()
 	if err != nil {
 		return err

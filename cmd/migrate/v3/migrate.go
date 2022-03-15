@@ -5,8 +5,7 @@ import (
 	"io/ioutil"
 	"time"
 
-	"github.com/forbole/juno/v3/cmd/parse/types"
-
+	parsecmdtypes "github.com/forbole/juno/v3/cmd/parse/types"
 	parserconfig "github.com/forbole/juno/v3/parser/config"
 
 	"gopkg.in/yaml.v3"
@@ -20,7 +19,7 @@ import (
 )
 
 // RunMigration runs the migrations from v2 to v3
-func RunMigration(parseConfig *types.Config) error {
+func RunMigration(parseConfig *parsecmdtypes.Config) error {
 	// Migrate the config
 	cfg, err := migrateConfig()
 	if err != nil {
@@ -28,7 +27,7 @@ func RunMigration(parseConfig *types.Config) error {
 	}
 
 	// Refresh the global configuration
-	err = types.UpdatedGlobalCfg(parseConfig)
+	err = parsecmdtypes.UpdatedGlobalCfg(parseConfig)
 	if err != nil {
 		return err
 	}
@@ -106,7 +105,7 @@ func migrateConfig() (Config, error) {
 	}, nil
 }
 
-func migrateDb(cfg Config, parseConfig *types.Config) error {
+func migrateDb(cfg Config, parseConfig *parsecmdtypes.Config) error {
 	// Build the codec
 	encodingConfig := parseConfig.GetEncodingConfigBuilder()()
 
