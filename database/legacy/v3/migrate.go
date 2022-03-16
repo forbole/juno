@@ -32,6 +32,16 @@ func (db *Migrator) Migrate() error {
 		return err
 	}
 
+	// Use temporal messages_by_address with transaction_old & message_old tables
+	err = db.deleteOldMessagesByAddressFunction()
+	if err != nil {
+		return fmt.Errorf("error while deleting messages_by_address function: %s", err)
+	}
+	err = db.createOldMessageByAddressFunction()
+	if err != nil {
+		return fmt.Errorf("error while creating messages_by_address function: %s", err)
+	}
+
 	// Migrate the transactions
 	log.Info().Msg("migrating transactions")
 	var offset int64
@@ -61,7 +71,7 @@ func (db *Migrator) Migrate() error {
 
 	err = db.deleteOldMessagesByAddressFunction()
 	if err != nil {
-		return fmt.Errorf("error while creating messages_by_address function: %s", err)
+		return fmt.Errorf("error while deleting messages_by_address function: %s", err)
 	}
 
 	err = db.createNewMessageByAddressFunction()
@@ -187,6 +197,37 @@ func (db *Migrator) insertTransactionMessages(tx types.TransactionRow, partition
 
 func (db *Migrator) deleteOldMessagesByAddressFunction() error {
 	_, err := db.Sql.Exec("DROP FUNCTION IF EXISTS messages_by_address(text[],text[],bigint,bigint);")
+	return err
+}
+
+func (db *Migrator) createOldMessageByAddressFunction() error {
+	_, err := db.Sql.Exec(`
+CREATE FUNCTION messages_by_address(
+		addresses TEXT[],
+		types TEXT[],
+		"limit" BIGINT = 100,
+		"offset" BIGINT = 0
+) RETURNS SETOF message_old AS $$
+	SELECT 
+	message_old.transaction_hash, 
+	message_old.index, 
+	message_old.type, 
+	message_old.value, 
+	message_old.involved_accounts_addresses
+FROM 
+	message_old
+JOIN 
+	transaction_old t on message_old.transaction_hash = t.hash
+WHERE 
+	(cardinality(types) = 0 OR type = ANY (types))
+	AND addresses && involved_accounts_addresses
+	ORDER BY 
+		height DESC
+	LIMIT 
+	"limit" OFFSET "offset" $$ LANGUAGE sql STABLE;
+`,
+	)
+
 	return err
 }
 
