@@ -1,4 +1,4 @@
-package parse
+package types
 
 import (
 	"github.com/cosmos/cosmos-sdk/simapp/params"

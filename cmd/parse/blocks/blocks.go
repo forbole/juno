@@ -3,9 +3,9 @@ package blocks
 import (
 	"fmt"
 
-	"github.com/rs/zerolog/log"
+	parsecmdtypes "github.com/forbole/juno/v3/cmd/parse/types"
 
-	"github.com/forbole/juno/v3/cmd/parse"
+	"github.com/rs/zerolog/log"
 
 	"github.com/spf13/cobra"
 
@@ -19,8 +19,8 @@ const (
 	flagEnd   = "end"
 )
 
-// blocksCmd returns a Cobra command that allows to fix missing blocks in database
-func blocksCmd(parseConfig *parse.Config) *cobra.Command {
+// newAllCmd returns a Cobra command that allows to fix missing blocks in database
+func newAllCmd(parseConfig *parsecmdtypes.Config) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "all",
 		Short: "Fix missing blocks and transactions in database",
@@ -31,13 +31,13 @@ You can override this behaviour using the %s flag. If this is set, even the bloc
 will be replaced with the data downloaded from the node.
 `, flagStart, flagEnd, flagForce),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			parseCtx, err := parse.GetParsingContext(parseConfig)
+			parseCtx, err := parsecmdtypes.GetParserContext(config.Cfg, parseConfig)
 			if err != nil {
 				return err
 			}
 
-			workerCtx := parser.NewContext(parseCtx.EncodingConfig.Marshaler, nil, parseCtx.Node, parseCtx.Database, parseCtx.Logger, parseCtx.Modules)
-			worker := parser.NewWorker(0, workerCtx)
+			workerCtx := parser.NewContext(parseCtx.EncodingConfig, parseCtx.Node, parseCtx.Database, parseCtx.Logger, parseCtx.Modules)
+			worker := parser.NewWorker(workerCtx, nil, 0)
 
 			// Get the flag values
 			start, _ := cmd.Flags().GetInt64(flagStart)

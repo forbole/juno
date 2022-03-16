@@ -10,6 +10,7 @@ import (
 const (
 	TypeRemote = "remote"
 	TypeLocal  = "local"
+	TypeNone   = "none"
 )
 
 type Config struct {

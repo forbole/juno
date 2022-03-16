@@ -34,7 +34,8 @@ Usage:
 Available Commands:
   help        Help about any command
   init        Initializes the configuration files
-  parse       Start parsing the blockchain data
+  parse       Parse individual data (eg. the genesis file)
+  start       Start parsing the blockchain data
   version     Print the version information
 
 Flags:
@@ -70,14 +71,14 @@ For a better understanding of what each section and field refers to, please read
 Once the configuration file has been setup, you can run Juno using the following command:
 
 ```shell
-$ juno parse
+$ juno start
 ```
 
 If you are using a custom folder for the configuration file, please specify it using the `--home` flag:
 
 
 ```shell
-$ juno parse --home /path/to/my/config/folder
+$ juno start --home /path/to/my/config/folder
 ```
 
 We highly suggest you running Juno as a system service so that it can be restarted automatically in the case it stops. To do this you can run:
