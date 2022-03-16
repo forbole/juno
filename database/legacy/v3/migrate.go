@@ -32,14 +32,10 @@ func (db *Migrator) Migrate() error {
 		return err
 	}
 
-	// Use temporal messages_by_address with transaction_old & message_old tables
-	err = db.deleteOldMessagesByAddressFunction()
+	// Use temporal messages_by_address function with transaction_old & message_old tables
+	err = db.modifyOldMessageByAddressFunction()
 	if err != nil {
-		return fmt.Errorf("error while deleting messages_by_address function: %s", err)
-	}
-	err = db.createOldMessageByAddressFunction()
-	if err != nil {
-		return fmt.Errorf("error while creating messages_by_address function: %s", err)
+		return fmt.Errorf("error while modifying old messages_by_address function: %s", err)
 	}
 
 	// Migrate the transactions
@@ -200,8 +196,13 @@ func (db *Migrator) deleteOldMessagesByAddressFunction() error {
 	return err
 }
 
-func (db *Migrator) createOldMessageByAddressFunction() error {
-	_, err := db.Sql.Exec(`
+func (db *Migrator) modifyOldMessageByAddressFunction() error {
+	_, err := db.Sql.Exec("DROP FUNCTION IF EXISTS messages_by_address(text[],text[],bigint,bigint);")
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Sql.Exec(`
 CREATE FUNCTION messages_by_address(
 		addresses TEXT[],
 		types TEXT[],
