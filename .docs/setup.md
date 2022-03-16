@@ -34,6 +34,7 @@ Usage:
 Available Commands:
   help        Help about any command
   init        Initializes the configuration files
+  parse       Parse individual data (eg. the genesis file)
   start       Start parsing the blockchain data
   version     Print the version information
 
