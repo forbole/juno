@@ -7,6 +7,7 @@ import (
 	"github.com/forbole/juno/v3/modules/telemetry"
 	nodeconfig "github.com/forbole/juno/v3/node/config"
 	parserconfig "github.com/forbole/juno/v3/parser/config"
+	pricefeedconfig "github.com/forbole/juno/v3/pricefeed"
 	"github.com/forbole/juno/v3/types/config"
 )
 
@@ -20,6 +21,7 @@ type Config struct {
 
 	// The following are there to support modules which config are present if they are enabled
 
-	Telemetry *telemetry.Config `yaml:"telemetry,omitempty"`
-	Pruning   *pruning.Config   `yaml:"pruning,omitempty"`
+	Telemetry *telemetry.Config       `yaml:"telemetry,omitempty"`
+	Pruning   *pruning.Config         `yaml:"pruning,omitempty"`
+	PriceFeed *pricefeedconfig.Config `yaml:"pricefeed,omitempty"`
 }
