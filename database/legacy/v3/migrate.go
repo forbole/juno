@@ -32,10 +32,16 @@ func (db *Migrator) Migrate() error {
 		return err
 	}
 
-	// Use temporal messages_by_address function with transaction_old & message_old tables
+	// Rename function to messages_by_address_old that reads from transaction_old & message_old tables
 	err = db.modifyOldMessageByAddressFunction()
 	if err != nil {
 		return fmt.Errorf("error while modifying old messages_by_address function: %s", err)
+	}
+
+	// Create new messages_by_address function that reads from the partitioned tables
+	err = db.createNewMessageByAddressFunction()
+	if err != nil {
+		return fmt.Errorf("error while creating messages_by_address function: %s", err)
 	}
 
 	// Migrate the transactions
@@ -68,11 +74,6 @@ func (db *Migrator) Migrate() error {
 	err = db.deleteOldMessagesByAddressFunction()
 	if err != nil {
 		return fmt.Errorf("error while deleting messages_by_address function: %s", err)
-	}
-
-	err = db.createNewMessageByAddressFunction()
-	if err != nil {
-		return fmt.Errorf("error while creating messages_by_address function: %s", err)
 	}
 
 	return nil
@@ -192,7 +193,7 @@ func (db *Migrator) insertTransactionMessages(tx types.TransactionRow, partition
 }
 
 func (db *Migrator) deleteOldMessagesByAddressFunction() error {
-	_, err := db.Sql.Exec("DROP FUNCTION IF EXISTS messages_by_address(text[],text[],bigint,bigint);")
+	_, err := db.Sql.Exec("DROP FUNCTION IF EXISTS messages_by_address_old(text[],text[],bigint,bigint);")
 	return err
 }
 
@@ -203,7 +204,7 @@ func (db *Migrator) modifyOldMessageByAddressFunction() error {
 	}
 
 	_, err = db.Sql.Exec(`
-CREATE FUNCTION messages_by_address(
+CREATE FUNCTION messages_by_address_old(
 		addresses TEXT[],
 		types TEXT[],
 		"limit" BIGINT = 100,
