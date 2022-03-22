@@ -38,7 +38,7 @@ func (db *Migrator) Migrate() error {
 		return fmt.Errorf("error while modifying old messages_by_address function: %s", err)
 	}
 
-	// Create new messages_by_address function that reads from the partitioned tables
+	// Create new messages_by_address function that reads from partitioned transaction & message tables
 	err = db.createNewMessageByAddressFunction()
 	if err != nil {
 		return fmt.Errorf("error while creating messages_by_address function: %s", err)
