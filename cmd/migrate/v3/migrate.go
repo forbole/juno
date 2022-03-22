@@ -102,6 +102,7 @@ func migrateConfig() (Config, error) {
 		Logging:   cfg.Logging,
 		Telemetry: cfg.Telemetry,
 		Pruning:   cfg.Pruning,
+		PriceFeed: cfg.PriceFeed,
 	}, nil
 }
 
