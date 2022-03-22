@@ -73,7 +73,7 @@ func (db *Migrator) Migrate() error {
 
 	err = db.deleteOldMessagesByAddressFunction()
 	if err != nil {
-		return fmt.Errorf("error while deleting messages_by_address function: %s", err)
+		return fmt.Errorf("error while deleting messages_by_address_old function: %s", err)
 	}
 
 	return nil
