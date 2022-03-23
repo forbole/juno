@@ -32,10 +32,12 @@ func (db *Migrator) Migrate() error {
 		return err
 	}
 
-	// Rename function to messages_by_address_old that reads from transaction_old & message_old tables
-	err = db.modifyOldMessageByAddressFunction()
+	// Migrate the messages_by_address function
+	log.Info().Msg("migrating messages_by_address")
+
+	err = db.deleteOldMessagesByAddressFunction()
 	if err != nil {
-		return fmt.Errorf("error while modifying old messages_by_address function: %s", err)
+		return fmt.Errorf("error while deleting messages_by_address_old function: %s", err)
 	}
 
 	// Create new messages_by_address function that reads from partitioned transaction & message tables
@@ -66,14 +68,6 @@ func (db *Migrator) Migrate() error {
 		}
 
 		offset += batchSize
-	}
-
-	// Migrate the messages_by_address function
-	log.Info().Msg("migrating messages_by_address")
-
-	err = db.deleteOldMessagesByAddressFunction()
-	if err != nil {
-		return fmt.Errorf("error while deleting messages_by_address_old function: %s", err)
 	}
 
 	return nil
@@ -193,43 +187,7 @@ func (db *Migrator) insertTransactionMessages(tx types.TransactionRow, partition
 }
 
 func (db *Migrator) deleteOldMessagesByAddressFunction() error {
-	_, err := db.Sql.Exec("DROP FUNCTION IF EXISTS messages_by_address_old(text[],text[],bigint,bigint);")
-	return err
-}
-
-func (db *Migrator) modifyOldMessageByAddressFunction() error {
 	_, err := db.Sql.Exec("DROP FUNCTION IF EXISTS messages_by_address(text[],text[],bigint,bigint);")
-	if err != nil {
-		return err
-	}
-
-	_, err = db.Sql.Exec(`
-CREATE FUNCTION messages_by_address_old(
-		addresses TEXT[],
-		types TEXT[],
-		"limit" BIGINT = 100,
-		"offset" BIGINT = 0
-) RETURNS SETOF message_old AS $$
-	SELECT 
-	message_old.transaction_hash, 
-	message_old.index, 
-	message_old.type, 
-	message_old.value, 
-	message_old.involved_accounts_addresses
-FROM 
-	message_old
-JOIN 
-	transaction_old t on message_old.transaction_hash = t.hash
-WHERE 
-	(cardinality(types) = 0 OR type = ANY (types))
-	AND addresses && involved_accounts_addresses
-	ORDER BY 
-		height DESC
-	LIMIT 
-	"limit" OFFSET "offset" $$ LANGUAGE sql STABLE;
-`,
-	)
-
 	return err
 }
 
