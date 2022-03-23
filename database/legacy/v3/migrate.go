@@ -32,9 +32,6 @@ func (db *Migrator) Migrate() error {
 		return err
 	}
 
-	// Migrate the messages_by_address function
-	log.Info().Msg("migrating messages_by_address")
-
 	// Migrate the transactions
 	log.Info().Msg("migrating transactions")
 	var offset int64
