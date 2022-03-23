@@ -35,23 +35,6 @@ func (db *Migrator) Migrate() error {
 	// Migrate the messages_by_address function
 	log.Info().Msg("migrating messages_by_address")
 
-	err = db.deleteOldMessagesByAddressFunction()
-	if err != nil {
-		return fmt.Errorf("error while deleting messages_by_address_old function: %s", err)
-	}
-
-	// Replace involved_accounts_addresses INDEX with GIN INDEX
-	err = db.createInvolvedAccountsGinIndex()
-	if err != nil {
-		return fmt.Errorf("error while creating gin index for involved_accounts_addresses: %s", err)
-	}
-
-	// Create new messages_by_address function that reads from partitioned transaction & message tables
-	err = db.createNewMessageByAddressFunction()
-	if err != nil {
-		return fmt.Errorf("error while creating messages_by_address function: %s", err)
-	}
-
 	// Migrate the transactions
 	log.Info().Msg("migrating transactions")
 	var offset int64
@@ -189,56 +172,5 @@ func (db *Migrator) insertTransactionMessages(tx types.TransactionRow, partition
 	stmt += " ON CONFLICT DO NOTHING"
 
 	_, err = db.Sql.Exec(stmt, params...)
-	return err
-}
-
-func (db *Migrator) deleteOldMessagesByAddressFunction() error {
-	_, err := db.Sql.Exec("DROP FUNCTION IF EXISTS messages_by_address(text[],text[],bigint,bigint);")
-	return err
-}
-
-func (db *Migrator) createInvolvedAccountsGinIndex() error {
-	_, err := db.Sql.Exec("DROP INDEX IF EXISTS message_involved_accounts_index);")
-	if err != nil {
-		return fmt.Errorf("error while dropping index: %s", err)
-	}
-
-	_, err = db.Sql.Exec("CREATE INDEX message_involved_accounts_index ON message USING GIN(involved_accounts_addresses);")
-	if err != nil {
-		return fmt.Errorf("error while creating gin index: %s", err)
-	}
-
-	return nil
-}
-
-func (db *Migrator) createNewMessageByAddressFunction() error {
-	_, err := db.Sql.Exec(`
-CREATE OR REPLACE FUNCTION messages_by_address(
-	addresses TEXT [],
-	types TEXT [],
-	"limit" BIGINT = 100,
-	"offset" BIGINT = 0
-) RETURNS SETOF message AS $$
-SELECT
-	message.transaction_hash,
-  	message.index,
-  	message.type,
-  	message.value,
-  	message.involved_accounts_addresses,
-  	message.partition_id,
-  	message.height
-FROM
-  	message
-WHERE
-  	( cardinality(types) = 0  OR type = ANY (types))
-  	AND involved_accounts_addresses @> addresses
-ORDER BY
-  	height DESC,
-  	involved_accounts_addresses
-LIMIT
-  	"limit" OFFSET "offset" $$ LANGUAGE sql STABLE;
-`,
-	)
-
 	return err
 }
