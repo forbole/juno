@@ -40,6 +40,12 @@ func (db *Migrator) Migrate() error {
 		return fmt.Errorf("error while deleting messages_by_address_old function: %s", err)
 	}
 
+	// Replace involved_accounts_addresses INDEX with GIN INDEX
+	err = db.createInvolvedAccountsGinIndex()
+	if err != nil {
+		return fmt.Errorf("error while creating gin index for involved_accounts_addresses: %s", err)
+	}
+
 	// Create new messages_by_address function that reads from partitioned transaction & message tables
 	err = db.createNewMessageByAddressFunction()
 	if err != nil {
@@ -191,6 +197,20 @@ func (db *Migrator) deleteOldMessagesByAddressFunction() error {
 	return err
 }
 
+func (db *Migrator) createInvolvedAccountsGinIndex() error {
+	_, err := db.Sql.Exec("DROP INDEX IF EXISTS message_involved_accounts_index);")
+	if err != nil {
+		return fmt.Errorf("error while dropping index: %s", err)
+	}
+
+	_, err = db.Sql.Exec("CREATE INDEX message_involved_accounts_index ON message USING GIN(involved_accounts_addresses);")
+	if err != nil {
+		return fmt.Errorf("error while creating gin index: %s", err)
+	}
+
+	return nil
+}
+
 func (db *Migrator) createNewMessageByAddressFunction() error {
 	_, err := db.Sql.Exec(`
 CREATE OR REPLACE FUNCTION messages_by_address(
@@ -211,7 +231,7 @@ FROM
   	message
 WHERE
   	( cardinality(types) = 0  OR type = ANY (types))
-  	AND involved_accounts_addresses && addresses
+  	AND involved_accounts_addresses @> addresses
 ORDER BY
   	height DESC,
   	involved_accounts_addresses
