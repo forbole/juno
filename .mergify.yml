@@ -4,7 +4,7 @@ queue_rules:
       - base~=v
 
 pull_request_rules:
-  - name: automerge to master with label automerge and branch protection passing
+  - name: automerge with label automerge and branch protection passing
     conditions:
       - "#approved-reviews-by>1"
       - label=automerge
