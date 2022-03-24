@@ -75,7 +75,24 @@ CREATE TABLE message
 ) PARTITION BY LIST (partition_id);
 CREATE INDEX message_transaction_hash_index ON message (transaction_hash);
 CREATE INDEX message_type_index ON message (type);
-CREATE INDEX message_involved_accounts_index ON message (involved_accounts_addresses);
+CREATE INDEX message_involved_accounts_index ON message USING GIN(involved_accounts_addresses);
+
+/**
+ * This function is used to find all the utils that involve any of the given addresses and have
+ * type that is one of the specified types.
+ */
+CREATE FUNCTION messages_by_address(
+    addresses TEXT[],
+    types TEXT[],
+    "limit" BIGINT = 100,
+    "offset" BIGINT = 0)
+    RETURNS SETOF message AS
+$$
+SELECT * FROM message
+WHERE (cardinality(types) = 0 OR type = ANY (types))
+  AND addresses && involved_accounts_addresses
+ORDER BY height DESC LIMIT "limit" OFFSET "offset"
+$$ LANGUAGE sql STABLE;
 
 CREATE TABLE pruning
 (

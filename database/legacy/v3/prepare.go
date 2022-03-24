@@ -28,6 +28,11 @@ func (db *Migrator) PrepareMigration() error {
 		return fmt.Errorf("error while creating messaage table: %s", err)
 	}
 
+	err = db.migrateMessagesByAddressFunction()
+	if err != nil {
+		return fmt.Errorf("error while migrating the messages_by_address function: %s", err)
+	}
+
 	return nil
 }
 
@@ -111,10 +116,41 @@ CREATE TABLE message
 ) PARTITION BY LIST(partition_id);
 CREATE INDEX message_transaction_hash_index ON message (transaction_hash);
 CREATE INDEX message_type_index ON message (type);
-CREATE INDEX message_involved_accounts_index ON message (involved_accounts_addresses);
+CREATE INDEX message_involved_accounts_index ON message USING GIN(involved_accounts_addresses);
 GRANT ALL PRIVILEGES ON message TO %s;
 `, config.Cfg.Database.User)
 
 	_, err := db.Sql.Exec(stmt)
+	return err
+}
+
+// migrateMessagesByAddressFunction migrates the messages_by_address function to use the new tables structures.
+// This deletes the old function, which relied on a JOIN with the transaction table to get the message height,
+// and creates a new function that does not require any JOIN since it takes the message height directly from
+// the message table itself (as we've added this field with the new schema).
+func (db *Migrator) migrateMessagesByAddressFunction() error {
+	// Delete the old function
+	_, err := db.Sql.Exec("DROP FUNCTION IF EXISTS messages_by_address(text[],text[],bigint,bigint);")
+	if err != nil {
+		return err
+	}
+
+	// Create the new function
+	stmt := `
+CREATE FUNCTION messages_by_address(
+    addresses TEXT[],
+    types TEXT[],
+    "limit" BIGINT = 100,
+    "offset" BIGINT = 0)
+    RETURNS SETOF message AS
+$$
+SELECT * FROM message
+WHERE (cardinality(types) = 0 OR type = ANY (types))
+  AND addresses && involved_accounts_addresses
+ORDER BY height DESC LIMIT "limit" OFFSET "offset"
+$$ LANGUAGE sql STABLE;
+`
+
+	_, err = db.Sql.Exec(stmt)
 	return err
 }
