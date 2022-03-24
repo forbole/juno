@@ -4,14 +4,15 @@ import (
 	"fmt"
 	"os"
 
+	parsecmdtypes "github.com/forbole/juno/v3/cmd/parse/types"
+
 	"github.com/spf13/cobra"
 
 	v2 "github.com/forbole/juno/v3/cmd/migrate/v2"
 	v3 "github.com/forbole/juno/v3/cmd/migrate/v3"
-	"github.com/forbole/juno/v3/cmd/parse"
 )
 
-type Migrator func(parseCfg *parse.Config) error
+type Migrator func(parseCfg *parsecmdtypes.Config) error
 
 var (
 	migrations = map[string]Migrator{
@@ -28,8 +29,8 @@ func getVersions() []string {
 	return versions
 }
 
-// MigrateCmd returns the Cobra command allowing to migrate config and tables to v3 version
-func MigrateCmd(appName string, parseConfig *parse.Config) *cobra.Command {
+// NewMigrateCmd returns the Cobra command allowing to migrate config and tables to v3 version
+func NewMigrateCmd(appName string, parseConfig *parsecmdtypes.Config) *cobra.Command {
 	return &cobra.Command{
 		Use:   "migrate [to-version]",
 		Short: "Perform the migrations from the current version to the specified one",
