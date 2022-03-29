@@ -13,8 +13,8 @@ const (
 	flagReplace = "replace"
 )
 
-// InitCmd returns the command that should be run in order to properly initialize BDJuno
-func InitCmd(cfg *Config) *cobra.Command {
+// NewInitCmd returns the command that should be run in order to properly initialize Juno
+func NewInitCmd(cfg *Config) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "init",
 		Short: "Initializes the configuration files",

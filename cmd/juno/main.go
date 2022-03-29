@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/forbole/juno/v3/cmd/parse"
+	"github.com/forbole/juno/v3/cmd/parse/types"
 
 	"github.com/forbole/juno/v3/modules/messages"
 	"github.com/forbole/juno/v3/modules/registrar"
@@ -14,7 +14,7 @@ import (
 func main() {
 	// JunoConfig the runner
 	config := cmd.NewConfig("juno").
-		WithParseConfig(parse.NewConfig().
+		WithParseConfig(types.NewConfig().
 			WithRegistrar(registrar.NewDefaultRegistrar(
 				messages.CosmosMessageAddressesParser,
 			)),

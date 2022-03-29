@@ -15,6 +15,7 @@ import (
 
 	"github.com/forbole/juno/v3/database"
 	"github.com/forbole/juno/v3/types"
+	"github.com/forbole/juno/v3/types/config"
 )
 
 // Builder creates a database connection with the given database connection info
@@ -67,37 +68,26 @@ type Database struct {
 	Logger         logging.Logger
 }
 
-// RunTx allows to run a transaction inside this database instance
-func (db *Database) RunTx(fn func(tx *sql.Tx) error) error {
-	tx, err := db.Sql.Begin()
-	if err != nil {
-		return fmt.Errorf("error while beginning database transaction: %s", err)
-	}
+// createPartitionIfNotExists creates a new partition having the given partition id if not existing
+func (db *Database) createPartitionIfNotExists(table string, partitionID int64) error {
+	partitionTable := fmt.Sprintf("%s_%d", table, partitionID)
 
-	err = fn(tx)
+	stmt := fmt.Sprintf(
+		"CREATE TABLE IF NOT EXISTS %s PARTITION OF %s FOR VALUES IN (%d)",
+		partitionTable,
+		table,
+		partitionID,
+	)
+	_, err := db.Sql.Exec(stmt)
+
 	if err != nil {
-		if rbError := tx.Rollback(); rbError != nil {
-			return fmt.Errorf("error while rolling back database transaction; tx err: %s, rb err: %s", err, rbError)
-		}
 		return err
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return fmt.Errorf("error while committing transaction: %s", err)
 	}
 
 	return nil
 }
 
 // -------------------------------------------------------------------------------------------------------------------
-
-// LastBlockHeight implements database.Database
-func (db *Database) LastBlockHeight() (int64, error) {
-	var height int64
-	err := db.Sql.QueryRow(`SELECT coalesce(MAX(height),0) AS height FROM block;`).Scan(&height)
-	return height, err
-}
 
 // HasBlock implements database.Database
 func (db *Database) HasBlock(height int64) (bool, error) {
@@ -121,10 +111,26 @@ VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING`
 
 // SaveTx implements database.Database
 func (db *Database) SaveTx(tx *types.Tx) error {
+	var partitionID int64
+
+	partitionSize := config.Cfg.Database.PartitionSize
+	if partitionSize > 0 {
+		partitionID = tx.Height / partitionSize
+		err := db.createPartitionIfNotExists("transaction", partitionID)
+		if err != nil {
+			return err
+		}
+	}
+
+	return db.saveTxInsidePartition(tx, partitionID)
+}
+
+// saveTxInsidePartition stores the given transaction inside the partition having the given id
+func (db *Database) saveTxInsidePartition(tx *types.Tx, partitionId int64) error {
 	sqlStatement := `
 INSERT INTO transaction 
-    (hash, height, success, messages, memo, signatures, signer_infos, fee, gas_wanted, gas_used, raw_log, logs) 
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT DO NOTHING`
+(hash, height, success, messages, memo, signatures, signer_infos, fee, gas_wanted, gas_used, raw_log, logs, partition_id) 
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) ON CONFLICT DO NOTHING`
 
 	var sigs = make([]string, len(tx.Signatures))
 	for index, sig := range tx.Signatures {
@@ -166,6 +172,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT DO NOTHIN
 		msgsBz, tx.Body.Memo, pq.Array(sigs),
 		sigInfoBz, string(feeBz),
 		tx.GasWanted, tx.GasUsed, tx.RawLog, string(logsBz),
+		partitionId,
 	)
 	return err
 }
@@ -224,11 +231,26 @@ func (db *Database) SaveCommitSignatures(signatures []*types.CommitSig) error {
 
 // SaveMessage implements database.Database
 func (db *Database) SaveMessage(msg *types.Message) error {
-	stmt := `
-INSERT INTO message(transaction_hash, index, type, value, involved_accounts_addresses) 
-VALUES ($1, $2, $3, $4, $5)`
+	var partitionID int64
+	partitionSize := config.Cfg.Database.PartitionSize
+	if partitionSize > 0 {
+		partitionID = msg.Height / partitionSize
+		err := db.createPartitionIfNotExists("message", partitionID)
+		if err != nil {
+			return err
+		}
+	}
 
-	_, err := db.Sql.Exec(stmt, msg.TxHash, msg.Index, msg.Type, msg.Value, pq.Array(msg.Addresses))
+	return db.saveMessageInsidePartition(msg, partitionID)
+}
+
+// saveMessageInsidePartition stores the given message inside the partition having the provided id
+func (db *Database) saveMessageInsidePartition(msg *types.Message, partitionID int64) error {
+	stmt := `
+INSERT INTO message(transaction_hash, index, type, value, involved_accounts_addresses, height, partition_id) 
+VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT DO NOTHING`
+
+	_, err := db.Sql.Exec(stmt, msg.TxHash, msg.Index, msg.Type, msg.Value, pq.Array(msg.Addresses), msg.Height, partitionID)
 	return err
 }
 

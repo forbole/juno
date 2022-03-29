@@ -1,40 +1,34 @@
 package parser
 
 import (
-	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/simapp/params"
 
 	"github.com/forbole/juno/v3/logging"
 	"github.com/forbole/juno/v3/node"
 
 	"github.com/forbole/juno/v3/database"
 	"github.com/forbole/juno/v3/modules"
-	"github.com/forbole/juno/v3/types"
 )
 
 // Context represents the context that is shared among different workers
 type Context struct {
-	Codec    codec.Codec
-	Node     node.Node
-	Database database.Database
-	Logger   logging.Logger
-
-	Queue   types.HeightQueue
-	Modules []modules.Module
+	EncodingConfig *params.EncodingConfig
+	Node           node.Node
+	Database       database.Database
+	Logger         logging.Logger
+	Modules        []modules.Module
 }
 
-// NewContext allows to build a new Worker Context instance
+// NewContext builds a new Context instance
 func NewContext(
-	codec codec.Codec, queue types.HeightQueue,
-	node node.Node, db database.Database, logger logging.Logger,
-	modules []modules.Module,
+	encodingConfig *params.EncodingConfig, proxy node.Node, db database.Database,
+	logger logging.Logger, modules []modules.Module,
 ) *Context {
 	return &Context{
-		Codec:    codec,
-		Node:     node,
-		Database: db,
-		Logger:   logger,
-
-		Queue:   queue,
-		Modules: modules,
+		EncodingConfig: encodingConfig,
+		Node:           proxy,
+		Database:       db,
+		Modules:        modules,
+		Logger:         logger,
 	}
 }

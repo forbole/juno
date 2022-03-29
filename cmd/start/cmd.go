@@ -1,4 +1,4 @@
-package parse
+package start
 
 import (
 	"fmt"
@@ -8,12 +8,13 @@ import (
 	"syscall"
 	"time"
 
+	parsecmdtypes "github.com/forbole/juno/v3/cmd/parse/types"
+
 	"github.com/forbole/juno/v3/logging"
 
 	"github.com/forbole/juno/v3/types/config"
 
 	"github.com/go-co-op/gocron"
-	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/forbole/juno/v3/modules"
 	"github.com/forbole/juno/v3/parser"
@@ -26,14 +27,14 @@ var (
 	waitGroup sync.WaitGroup
 )
 
-// ParseCmd returns the command that should be run when we want to start parsing a chain state.
-func ParseCmd(cmdCfg *Config) *cobra.Command {
+// NewStartCmd returns the command that should be run when we want to start parsing a chain state.
+func NewStartCmd(cmdCfg *parsecmdtypes.Config) *cobra.Command {
 	return &cobra.Command{
-		Use:     "parse",
+		Use:     "start",
 		Short:   "Start parsing the blockchain data",
-		PreRunE: ReadConfig(cmdCfg),
+		PreRunE: parsecmdtypes.ReadConfigPreRunE(cmdCfg),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			context, err := GetParsingContext(cmdCfg)
+			context, err := parsecmdtypes.GetParserContext(config.Cfg, cmdCfg)
 			if err != nil {
 				return err
 			}
@@ -54,7 +55,7 @@ func ParseCmd(cmdCfg *Config) *cobra.Command {
 }
 
 // StartParsing represents the function that should be called when the parse command is executed
-func StartParsing(ctx *Context) error {
+func StartParsing(ctx *parser.Context) error {
 	// Get the config
 	cfg := config.Cfg.Parser
 	logging.StartHeight.Add(float64(cfg.StartHeight))
@@ -75,10 +76,9 @@ func StartParsing(ctx *Context) error {
 	exportQueue := types.NewQueue(25)
 
 	// Create workers
-	workerCtx := parser.NewContext(ctx.EncodingConfig.Marshaler, exportQueue, ctx.Node, ctx.Database, ctx.Logger, ctx.Modules)
 	workers := make([]parser.Worker, cfg.Workers, cfg.Workers)
 	for i := range workers {
-		workers[i] = parser.NewWorker(i, workerCtx)
+		workers[i] = parser.NewWorker(ctx, exportQueue, i)
 	}
 
 	waitGroup.Add(1)
@@ -110,7 +110,7 @@ func StartParsing(ctx *Context) error {
 	}
 
 	if cfg.ParseNewBlocks {
-		go startNewBlockListener(exportQueue, ctx)
+		go enqueueNewBlocks(exportQueue, ctx)
 	}
 
 	// Block main process (signal capture will call WaitGroup's Done)
@@ -120,7 +120,7 @@ func StartParsing(ctx *Context) error {
 
 // enqueueMissingBlocks enqueues jobs (block heights) for missed blocks starting
 // at the startHeight up until the latest known height.
-func enqueueMissingBlocks(exportQueue types.HeightQueue, ctx *Context) {
+func enqueueMissingBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
 	// Get the config
 	cfg := config.Cfg.Parser
 
@@ -153,31 +153,32 @@ func enqueueMissingBlocks(exportQueue types.HeightQueue, ctx *Context) {
 	}
 }
 
-// startNewBlockListener subscribes to new block events via the Tendermint RPCConfig
-// and enqueues each new block height onto the provided queue. It blocks as new
-// blocks are incoming.
-func startNewBlockListener(exportQueue types.HeightQueue, ctx *Context) {
-	eventCh, cancel, err := ctx.Node.SubscribeNewBlocks("juno-new-blocks-listener")
-	defer cancel()
-
+// enqueueNewBlocks enqueues new block heights onto the provided queue.
+func enqueueNewBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
+	currHeight, err := ctx.Node.LatestHeight()
 	if err != nil {
-		panic(fmt.Errorf("failed to subscribe to new blocks: %s", err))
+		panic(fmt.Errorf("failed to get last block from RPCConfig client: %s", err))
 	}
 
-	ctx.Logger.Info("listening for new block events...")
+	// Enqueue upcoming heights
+	for {
+		latestBlockHeight, err := ctx.Node.LatestHeight()
+		if err != nil {
+			panic(fmt.Errorf("failed to get last block from RPCConfig client: %s", err))
+		}
 
-	for e := range eventCh {
-		newBlock := e.Data.(tmtypes.EventDataNewBlock).Block
-		height := newBlock.Header.Height
-
-		ctx.Logger.Debug("enqueueing new block", "height", height)
-		exportQueue <- height
+		// Enqueue all heights from the current height up to the latest height
+		for ; currHeight <= latestBlockHeight; currHeight++ {
+			ctx.Logger.Debug("enqueueing new block", "height", currHeight)
+			exportQueue <- currHeight
+		}
+		time.Sleep(config.Cfg.Parser.AvgBlockTime)
 	}
 }
 
 // trapSignal will listen for any OS signal and invoke Done on the main
 // WaitGroup allowing the main process to gracefully exit.
-func trapSignal(ctx *Context) {
+func trapSignal(ctx *parser.Context) {
 	var sigCh = make(chan os.Signal)
 
 	signal.Notify(sigCh, syscall.SIGTERM)

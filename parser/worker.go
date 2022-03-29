@@ -37,12 +37,12 @@ type Worker struct {
 }
 
 // NewWorker allows to create a new Worker implementation.
-func NewWorker(index int, ctx *Context) Worker {
+func NewWorker(ctx *Context, queue types.HeightQueue, index int) Worker {
 	return Worker{
 		index:   index,
-		codec:   ctx.Codec,
+		codec:   ctx.EncodingConfig.Marshaler,
 		node:    ctx.Node,
-		queue:   ctx.Queue,
+		queue:   queue,
 		db:      ctx.Database,
 		modules: ctx.Modules,
 		logger:  ctx.Logger,

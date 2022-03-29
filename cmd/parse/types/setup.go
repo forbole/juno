@@ -1,8 +1,10 @@
-package parse
+package types
 
 import (
 	"fmt"
 	"reflect"
+
+	"github.com/forbole/juno/v3/parser"
 
 	nodebuilder "github.com/forbole/juno/v3/node/builder"
 	"github.com/forbole/juno/v3/types/config"
@@ -14,12 +16,8 @@ import (
 	modsregistrar "github.com/forbole/juno/v3/modules/registrar"
 )
 
-// GetParsingContext setups all the things that should be later passed to StartParsing in order
-// to parse the chain data properly.
-func GetParsingContext(parseConfig *Config) (*Context, error) {
-	// Get the global config
-	cfg := config.Cfg
-
+// GetParserContext setups all the things that can be used to later parse the chain state
+func GetParserContext(cfg config.Config, parseConfig *Config) (*parser.Context, error) {
 	// Build the codec
 	encodingConfig := parseConfig.GetEncodingConfigBuilder()()
 
@@ -59,7 +57,7 @@ func GetParsingContext(parseConfig *Config) (*Context, error) {
 	mods := parseConfig.GetRegistrar().BuildModules(context)
 	registeredModules := modsregistrar.GetModules(mods, cfg.Chain.Modules, parseConfig.GetLogger())
 
-	return NewContext(&encodingConfig, cp, db, parseConfig.GetLogger(), registeredModules), nil
+	return parser.NewContext(&encodingConfig, cp, db, parseConfig.GetLogger(), registeredModules), nil
 }
 
 // getConfig returns the SDK Config instance as well as if it's sealed or not
