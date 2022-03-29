@@ -1,5 +1,5 @@
 # PostgreSQL Setup with GraphQL
-In order to properly setup this project to work with PostgreSQL and, at the same time, create a GraphQL endpoint, you need to perform some additional setup. 
+In order to properly set up this project to work with PostgreSQL and, at the same time, create a GraphQL endpoint, you need to perform some additional setup. 
 
 ## 1. Install PostgreSQL
 First of all, install PostgreSQL following the [official documentation](https://www.postgresql.org/download/).
@@ -12,7 +12,7 @@ Once you have installed PostgreSQL, you will need to create the Juno database. T
     sudo -u postgres psql
    ``` 
    
-2. Configure PostgreSQL to make is accessible by your normal users. Change your_username with your actual user already created on your Ubuntu system.
+2. Configure PostgreSQL to make it accessible to your normal users. Change your_username with your actual user already created on your Ubuntu system.
    ```postgresql
    CREATE ROLE <your_username> WITH SUPERUSER LOGIN ENCRYPTED PASSWORD 'your_password';
    ``` 
@@ -22,12 +22,12 @@ Once you have installed PostgreSQL, you will need to create the Juno database. T
    \q
    ```
    
-4. Create the Juno database and set yor user to be the owner. 
+4. Create the Juno database and set your user to be the owner. 
    ```bash
    createdb juno -O <your-username>
    ```
    
-5. Log into the Juno database. 
+5. Log in to the Juno database. 
    ```bash
    psql juno
    ```
@@ -42,7 +42,7 @@ Once you have installed PostgreSQL, you will need to create the Juno database. T
    ```
 
 ## Setup the GraphQL APIs with Hasura
-In order to easily setup the GraphQL APIs, we're going to use [Hasura](https://hasura.io/). This project will allow you to run a Docker container which exposes the GraphQL APIs allowing you to perform custom queries without much effort.
+To easily set up the GraphQL APIs, we're going to use [Hasura](https://hasura.io/). This project will allow you to run a Docker container that exposes the GraphQL APIs allowing you to perform custom queries without much effort.
 
 To get started with Hasura we need to perform the below steps.
 
@@ -52,7 +52,7 @@ To get started with Hasura we need to perform the below steps.
    ```
 
 2. Configure the script by editing its content so that it looks like the following.  
-   **Note**. Replace `username`, `password`, `host`, `port` and `dbname` with the details to connect to your database you set up during the database creation.
+   **Note**. Replace `username`, `password`, `host`, `port` and `dbname` with the details to connect to the database you set up during the database creation.
 
 3. Make the script executable.
    ```bash
@@ -81,6 +81,6 @@ Once you have selected the views to track you also need to select the foreign ke
 
 ![](.img/hasura_track_keys.png)
 
-Once you have done so, by going inside the _GraphiQL_ section you will be able to compose your query using the left side panel, run it using the _Play_ button and seeing the result on the right side panel: 
+Once you have done so, by going inside the _GraphiQL_ section you will be able to compose your query using the left side panel, run it using the _Play_ button and see the result on the right-side panel: 
 
 ![](.img/hasura_result.png) 
