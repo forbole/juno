@@ -46,7 +46,7 @@ Use "juno [command] --help" for more information about a command.
 ```
 
 ## Initializing the configuration
-In order to correctly parse and store the data based on your requirements, Juno allows you to customize its behavior via a TOML file called `config.yaml`. In order to create the first instance of the `config.yaml` file you can run
+In order to correctly parse and store the data based on your requirements, Juno allows you to customize its behavior via a YAML file called `config.yaml`. In order to create the first instance of the `config.yaml` file you can run
 
 ```shell
 $ juno init
