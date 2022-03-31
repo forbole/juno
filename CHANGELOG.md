@@ -1,3 +1,7 @@
+## v3.0.1
+### Changes
+- Updated IBC to `v2.2.0`
+
 ## v3.0.0
 #### Note
 Some changes included in this version are **breaking** due to the command renames. Extra precaution needs to be used when updating to this version.
