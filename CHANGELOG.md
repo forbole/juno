@@ -1,3 +1,7 @@
+## v3.1.0
+### Changes
+- Allow to return any `WritableConfig` when initializing the configuration
+
 ## v3.0.0
 #### Note
 Some changes included in this version are **breaking** due to the command renames. Extra precaution needs to be used when updating to this version.
