@@ -2,6 +2,7 @@ package init
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 
 	"github.com/forbole/juno/v3/types/config"
@@ -45,11 +46,21 @@ func NewInitCmd(cfg *Config) *cobra.Command {
 
 			// Get the config from the flags
 			yamlCfg := cfg.GetConfigCreator()(cmd)
-			return config.Write(yamlCfg, configFilePath)
+			return writeConfig(yamlCfg, configFilePath)
 		},
 	}
 
 	cmd.Flags().Bool(flagReplace, false, "overrides any existing configuration")
 
 	return cmd
+}
+
+// writeConfig allows to write the given configuration into the file present at the given path
+func writeConfig(cfg WritableConfig, path string) error {
+	bz, err := cfg.GetBytes()
+	if err != nil {
+		return err
+	}
+
+	return ioutil.WriteFile(path, bz, 0600)
 }

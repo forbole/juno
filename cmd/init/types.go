@@ -6,13 +6,19 @@ import (
 	"github.com/forbole/juno/v3/types/config"
 )
 
+// WritableConfig represents a configuration that can be written to a file
+type WritableConfig interface {
+	// GetBytes returns the bytes to be written to the config file when initializing it
+	GetBytes() ([]byte, error)
+}
+
 // ConfigCreator represents a function that builds a Config instance from the flags that have been specified by the
 // user inside the given command.
-type ConfigCreator = func(cmd *cobra.Command) config.Config
+type ConfigCreator = func(cmd *cobra.Command) WritableConfig
 
 // DefaultConfigCreator represents the default configuration creator that builds a Config instance using the values
 // specified using the default flags.
-func DefaultConfigCreator(_ *cobra.Command) config.Config {
+func DefaultConfigCreator(_ *cobra.Command) WritableConfig {
 	return config.DefaultConfig()
 }
 
