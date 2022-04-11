@@ -48,8 +48,8 @@ func DefaultConfig() Config {
 	)
 }
 
-func (c Config) GetBytes() []byte {
-	return c.bytes
+func (c Config) GetBytes() ([]byte, error) {
+	return c.bytes, nil
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
