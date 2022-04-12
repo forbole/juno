@@ -1,3 +1,7 @@
+## v3.1.1
+### Changes
+- Updated IBC to `v3.0.0`
+
 ## v3.1.0
 ### Changes
 - Allow to return any `WritableConfig` when initializing the configuration
