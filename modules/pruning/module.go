@@ -24,7 +24,12 @@ type Module struct {
 
 // NewModule builds a new Module instance
 func NewModule(cfg config.Config, db database.Database, logger logging.Logger) *Module {
-	pruningCfg, err := ParseConfig(cfg.GetBytes())
+	bz, err := cfg.GetBytes()
+	if err != nil {
+		panic(err)
+	}
+
+	pruningCfg, err := ParseConfig(bz)
 	if err != nil {
 		panic(err)
 	}
