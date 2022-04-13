@@ -46,7 +46,7 @@ func NewContext(
 }
 
 // Registrar represents a modules registrar. This allows to build a list of modules that can later be used by
-// specifying their names inside the TOML configuration file.
+// specifying their names inside the YAML configuration file.
 type Registrar interface {
 	BuildModules(context Context) modules.Modules
 }
