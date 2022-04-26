@@ -125,7 +125,7 @@ func (w Worker) Process(height int64) error {
 }
 
 // ProcessTransactions fetches transactions for a given height and exports it to a database.
-// It returns an error if any export process fails.
+// It returns an error if export process fails.
 func (w Worker) ProcessTransactions(height int64) error {
 	block, err := w.node.Block(height)
 	if err != nil {
