@@ -6,7 +6,7 @@ on:
   pull_request:
   push:
     branches:
-      - v3/cosmos-*
+      - cosmos/*
 
 jobs:
   GolangCI:
