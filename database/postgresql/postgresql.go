@@ -130,7 +130,18 @@ func (db *Database) saveTxInsidePartition(tx *types.Tx, partitionId int64) error
 	sqlStatement := `
 INSERT INTO transaction 
 (hash, height, success, messages, memo, signatures, signer_infos, fee, gas_wanted, gas_used, raw_log, logs, partition_id) 
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) ON CONFLICT DO NOTHING`
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) ON CONFLICT (hash) DO UPDATE 
+		SET height = excluded.height, 
+			success = excluded.success, 
+			messages = excluded.messages,
+			memo = excluded.memo, 
+			signatures = excluded.signatures, 
+			signer_infos = excluded.signer_infos,
+			fee = excluded.fee, 
+			gas_wanted = excluded.gas_wanted, 
+			gas_used = excluded.gas_used,
+			raw_log = excluded.raw_log, 
+			logs = excluded.logs`
 
 	var sigs = make([]string, len(tx.Signatures))
 	for index, sig := range tx.Signatures {
