@@ -47,8 +47,8 @@ database:
 
 	cfg, err := DefaultConfigParser([]byte(data))
 	require.NoError(t, err)
-
-	require.NotEmpty(t, cfg.GetBytes())
+	bytes, _ := cfg.GetBytes()
+	require.NotEmpty(t, bytes)
 	require.Equal(t, "cosmos", cfg.Chain.Bech32Prefix)
 	require.Equal(t, []string{"pruning"}, cfg.Chain.Modules)
 }
