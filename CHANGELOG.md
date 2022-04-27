@@ -1,5 +1,6 @@
 ## Unreleased
 ### Changes
+- ([\#61](https://github.com/forbole/juno/pull/61)) Updated v3 migration code to handle database users names with a hyphen 
 - ([\#59](https://github.com/forbole/juno/pull/59)) Added transactions fix for `bdjuno parse transactios` command
 
 ## v3.1.1
