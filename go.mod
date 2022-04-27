@@ -3,6 +3,7 @@ module github.com/forbole/juno/v3
 go 1.17
 
 require (
+	github.com/MonikaCat/zerolog v1.26.2-0.20220427115543-3fa9a10add89
 	github.com/cosmos/cosmos-sdk v0.45.1
 	github.com/cosmos/ibc-go/v3 v3.0.0
 	github.com/go-co-op/gocron v0.3.3
@@ -12,7 +13,6 @@ require (
 	github.com/lib/pq v1.10.2
 	github.com/pelletier/go-toml v1.9.4
 	github.com/prometheus/client_golang v1.11.0
-	github.com/rs/zerolog v1.26.0
 	github.com/spf13/cobra v1.3.0
 	github.com/spf13/viper v1.10.1
 	github.com/stretchr/testify v1.7.0

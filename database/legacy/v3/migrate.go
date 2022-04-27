@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/rs/zerolog/log"
+	"github.com/MonikaCat/zerolog/log"
 
 	"github.com/forbole/juno/v3/types/config"
 
