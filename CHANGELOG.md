@@ -1,6 +1,18 @@
+## Unreleased
+### Changes
+- ([\#61](https://github.com/forbole/juno/pull/61)) Updated v3 migration code to handle database users names with a hyphen 
+
+## v3.1.1
+### Changes
+- Updated IBC to `v3.0.0`
+
 ## v3.1.0
 ### Changes
 - Allow to return any `WritableConfig` when initializing the configuration
+
+## v3.0.1
+### Changes
+- Updated IBC to `v2.2.0`
 
 ## v3.0.0
 #### Note
