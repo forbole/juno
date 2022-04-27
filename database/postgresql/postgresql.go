@@ -263,7 +263,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (transaction_hash, index, partit
 		SET height = excluded.height, 
 			type = excluded.type,
 			value = excluded.value,
-			involved_accounts_addresses = excluded.involved_accounts_addresses,
+			involved_accounts_addresses = excluded.involved_accounts_addresses`
 
 	_, err := db.Sql.Exec(stmt, msg.TxHash, msg.Index, msg.Type, msg.Value, pq.Array(msg.Addresses), msg.Height, partitionID)
 	return err
