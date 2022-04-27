@@ -7,8 +7,8 @@ import (
 	"github.com/gogo/protobuf/proto"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/MonikaCat/zerolog"
-	"github.com/MonikaCat/zerolog/log"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	"github.com/forbole/juno/v3/modules"

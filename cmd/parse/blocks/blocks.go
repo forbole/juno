@@ -5,7 +5,7 @@ import (
 
 	parsecmdtypes "github.com/forbole/juno/v3/cmd/parse/types"
 
-	"github.com/MonikaCat/zerolog/log"
+	"github.com/rs/zerolog/log"
 
 	"github.com/spf13/cobra"
 

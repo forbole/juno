@@ -1,6 +1,6 @@
 package config
 
-import "github.com/MonikaCat/zerolog"
+import "github.com/rs/zerolog"
 
 type Config struct {
 	LogLevel  string `yaml:"level"`
