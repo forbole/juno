@@ -130,7 +130,7 @@ func (db *Database) saveTxInsidePartition(tx *types.Tx, partitionId int64) error
 	sqlStatement := `
 INSERT INTO transaction 
 (hash, height, success, messages, memo, signatures, signer_infos, fee, gas_wanted, gas_used, raw_log, logs, partition_id) 
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) ON CONFLICT (hash) DO UPDATE 
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) ON CONFLICT (hash, partition_id) DO UPDATE 
 		SET height = excluded.height, 
 			success = excluded.success, 
 			messages = excluded.messages,
