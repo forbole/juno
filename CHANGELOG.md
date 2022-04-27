@@ -1,3 +1,7 @@
+## Unreleased
+### Changes
+- ([\#59](https://github.com/forbole/juno/pull/59)) Added transactions fix for `bdjuno parse transactios` command
+
 ## v3.1.1
 ### Changes
 - Updated IBC to `v3.0.0`
