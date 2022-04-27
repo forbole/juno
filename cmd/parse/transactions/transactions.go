@@ -59,7 +59,7 @@ You can specify a custom height range by using the %s and %s flags.
 			for k := startHeight; k <= endHeight; k++ {
 				err = worker.ProcessTransactions(k)
 				if err != nil {
-					return fmt.Errorf("error while re-fetching transactions %d: %s", k, err)
+					return fmt.Errorf("error while re-fetching transactions of height %d: %s", k, err)
 				}
 			}
 
