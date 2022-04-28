@@ -1,3 +1,8 @@
+## v3.2.0
+### Changes
+- ([\#61](https://github.com/forbole/juno/pull/61)) Updated v3 migration code to handle database users names with a hyphen 
+- ([\#59](https://github.com/forbole/juno/pull/59)) Added `parse transactios` command to re-fetch missing or incomplete transactions
+
 ## v3.1.1
 ### Changes
 - Updated IBC to `v3.0.0`

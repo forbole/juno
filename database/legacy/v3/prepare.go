@@ -89,7 +89,7 @@ CREATE TABLE transaction
 CREATE INDEX transaction_hash_index ON transaction (hash);
 CREATE INDEX transaction_height_index ON transaction (height);
 CREATE INDEX transaction_partition_id_index ON transaction (partition_id);
-GRANT ALL PRIVILEGES ON transaction TO %s;
+GRANT ALL PRIVILEGES ON transaction TO "%s";
 `,
 		config.Cfg.Database.User)
 
@@ -117,7 +117,7 @@ CREATE TABLE message
 CREATE INDEX message_transaction_hash_index ON message (transaction_hash);
 CREATE INDEX message_type_index ON message (type);
 CREATE INDEX message_involved_accounts_index ON message USING GIN(involved_accounts_addresses);
-GRANT ALL PRIVILEGES ON message TO %s;
+GRANT ALL PRIVILEGES ON message TO "%s";
 `, config.Cfg.Database.User)
 
 	_, err := db.Sql.Exec(stmt)
