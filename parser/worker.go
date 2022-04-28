@@ -124,6 +124,22 @@ func (w Worker) Process(height int64) error {
 	return w.ExportBlock(block, events, txs, vals)
 }
 
+// ProcessTransactions fetches transactions for a given height and stores them into the database.
+// It returns an error if the export process fails.
+func (w Worker) ProcessTransactions(height int64) error {
+	block, err := w.node.Block(height)
+	if err != nil {
+		return fmt.Errorf("failed to get block from node: %s", err)
+	}
+
+	txs, err := w.node.Txs(block)
+	if err != nil {
+		return fmt.Errorf("failed to get transactions for block: %s", err)
+	}
+
+	return w.ExportTxs(txs)
+}
+
 // HandleGenesis accepts a GenesisDoc and calls all the registered genesis handlers
 // in the order in which they have been registered.
 func (w Worker) HandleGenesis(genesisDoc *tmtypes.GenesisDoc, appState map[string]json.RawMessage) error {
