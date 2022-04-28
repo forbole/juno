@@ -10,7 +10,7 @@ import (
 func NewTransactionsCmd(parseConfig *parsecmdtypes.Config) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "transactions",
-		Short: "Fix things related to transactions",
+		Short: "Parse things related to transactions",
 	}
 
 	cmd.AddCommand(

@@ -22,7 +22,7 @@ const (
 func newTransactionsCmd(parseConfig *parsecmdtypes.Config) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "all",
-		Short: "Fix missing or incomplete transactions in database",
+		Short: "Parse missing or incomplete transactions",
 		Long: fmt.Sprintf(`Refetch missing or incomplete transactions and store them inside the database. 
 You can specify a custom height range by using the %s and %s flags. 
 `, flagStart, flagEnd),
