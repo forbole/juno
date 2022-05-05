@@ -58,7 +58,7 @@ var (
 // Node represents the node implementation that uses a local node
 type Node struct {
 	ctx      context.Context
-	codec    codec.Marshaler
+	codec    codec.Codec
 	txConfig client.TxConfig
 
 	// config
@@ -75,7 +75,7 @@ type Node struct {
 }
 
 // NewNode returns a new Node instance
-func NewNode(config *Details, txConfig client.TxConfig, codec codec.Marshaler) (*Node, error) {
+func NewNode(config *Details, txConfig client.TxConfig, codec codec.Codec) (*Node, error) {
 	// Load the config
 	viper.SetConfigFile(path.Join(config.Home, "config", "config.yaml"))
 	tmCfg, err := ParseConfig()

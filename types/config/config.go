@@ -55,12 +55,12 @@ func (c Config) GetBytes() ([]byte, error) {
 // ---------------------------------------------------------------------------------------------------------------------
 
 type ChainConfig struct {
-	Bech32Prefix string   `yaml:"bech32_prefix"`
+	Bech32Prefix []string `yaml:"bech32_prefix"`
 	Modules      []string `yaml:"modules"`
 }
 
 // NewChainConfig returns a new ChainConfig instance
-func NewChainConfig(bech32Prefix string, modules []string) ChainConfig {
+func NewChainConfig(bech32Prefix []string, modules []string) ChainConfig {
 	return ChainConfig{
 		Bech32Prefix: bech32Prefix,
 		Modules:      modules,
@@ -69,7 +69,7 @@ func NewChainConfig(bech32Prefix string, modules []string) ChainConfig {
 
 // DefaultChainConfig returns the default instance of ChainConfig
 func DefaultChainConfig() ChainConfig {
-	return NewChainConfig("cosmos", nil)
+	return NewChainConfig([]string{"cosmos"}, nil)
 }
 
 func (cfg ChainConfig) IsModuleEnabled(moduleName string) bool {

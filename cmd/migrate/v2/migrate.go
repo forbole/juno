@@ -56,7 +56,7 @@ func migrateConfig() (Config, error) {
 			),
 		},
 		Chain: config.ChainConfig{
-			Bech32Prefix: cfg.Cosmos.Prefix,
+			Bech32Prefix: []string{cfg.Cosmos.Prefix},
 			Modules:      cfg.Cosmos.Modules,
 		},
 		Database: DatabaseConfig{

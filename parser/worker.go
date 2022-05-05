@@ -28,7 +28,7 @@ type Worker struct {
 	index int
 
 	queue   types.HeightQueue
-	codec   codec.BinaryMarshaler
+	codec   codec.BinaryCodec
 	modules []modules.Module
 
 	node   node.Node

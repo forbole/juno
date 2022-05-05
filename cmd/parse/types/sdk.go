@@ -14,18 +14,33 @@ type SdkConfigSetup func(config config.Config, sdkConfig *sdk.Config)
 // DefaultConfigSetup represents a handy implementation of SdkConfigSetup that simply setups the prefix
 // inside the configuration
 func DefaultConfigSetup(cfg config.Config, sdkConfig *sdk.Config) {
-	prefix := cfg.Chain.Bech32Prefix
-	sdkConfig.SetBech32PrefixForAccount(
-		prefix,
-		prefix+sdk.PrefixPublic,
+	prefixes := cfg.Chain.Bech32Prefix
+
+	bech32PrefixesAccPub := make([]string, 0, len(prefixes))
+	bech32PrefixesValAddr := make([]string, 0, len(prefixes))
+	bech32PrefixesValPub := make([]string, 0, len(prefixes))
+	bech32PrefixesConsAddr := make([]string, 0, len(prefixes))
+	bech32PrefixesConsPub := make([]string, 0, len(prefixes))
+
+	for _, prefix := range prefixes {
+		bech32PrefixesAccPub = append(bech32PrefixesAccPub, prefix+"pub")
+		bech32PrefixesValAddr = append(bech32PrefixesValAddr, prefix+"valoper")
+		bech32PrefixesValPub = append(bech32PrefixesValPub, prefix+"valoperpub")
+		bech32PrefixesConsAddr = append(bech32PrefixesConsAddr, prefix+"valcons")
+		bech32PrefixesConsPub = append(bech32PrefixesConsPub, prefix+"valconspub")
+	}
+
+	sdkConfig.SetBech32PrefixesForAccount(
+		prefixes,
+		bech32PrefixesAccPub,
 	)
-	sdkConfig.SetBech32PrefixForValidator(
-		prefix+sdk.PrefixValidator+sdk.PrefixOperator,
-		prefix+sdk.PrefixValidator+sdk.PrefixOperator+sdk.PrefixPublic,
+	sdkConfig.SetBech32PrefixesForValidator(
+		bech32PrefixesValAddr,
+		bech32PrefixesValPub,
 	)
-	sdkConfig.SetBech32PrefixForConsensusNode(
-		prefix+sdk.PrefixValidator+sdk.PrefixConsensus,
-		prefix+sdk.PrefixValidator+sdk.PrefixConsensus+sdk.PrefixPublic,
+	sdkConfig.SetBech32PrefixesForConsensusNode(
+		bech32PrefixesConsAddr,
+		bech32PrefixesConsPub,
 	)
 }
 

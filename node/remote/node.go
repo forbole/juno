@@ -36,14 +36,14 @@ var (
 // chain SDK REST client that allows for essential data queries.
 type Node struct {
 	ctx             context.Context
-	codec           codec.Marshaler
+	codec           codec.Codec
 	client          *httpclient.HTTP
 	txServiceClient tx.ServiceClient
 	grpcConnection  *grpc.ClientConn
 }
 
 // NewNode allows to build a new Node instance
-func NewNode(cfg *Details, codec codec.Marshaler) (*Node, error) {
+func NewNode(cfg *Details, codec codec.Codec) (*Node, error) {
 	httpClient, err := jsonrpcclient.DefaultHTTPClient(cfg.RPC.Address)
 	if err != nil {
 		return nil, err
