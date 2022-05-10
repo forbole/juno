@@ -261,7 +261,6 @@ func (w Worker) ExportCommit(commit *tmtypes.Commit, vals *tmctypes.ResultValida
 
 func (w Worker) SaveTxs(tx *types.Tx, i int, wg *sync.WaitGroup) error {
 	defer wg.Done()
-	fmt.Printf("\n** SAVE TXS %d **", i)
 	err := w.db.SaveTx(tx)
 	if err != nil {
 		return fmt.Errorf("failed to handle transaction with hash %s: %s", tx.TxHash, err)
@@ -274,8 +273,6 @@ func (w Worker) HandleTxs(tx *types.Tx, i int, wg *sync.WaitGroup) {
 
 	// Call the tx handlers
 	for _, module := range w.modules {
-		fmt.Printf("\n** HANDLE TRASACTIONS %d **", i)
-
 		if transactionModule, ok := module.(modules.TransactionModule); ok {
 			err := transactionModule.HandleTx(tx)
 			if err != nil {
@@ -290,8 +287,6 @@ func (w Worker) HandleMessages(tx *types.Tx, i int, wg *sync.WaitGroup) error {
 
 	// Handle all the messages contained inside the transaction
 	for i, msg := range tx.Body.Messages {
-		fmt.Printf("\n** HANDLE MESSAGES  %d **", i)
-
 		var stdMsg sdk.Msg
 		err := w.codec.UnpackAny(msg, &stdMsg)
 		if err != nil {
