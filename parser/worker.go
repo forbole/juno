@@ -3,6 +3,7 @@ package parser
 import (
 	"encoding/json"
 	"fmt"
+	"sync"
 
 	"github.com/forbole/juno/v3/logging"
 
@@ -28,7 +29,7 @@ type Worker struct {
 	index int
 
 	queue   types.HeightQueue
-	codec   codec.Codec
+	codec   codec.BinaryMarshaler
 	modules []modules.Module
 
 	node   node.Node
@@ -258,31 +259,43 @@ func (w Worker) ExportCommit(commit *tmtypes.Commit, vals *tmctypes.ResultValida
 	return nil
 }
 
-// ExportTxs accepts a slice of transactions and persists then inside the database.
-// An error is returned if the write fails.
-func (w Worker) ExportTxs(txs []*types.Tx) error {
-	// Handle all the transactions inside the block
-	for _, tx := range txs {
-		// Save the transaction itself
+func (w Worker) SaveTxss(txs []*types.Tx, wg *sync.WaitGroup) error {
+	defer wg.Done()
+	for i, tx := range txs {
+		fmt.Printf("\n** SAVE TRANSACTIONS %d **", i)
 		err := w.db.SaveTx(tx)
 		if err != nil {
 			return fmt.Errorf("failed to handle transaction with hash %s: %s", tx.TxHash, err)
 		}
+	}
+	return nil
+}
 
+func (w Worker) HandleTxs(txs []*types.Tx, wg *sync.WaitGroup) error {
+	defer wg.Done()
+	for i, tx := range txs {
 		// Call the tx handlers
 		for _, module := range w.modules {
+			fmt.Printf("\n** HANDLE TRANSACTIONS %d **", i)
 			if transactionModule, ok := module.(modules.TransactionModule); ok {
-				err = transactionModule.HandleTx(tx)
+				err := transactionModule.HandleTx(tx)
 				if err != nil {
 					w.logger.TxError(module, tx, err)
 				}
 			}
 		}
+	}
+	return nil
+}
 
+func (w Worker) HandleMessages(txs []*types.Tx, wg *sync.WaitGroup) error {
+	defer wg.Done()
+	for i, tx := range txs {
+		fmt.Printf("\n** HANDLE MESSAGES %d **", i)
 		// Handle all the messages contained inside the transaction
 		for i, msg := range tx.Body.Messages {
 			var stdMsg sdk.Msg
-			err = w.codec.UnpackAny(msg, &stdMsg)
+			err := w.codec.UnpackAny(msg, &stdMsg)
 			if err != nil {
 				return fmt.Errorf("error while unpacking message: %s", err)
 			}
@@ -298,6 +311,23 @@ func (w Worker) ExportTxs(txs []*types.Tx) error {
 			}
 		}
 	}
+	return nil
+}
+
+// ExportTxs accepts a slice of transactions and persists then inside the database.
+// An error is returned if the write fails.
+func (w Worker) ExportTxs(txs []*types.Tx) error {
+
+	var wg sync.WaitGroup
+
+	wg.Add(3)
+	go w.SaveTxss(txs, &wg)
+	go w.HandleTxs(txs, &wg)
+	go w.HandleMessages(txs, &wg)
+
+	fmt.Println("Waiting...")
+	wg.Wait()
+	fmt.Println("Done!")
 
 	return nil
 }
