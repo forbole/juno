@@ -29,7 +29,7 @@ type Worker struct {
 	index int
 
 	queue   types.HeightQueue
-	codec   codec.BinaryMarshaler
+	codec   codec.Codec
 	modules []modules.Module
 
 	node   node.Node
@@ -259,7 +259,7 @@ func (w Worker) ExportCommit(commit *tmtypes.Commit, vals *tmctypes.ResultValida
 	return nil
 }
 
-func (w Worker) SaveTxss(txs []*types.Tx, wg *sync.WaitGroup) error {
+func (w Worker) SaveTxs(txs []*types.Tx, wg *sync.WaitGroup) error {
 	defer wg.Done()
 	for i, tx := range txs {
 		fmt.Printf("\n** SAVE TRANSACTIONS %d **", i)
@@ -321,7 +321,7 @@ func (w Worker) ExportTxs(txs []*types.Tx) error {
 	var wg sync.WaitGroup
 
 	wg.Add(3)
-	go w.SaveTxss(txs, &wg)
+	go w.SaveTxs(txs, &wg)
 	go w.HandleTxs(txs, &wg)
 	go w.HandleMessages(txs, &wg)
 
