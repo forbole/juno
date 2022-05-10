@@ -318,16 +318,19 @@ func (w Worker) ExportTxs(txs []*types.Tx) error {
 	var wg sync.WaitGroup
 	for i, tx := range txs {
 		wg.Add(3)
+
+		go w.HandleTxs(tx, i, &wg)
+
 		err := w.SaveTxs(tx, i, &wg)
 		if err != nil {
 			return fmt.Errorf("error while exporting txs: %s", err)
 		}
-		go w.HandleTxs(tx, i, &wg)
 		err = w.HandleMessages(tx, i, &wg)
 		if err != nil {
 			return fmt.Errorf("error while exporting txs: %s", err)
 		}
 	}
+
 	wg.Wait()
 
 	return nil
