@@ -259,9 +259,8 @@ func (w Worker) ExportCommit(commit *tmtypes.Commit, vals *tmctypes.ResultValida
 	return nil
 }
 
-func (w Worker) SaveTxs(tx *types.Tx, i int, wg *sync.WaitGroup) error {
+func (w Worker) SaveTxs(tx *types.Tx, wg *sync.WaitGroup) error {
 	defer wg.Done()
-	fmt.Printf("\n** SAVE TRANSACTIONS %d **", i)
 	err := w.db.SaveTx(tx)
 	if err != nil {
 		return fmt.Errorf("failed to handle transaction with hash %s: %s", tx.TxHash, err)
@@ -269,11 +268,11 @@ func (w Worker) SaveTxs(tx *types.Tx, i int, wg *sync.WaitGroup) error {
 	return nil
 }
 
-func (w Worker) HandleTxs(tx *types.Tx, i int, wg *sync.WaitGroup) error {
+func (w Worker) HandleTxs(tx *types.Tx, wg *sync.WaitGroup) {
 	defer wg.Done()
+
 	// Call the tx handlers
 	for _, module := range w.modules {
-		fmt.Printf("\n** HANDLE TRANSACTIONS %d **", i)
 		if transactionModule, ok := module.(modules.TransactionModule); ok {
 			err := transactionModule.HandleTx(tx)
 			if err != nil {
@@ -281,12 +280,11 @@ func (w Worker) HandleTxs(tx *types.Tx, i int, wg *sync.WaitGroup) error {
 			}
 		}
 	}
-	return nil
 }
 
-func (w Worker) HandleMessages(tx *types.Tx, i int, wg *sync.WaitGroup) error {
+func (w Worker) HandleMessages(tx *types.Tx, wg *sync.WaitGroup) error {
 	defer wg.Done()
-	fmt.Printf("\n** HANDLE MESSAGES %d **", i)
+
 	// Handle all the messages contained inside the transaction
 	for i, msg := range tx.Body.Messages {
 		var stdMsg sdk.Msg
@@ -313,16 +311,19 @@ func (w Worker) HandleMessages(tx *types.Tx, i int, wg *sync.WaitGroup) error {
 func (w Worker) ExportTxs(txs []*types.Tx) error {
 
 	var wg sync.WaitGroup
-	for i, tx := range txs {
+	for _, tx := range txs {
 		wg.Add(3)
-		go w.SaveTxs(tx, i, &wg)
-		go w.HandleTxs(tx, i, &wg)
-		go w.HandleMessages(tx, i, &wg)
+		err := w.SaveTxs(tx, &wg)
+		if err != nil {
+			return fmt.Errorf("error while exporting txs: %s", err)
+		}
+		go w.HandleTxs(tx, &wg)
+		err = w.HandleMessages(tx, &wg)
+		if err != nil {
+			return fmt.Errorf("error while exporting txs: %s", err)
+		}
 	}
-
-	fmt.Println("Waiting...")
 	wg.Wait()
-	fmt.Println("Done!")
 
 	return nil
 }
