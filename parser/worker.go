@@ -261,7 +261,7 @@ func (w Worker) ExportCommit(commit *tmtypes.Commit, vals *tmctypes.ResultValida
 
 // SaveTxs accepts the transaction and persists it inside the database.
 // An error is returned if the write fails.
-func (w Worker) SaveTxs(tx *types.Tx, i int, wg *sync.WaitGroup) error {
+func (w Worker) SaveTxs(tx *types.Tx, wg *sync.WaitGroup) error {
 	defer wg.Done()
 	err := w.db.SaveTx(tx)
 	if err != nil {
@@ -271,7 +271,7 @@ func (w Worker) SaveTxs(tx *types.Tx, i int, wg *sync.WaitGroup) error {
 }
 
 // HandleTxs accepts the transaction and calls the tx handlers.
-func (w Worker) HandleTxs(tx *types.Tx, i int, wg *sync.WaitGroup) {
+func (w Worker) HandleTxs(tx *types.Tx, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	// Call the tx handlers
@@ -288,7 +288,7 @@ func (w Worker) HandleTxs(tx *types.Tx, i int, wg *sync.WaitGroup) {
 // HandleMessages accepts the transaction and handles messages contained
 // inside the transaction. An error is returned if the message unpacking
 // or calling handlers fails.
-func (w Worker) HandleMessages(tx *types.Tx, i int, wg *sync.WaitGroup) error {
+func (w Worker) HandleMessages(tx *types.Tx, wg *sync.WaitGroup) error {
 	defer wg.Done()
 
 	// Handle all the messages contained inside the transaction
@@ -317,16 +317,16 @@ func (w Worker) HandleMessages(tx *types.Tx, i int, wg *sync.WaitGroup) error {
 func (w Worker) ExportTxs(txs []*types.Tx) error {
 
 	var wg sync.WaitGroup
-	for i, tx := range txs {
+	for _, tx := range txs {
 		wg.Add(3)
 
-		go w.HandleTxs(tx, i, &wg)
+		go w.HandleTxs(tx, &wg)
 
-		err := w.SaveTxs(tx, i, &wg)
+		err := w.SaveTxs(tx, &wg)
 		if err != nil {
 			return fmt.Errorf("error while exporting txs: %s", err)
 		}
-		err = w.HandleMessages(tx, i, &wg)
+		err = w.HandleMessages(tx, &wg)
 		if err != nil {
 			return fmt.Errorf("error while exporting txs: %s", err)
 		}
