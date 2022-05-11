@@ -259,6 +259,8 @@ func (w Worker) ExportCommit(commit *tmtypes.Commit, vals *tmctypes.ResultValida
 	return nil
 }
 
+// SaveTxs accepts the transaction and persists it inside the database.
+// An error is returned if the write fails.
 func (w Worker) SaveTxs(tx *types.Tx, i int, wg *sync.WaitGroup) error {
 	defer wg.Done()
 	err := w.db.SaveTx(tx)
@@ -268,6 +270,7 @@ func (w Worker) SaveTxs(tx *types.Tx, i int, wg *sync.WaitGroup) error {
 	return nil
 }
 
+// HandleTxs accepts the transaction and calls the tx handlers.
 func (w Worker) HandleTxs(tx *types.Tx, i int, wg *sync.WaitGroup) {
 	defer wg.Done()
 
@@ -282,6 +285,9 @@ func (w Worker) HandleTxs(tx *types.Tx, i int, wg *sync.WaitGroup) {
 	}
 }
 
+// HandleMessages accepts the transaction and handles messages contained
+// inside the transaction. An error is returned if the message unpacking
+// or calling handlers fails.
 func (w Worker) HandleMessages(tx *types.Tx, i int, wg *sync.WaitGroup) error {
 	defer wg.Done()
 
