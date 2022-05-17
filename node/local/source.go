@@ -66,7 +66,7 @@ func NewSource(home string, encodingConfig *params.EncodingConfig) (*Source, err
 
 		BlockStore: tmstore.NewBlockStore(blockStoreDB),
 		Logger:     log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "explorer"),
-		Cms:        store.NewCommitMultiStore(levelDB),
+		Cms:        store.NewCommitMultiStore(levelDB, log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "explorer")),
 	}, nil
 }
 
