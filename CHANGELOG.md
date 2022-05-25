@@ -1,3 +1,7 @@
+## Unreleased
+### Changes
+- ([\#67](https://github.com/forbole/juno/pull/67)) Added support for concurrent transaction handling
+
 ## v3.2.0
 ### Changes
 - ([\#61](https://github.com/forbole/juno/pull/61)) Updated v3 migration code to handle database users names with a hyphen 
