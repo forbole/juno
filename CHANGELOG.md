@@ -1,3 +1,7 @@
+## v3.2.1
+### Changes
+- ([\#68](https://github.com/forbole/juno/pull/68)) Added `chain_id` label to prometheus to improve alert monitoring 
+
 ## v3.2.0
 ### Changes
 - ([\#61](https://github.com/forbole/juno/pull/61)) Updated v3 migration code to handle database users names with a hyphen 
