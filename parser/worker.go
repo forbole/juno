@@ -3,7 +3,6 @@ package parser
 import (
 	"encoding/json"
 	"fmt"
-	"sync"
 
 	"github.com/forbole/juno/v3/logging"
 
@@ -261,8 +260,7 @@ func (w Worker) ExportCommit(commit *tmtypes.Commit, vals *tmctypes.ResultValida
 
 // SaveTxs accepts the transaction and persists it inside the database.
 // An error is returned if the write fails.
-func (w Worker) SaveTxs(tx *types.Tx, wg *sync.WaitGroup) error {
-	defer wg.Done()
+func (w Worker) SaveTxs(tx *types.Tx) error {
 	err := w.db.SaveTx(tx)
 	if err != nil {
 		return fmt.Errorf("failed to handle transaction with hash %s: %s", tx.TxHash, err)
@@ -271,9 +269,7 @@ func (w Worker) SaveTxs(tx *types.Tx, wg *sync.WaitGroup) error {
 }
 
 // HandleTxs accepts the transaction and calls the tx handlers.
-func (w Worker) HandleTxs(tx *types.Tx, wg *sync.WaitGroup) {
-	defer wg.Done()
-
+func (w Worker) HandleTxs(tx *types.Tx) {
 	// Call the tx handlers
 	for _, module := range w.modules {
 		if transactionModule, ok := module.(modules.TransactionModule); ok {
@@ -288,9 +284,7 @@ func (w Worker) HandleTxs(tx *types.Tx, wg *sync.WaitGroup) {
 // HandleMessages accepts the transaction and handles messages contained
 // inside the transaction. An error is returned if the message unpacking
 // or calling handlers fails.
-func (w Worker) HandleMessages(tx *types.Tx, wg *sync.WaitGroup) error {
-	defer wg.Done()
-
+func (w Worker) HandleMessages(tx *types.Tx) error {
 	// Handle all the messages contained inside the transaction
 	for i, msg := range tx.Body.Messages {
 		var stdMsg sdk.Msg
@@ -315,24 +309,18 @@ func (w Worker) HandleMessages(tx *types.Tx, wg *sync.WaitGroup) error {
 // ExportTxs accepts a slice of transactions and persists then inside the database.
 // An error is returned if the write fails.
 func (w Worker) ExportTxs(txs []*types.Tx) error {
-
-	var wg sync.WaitGroup
 	for _, tx := range txs {
-		wg.Add(3)
+		go w.HandleTxs(tx)
 
-		go w.HandleTxs(tx, &wg)
-
-		err := w.SaveTxs(tx, &wg)
+		err := w.SaveTxs(tx)
 		if err != nil {
 			return fmt.Errorf("error while exporting txs: %s", err)
 		}
-		err = w.HandleMessages(tx, &wg)
+		err = w.HandleMessages(tx)
 		if err != nil {
 			return fmt.Errorf("error while exporting txs: %s", err)
 		}
 	}
-
-	wg.Wait()
 
 	return nil
 }
