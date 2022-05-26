@@ -53,6 +53,10 @@ func NewWorker(ctx *Context, queue types.HeightQueue, index int) Worker {
 // given worker queue. Any failed job is logged and re-enqueued.
 func (w Worker) Start() {
 	logging.WorkerCount.Inc()
+	nodeInfo, err := w.node.Genesis()
+	if err != nil {
+		w.logger.Error("error while getting genesis info from the node ", "err", err)
+	}
 
 	for i := range w.queue {
 		if err := w.ProcessIfNotExists(i); err != nil {
@@ -64,7 +68,7 @@ func (w Worker) Start() {
 			}()
 		}
 
-		logging.WorkerHeight.WithLabelValues(fmt.Sprintf("%d", w.index)).Set(float64(i))
+		logging.WorkerHeight.WithLabelValues(fmt.Sprintf("%d", w.index), nodeInfo.Genesis.ChainID).Set(float64(i))
 	}
 }
 
