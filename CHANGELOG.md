@@ -1,4 +1,4 @@
-## Unreleased
+## v3.2.1
 ### Changes
 - ([\#68](https://github.com/forbole/juno/pull/68)) Added `chain_id` label to prometheus to improve alert monitoring 
 
