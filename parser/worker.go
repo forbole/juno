@@ -262,9 +262,9 @@ func (w Worker) ExportCommit(commit *tmtypes.Commit, vals *tmctypes.ResultValida
 	return nil
 }
 
-// SaveTxs accepts the transaction and persists it inside the database.
+// saveTx accepts the transaction and persists it inside the database.
 // An error is returned if the write fails.
-func (w Worker) SaveTxs(tx *types.Tx) error {
+func (w Worker) saveTx(tx *types.Tx) error {
 	err := w.db.SaveTx(tx)
 	if err != nil {
 		return fmt.Errorf("failed to handle transaction with hash %s: %s", tx.TxHash, err)
@@ -272,8 +272,8 @@ func (w Worker) SaveTxs(tx *types.Tx) error {
 	return nil
 }
 
-// HandleTxs accepts the transaction and calls the tx handlers.
-func (w Worker) HandleTxs(tx *types.Tx) {
+// handleTx accepts the transaction and calls the tx handlers.
+func (w Worker) handleTx(tx *types.Tx) {
 	// Call the tx handlers
 	for _, module := range w.modules {
 		if transactionModule, ok := module.(modules.TransactionModule); ok {
@@ -285,10 +285,10 @@ func (w Worker) HandleTxs(tx *types.Tx) {
 	}
 }
 
-// HandleMessages accepts the transaction and handles messages contained
+// handleMessages accepts the transaction and handles messages contained
 // inside the transaction. An error is returned if the message unpacking
 // or calling handlers fails.
-func (w Worker) HandleMessages(tx *types.Tx) error {
+func (w Worker) handleMessages(tx *types.Tx) error {
 	// Handle all the messages contained inside the transaction
 	for i, msg := range tx.Body.Messages {
 		var stdMsg sdk.Msg
@@ -314,13 +314,13 @@ func (w Worker) HandleMessages(tx *types.Tx) error {
 // An error is returned if the write fails.
 func (w Worker) ExportTxs(txs []*types.Tx) error {
 	for _, tx := range txs {
-		go w.HandleTxs(tx)
+		go w.handleTx(tx)
 
-		err := w.SaveTxs(tx)
+		err := w.saveTx(tx)
 		if err != nil {
 			return fmt.Errorf("error while exporting txs: %s", err)
 		}
-		err = w.HandleMessages(tx)
+		err = w.handleMessages(tx)
 		if err != nil {
 			return fmt.Errorf("error while exporting txs: %s", err)
 		}
