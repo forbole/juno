@@ -47,7 +47,6 @@ database:
 
 	cfg, err := DefaultConfigParser([]byte(data))
 	require.NoError(t, err)
-
 	bytes, _ := cfg.GetBytes()
 	require.NotEmpty(t, bytes)
 	require.Equal(t, "cosmos", cfg.Chain.Bech32Prefix)

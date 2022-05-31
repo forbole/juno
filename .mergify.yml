@@ -1,7 +1,7 @@
 queue_rules:
   - name: default
     conditions:
-      - base~=v
+      - base~=cosmos/
 
 pull_request_rules:
   - name: automerge with label automerge and branch protection passing

@@ -26,7 +26,7 @@ var WorkerHeight = prometheus.NewGaugeVec(
 		Name: "juno_last_indexed_height",
 		Help: "Height of the last indexed block.",
 	},
-	[]string{"worker_index"},
+	[]string{"worker_index", "chain_id"},
 )
 
 // ErrorCount represents the Telemetry counter used to track the number of errors emitted

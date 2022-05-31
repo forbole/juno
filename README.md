@@ -6,9 +6,9 @@
 
 > This branch is intended to be used with Cosmos SDK `v0.40.x`.
 
-[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/desmos-labs/juno/Tests)](https://github.com/forbole/juno/actions?query=workflow%3ATests)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/forbole/juno/Tests)](https://github.com/forbole/juno/actions?query=workflow%3ATests)
 [![Go Report Card](https://goreportcard.com/badge/github.com/forbole/juno)](https://goreportcard.com/report/github.com/forbole/juno)
-[![Codecov](https://img.shields.io/codecov/c/github/desmos-labs/juno)](https://codecov.io/gh/desmos-labs/juno/branch/cosmos-v0.40.x)
+[![Codecov](https://img.shields.io/codecov/c/github/forbole/juno)](https://codecov.io/gh/forbole/juno/branch/v3/cosmos-stargate)
 
 > Juno is a Cosmos Hub blockchain data aggregator and exporter that provides the ability for developers and clients to query for indexed chain data.
 
@@ -34,15 +34,17 @@ On the other hand, to achieve a highly modular code, we implemented extension po
 ## Compatibility table
 Since the Cosmos SDK has evolved a lot, we have different versions of Juno available.
 
-| Cosmos SDK Version | Juno branch |
-| :----------------: | :---------: | 
-| `v0.37.x` | `cosmos-v0.37.x` |
-| `v0.38.x` | `cosmos-v0.38.x` |
-| `v0.39.x` | `cosmos-v0.39.x` |
-| Stargate <br> (`v0.40.x`, `v0.41.x`, `v0.42.x`) | `cosmos-v0.40.x` |
+| Juno version | Cosmos SDK Version  | Juno branch |
+| :----------------: | :---------: | :----------: |
+| v3.0.0 | Stargate <br> (`v0.40.x`, `v0.41.x`, `v0.42.x`) | `v3/cosmos-stargate` | 
+| v3.0.0 | `v0.44.x` | `v3/cosmos-v0.44.x` | 
+| v2.0.0 | Stargate <br> (`v0.40.x`, `v0.41.x`, `v0.42.x`) | `v2/cosmos-stargate`  |
+|  v2.0.0 |`v0.44.x` | `v2/cosmos-v0.44.x` | 
+
+
 
 ## Usage
-To know how to setup and run Juno, please refer to the [docs folder](.docs).
+To know how to set up and run Juno, please refer to the [docs folder](.docs).
 
 ## Testing
 If you want to test the code, you can do so by running

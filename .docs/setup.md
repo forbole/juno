@@ -5,7 +5,7 @@ Setting up Juno is pretty straightforward. It requires three things to be done:
 2. Start the parser.
 
 ## Installing Juno
-In order to install Juno you are required to have [Go 1.15+](https://golang.org/dl/) installed on your machine. Once you have it, the first thing to do is to clone the GitHub repository. To do this you can run
+In order to install Juno you are required to have [Go 1.17+](https://golang.org/dl/) installed on your machine. Once you have it, the first thing to do is to clone the GitHub repository. To do this you can run
 
 ```shell
 $ git clone https://github.com/forbole/juno.git
@@ -46,13 +46,13 @@ Use "juno [command] --help" for more information about a command.
 ```
 
 ## Initializing the configuration
-In order to correctly parse and store the data based on your requirements, Juno allows you to customize its behavior via a TOML file called `config.yaml`. In order to create the first instance of the `config.yaml` file you can run
+To correctly parse and store the data based on your requirements, Juno allows you to customize its behavior via a YAML file called `config.yaml`. To create the first instance of the `config.yaml` file you can run
 
 ```shell
 $ juno init
 ```
 
-This will create such file inside the `~/.juno` folder.  
+This will create such a file inside the `~/.juno` folder.  
 Note that if you want to change the folder used by Juno you can do this using the `--home` flag:
 
 ```shell
@@ -68,7 +68,7 @@ $ nano ~/.juno/config.yaml
 For a better understanding of what each section and field refers to, please read the [config reference](config.md).
 
 ## Running Juno
-Once the configuration file has been setup, you can run Juno using the following command:
+Once the configuration file has been set up, you can run Juno using the following command:
 
 ```shell
 $ juno start
@@ -81,7 +81,7 @@ If you are using a custom folder for the configuration file, please specify it u
 $ juno start --home /path/to/my/config/folder
 ```
 
-We highly suggest you running Juno as a system service so that it can be restarted automatically in the case it stops. To do this you can run:
+We highly suggest you run Juno as a system service so that it can be restarted automatically in the case it stops. To do this you can run:
 
 ```shell
 $ sudo tee /etc/systemd/system/juno.service > /dev/null <<EOF

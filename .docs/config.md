@@ -66,7 +66,7 @@ This section contains the details of the chain configuration regarding the Cosmo
 | `prefix` | `string` | Bech 32 prefix of the addresses | `cosmos` | 
 
 ### Supported modules
-Currently we support the followings Cosmos modules:
+Currently, we support the followings Cosmos modules:
 
 - `auth` to parse the `x/auth` data
 - `bank` to parse the `x/bank` data
@@ -92,7 +92,7 @@ This section contains the details of the node to which Juno will connect.
 | `config` | `object` | Contains the configuration data for the node | | 
 
 ### Remote node
-A remote node is the default implementation of a node. It relies on both an RPC and gRPC connections to get the data. If you want to use this kind of node, you need to set the [`node`](#node) type to `remote` and then set the following attributes of the configuration.
+A remote node is the default implementation of a node. It relies on both RPC and gRPC connections to get the data. If you want to use this kind of node, you need to set the [`node`](#node) type to `remote` and then set the following attributes of the configuration.
 
 | Attribute | Type | Description | Example |
 | :-------: | :---: | :--------- | :------ |
@@ -132,7 +132,7 @@ A local node reads the data to be parsed from a local directory referred to as `
 | `genesis_file_path` | `string` | Path of the genesis file to be parsed | `'/bdjuno/.bdjuno/genesis/genesis.json'` |
 
 ## `database`
-This section contains all the different configuration related to the PostgreSQL database where Juno will write the data.
+This section contains all the different configurations related to the PostgreSQL database where Juno will write the data.
 
 | Attribute | Type | Description | Example |
 | :-------: | :---: | :--------- | :------ |
