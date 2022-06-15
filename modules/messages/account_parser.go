@@ -56,7 +56,7 @@ var CosmosMessageAddressesParser = JoinMessageParsers(
 	IBCTransferMessagesParser,
 	SlashingMessagesParser,
 	StakingMessagesParser,
-	// OsmoMessageAddressesParser,
+	OsmoMessageAddressesParser,
 	DefaultMessagesParser,
 )
 
