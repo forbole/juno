@@ -285,44 +285,43 @@ func (w Worker) handleTx(tx *types.Tx) {
 	}
 }
 
-// handleMessages accepts the transaction and handles messages contained
-// inside the transaction. An error is returned if the message unpacking
-// or calling handlers fails.
-func (w Worker) handleMessages(tx *types.Tx) error {
-	// Handle all the messages contained inside the transaction
-	for i, msg := range tx.Body.Messages {
-		var stdMsg sdk.Msg
-		err := w.codec.UnpackAny(msg, &stdMsg)
-		if err != nil {
-			return fmt.Errorf("error while unpacking message: %s", err)
-		}
-
-		// Call the handlers
-		for _, module := range w.modules {
-			if messageModule, ok := module.(modules.MessageModule); ok {
-				err = messageModule.HandleMsg(i, stdMsg, tx)
-				if err != nil {
-					w.logger.MsgError(module, tx, stdMsg, err)
-				}
+// handleMessage accepts the transaction and handles messages contained
+// inside the transaction.
+func (w Worker) handleMessage(index int, msg sdk.Msg, tx *types.Tx) {
+	for _, module := range w.modules {
+		if messageModule, ok := module.(modules.MessageModule); ok {
+			err := messageModule.HandleMsg(index, msg, tx)
+			if err != nil {
+				w.logger.MsgError(module, tx, msg, err)
 			}
 		}
 	}
-	return nil
 }
 
 // ExportTxs accepts a slice of transactions and persists then inside the database.
 // An error is returned if the write fails.
 func (w Worker) ExportTxs(txs []*types.Tx) error {
 	for _, tx := range txs {
-		go w.handleTx(tx)
 
 		err := w.saveTx(tx)
 		if err != nil {
-			return fmt.Errorf("error while exporting txs: %s", err)
+			return fmt.Errorf("error while storing txs: %s", err)
 		}
-		err = w.handleMessages(tx)
-		if err != nil {
-			return fmt.Errorf("error while exporting txs: %s", err)
+
+		go w.handleTx(tx)
+
+		sdkMsgs := make([]sdk.Msg, len(tx.Body.Messages))
+		for i, message := range tx.Body.Messages {
+			var stdMsg sdk.Msg
+			err := w.codec.UnpackAny(message, &stdMsg)
+			if err != nil {
+				return err
+			}
+			sdkMsgs[i] = stdMsg
+		}
+
+		for i, sdkMsg := range sdkMsgs {
+			go w.handleMessage(i, sdkMsg, tx)
 		}
 	}
 
