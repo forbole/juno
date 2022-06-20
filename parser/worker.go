@@ -301,25 +301,29 @@ func (w Worker) handleMessage(index int, msg sdk.Msg, tx *types.Tx) {
 // ExportTxs accepts a slice of transactions and persists then inside the database.
 // An error is returned if the write fails.
 func (w Worker) ExportTxs(txs []*types.Tx) error {
+	// handle all transactions inside the block
 	for _, tx := range txs {
-
+		// save the transaction
 		err := w.saveTx(tx)
 		if err != nil {
 			return fmt.Errorf("error while storing txs: %s", err)
 		}
 
+		// call the tx handlers
 		go w.handleTx(tx)
 
+		// handle all messages contained inside the transaction
 		sdkMsgs := make([]sdk.Msg, len(tx.Body.Messages))
-		for i, message := range tx.Body.Messages {
+		for i, msg := range tx.Body.Messages {
 			var stdMsg sdk.Msg
-			err := w.codec.UnpackAny(message, &stdMsg)
+			err := w.codec.UnpackAny(msg, &stdMsg)
 			if err != nil {
 				return err
 			}
 			sdkMsgs[i] = stdMsg
 		}
 
+		// call the msg handlers
 		for i, sdkMsg := range sdkMsgs {
 			go w.handleMessage(i, sdkMsg, tx)
 		}
