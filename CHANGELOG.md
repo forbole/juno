@@ -1,3 +1,7 @@
+## Unreleased
+### Changes
+- ([\#67](https://github.com/forbole/juno/pull/67)) Added support for concurrent transaction handling
+
 ## v3.2.1
 ### Changes
 - ([\#68](https://github.com/forbole/juno/pull/68)) Added `chain_id` label to prometheus to improve alert monitoring 
