@@ -20,6 +20,9 @@ type Node interface {
 	// is returned if the query fails.
 	LatestHeight() (int64, error)
 
+	// ChainID returns the network ID
+	ChainID() (string, error)
+
 	// Validators returns all the known Tendermint validators for a given block
 	// height. An error is returned if the query fails.
 	Validators(height int64) (*tmctypes.ResultValidators, error)
