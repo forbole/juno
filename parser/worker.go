@@ -128,6 +128,22 @@ func (w Worker) Process(height int64) error {
 	return w.ExportBlock(block, events, txs, vals)
 }
 
+// ProcessTransactions fetches transactions for a given height and stores them into the database.
+// It returns an error if the export process fails.
+func (w Worker) ProcessTransactions(height int64) error {
+	block, err := w.node.Block(height)
+	if err != nil {
+		return fmt.Errorf("failed to get block from node: %s", err)
+	}
+
+	txs, err := w.node.Txs(block)
+	if err != nil {
+		return fmt.Errorf("failed to get transactions for block: %s", err)
+	}
+
+	return w.ExportTxs(txs)
+}
+
 // HandleGenesis accepts a GenesisDoc and calls all the registered genesis handlers
 // in the order in which they have been registered.
 func (w Worker) HandleGenesis(genesisDoc *tmtypes.GenesisDoc, appState map[string]json.RawMessage) error {
@@ -246,44 +262,70 @@ func (w Worker) ExportCommit(commit *tmtypes.Commit, vals *tmctypes.ResultValida
 	return nil
 }
 
+// saveTx accepts the transaction and persists it inside the database.
+// An error is returned if the write fails.
+func (w Worker) saveTx(tx *types.Tx) error {
+	err := w.db.SaveTx(tx)
+	if err != nil {
+		return fmt.Errorf("failed to handle transaction with hash %s: %s", tx.TxHash, err)
+	}
+	return nil
+}
+
+// handleTx accepts the transaction and calls the tx handlers.
+func (w Worker) handleTx(tx *types.Tx) {
+	// Call the tx handlers
+	for _, module := range w.modules {
+		if transactionModule, ok := module.(modules.TransactionModule); ok {
+			err := transactionModule.HandleTx(tx)
+			if err != nil {
+				w.logger.TxError(module, tx, err)
+			}
+		}
+	}
+}
+
+// handleMessage accepts the transaction and handles messages contained
+// inside the transaction.
+func (w Worker) handleMessage(index int, msg sdk.Msg, tx *types.Tx) {
+	for _, module := range w.modules {
+		if messageModule, ok := module.(modules.MessageModule); ok {
+			err := messageModule.HandleMsg(index, msg, tx)
+			if err != nil {
+				w.logger.MsgError(module, tx, msg, err)
+			}
+		}
+	}
+}
+
 // ExportTxs accepts a slice of transactions and persists then inside the database.
 // An error is returned if the write fails.
 func (w Worker) ExportTxs(txs []*types.Tx) error {
-	// Handle all the transactions inside the block
+	// handle all transactions inside the block
 	for _, tx := range txs {
-		// Save the transaction itself
-		err := w.db.SaveTx(tx)
+		// save the transaction
+		err := w.saveTx(tx)
 		if err != nil {
-			return fmt.Errorf("failed to handle transaction with hash %s: %s", tx.TxHash, err)
+			return fmt.Errorf("error while storing txs: %s", err)
 		}
 
-		// Call the tx handlers
-		for _, module := range w.modules {
-			if transactionModule, ok := module.(modules.TransactionModule); ok {
-				err = transactionModule.HandleTx(tx)
-				if err != nil {
-					w.logger.TxError(module, tx, err)
-				}
-			}
-		}
+		// call the tx handlers
+		go w.handleTx(tx)
 
-		// Handle all the messages contained inside the transaction
+		// handle all messages contained inside the transaction
+		sdkMsgs := make([]sdk.Msg, len(tx.Body.Messages))
 		for i, msg := range tx.Body.Messages {
 			var stdMsg sdk.Msg
-			err = w.codec.UnpackAny(msg, &stdMsg)
+			err := w.codec.UnpackAny(msg, &stdMsg)
 			if err != nil {
-				return fmt.Errorf("error while unpacking message: %s", err)
+				return err
 			}
+			sdkMsgs[i] = stdMsg
+		}
 
-			// Call the handlers
-			for _, module := range w.modules {
-				if messageModule, ok := module.(modules.MessageModule); ok {
-					err = messageModule.HandleMsg(i, stdMsg, tx)
-					if err != nil {
-						w.logger.MsgError(module, tx, stdMsg, err)
-					}
-				}
-			}
+		// call the msg handlers
+		for i, sdkMsg := range sdkMsgs {
+			go w.handleMessage(i, sdkMsg, tx)
 		}
 	}
 

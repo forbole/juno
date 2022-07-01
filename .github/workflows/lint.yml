@@ -14,9 +14,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 6
     steps:
-      - name: Checkout
+      - name: Checkout 
       - uses: actions/checkout@v3
-      - name: Compute Diff
+      - name: Compute Diff 
       - uses: technote-space/get-diff-action@v4
         with:
           SUFFIX_FILTER: |
