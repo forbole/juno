@@ -53,9 +53,9 @@ func NewWorker(ctx *Context, queue types.HeightQueue, index int) Worker {
 // given worker queue. Any failed job is logged and re-enqueued.
 func (w Worker) Start() {
 	logging.WorkerCount.Inc()
-	nodeInfo, err := w.node.Genesis()
+	chainID, err := w.node.ChainID()
 	if err != nil {
-		w.logger.Error("error while getting genesis info from the node ", "err", err)
+		w.logger.Error("error while getting chain ID from the node ", "err", err)
 	}
 
 	for i := range w.queue {
@@ -68,7 +68,7 @@ func (w Worker) Start() {
 			}()
 		}
 
-		logging.WorkerHeight.WithLabelValues(fmt.Sprintf("%d", w.index), nodeInfo.Genesis.ChainID).Set(float64(i))
+		logging.WorkerHeight.WithLabelValues(fmt.Sprintf("%d", w.index), chainID).Set(float64(i))
 	}
 }
 
@@ -126,22 +126,6 @@ func (w Worker) Process(height int64) error {
 	}
 
 	return w.ExportBlock(block, events, txs, vals)
-}
-
-// ProcessTransactions fetches transactions for a given height and stores them into the database.
-// It returns an error if the export process fails.
-func (w Worker) ProcessTransactions(height int64) error {
-	block, err := w.node.Block(height)
-	if err != nil {
-		return fmt.Errorf("failed to get block from node: %s", err)
-	}
-
-	txs, err := w.node.Txs(block)
-	if err != nil {
-		return fmt.Errorf("failed to get transactions for block: %s", err)
-	}
-
-	return w.ExportTxs(txs)
 }
 
 // HandleGenesis accepts a GenesisDoc and calls all the registered genesis handlers
