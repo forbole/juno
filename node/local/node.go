@@ -322,6 +322,11 @@ func (cp *Node) LatestHeight() (int64, error) {
 	return cp.blockStore.Height(), nil
 }
 
+// ChainID implements node.Node
+func (cp *Node) ChainID() (string, error) {
+	return cp.genesisDoc.ChainID, nil
+}
+
 // Validators implements node.Node
 func (cp *Node) Validators(height int64) (*tmctypes.ResultValidators, error) {
 	height, err := cp.getHeight(cp.blockStore.Height(), &height)
