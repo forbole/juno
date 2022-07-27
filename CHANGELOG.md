@@ -1,6 +1,7 @@
-## Unreleased
+## v3.2.2
 ### Changes
 - ([\#67](https://github.com/forbole/juno/pull/67)) Added support for concurrent transaction handling
+- ([\#69](https://github.com/forbole/juno/pull/69)) Added `ChainID` method to the `Node` type
 
 ## v3.2.1
 ### Changes
