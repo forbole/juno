@@ -156,6 +156,17 @@ func (cp *Node) LatestHeight() (int64, error) {
 	return height, nil
 }
 
+// ChainID implements node.Node
+func (cp *Node) ChainID() (string, error) {
+	status, err := cp.client.Status(cp.ctx)
+	if err != nil {
+		return "", err
+	}
+
+	chainID := status.NodeInfo.Network
+	return chainID, err
+}
+
 // Validators implements node.Node
 func (cp *Node) Validators(height int64) (*tmctypes.ResultValidators, error) {
 	vals := &tmctypes.ResultValidators{
