@@ -12,7 +12,6 @@ import (
 	ibctransfertypes "github.com/cosmos/ibc-go/v3/modules/apps/transfer/types"
 	channeltypes "github.com/cosmos/ibc-go/v3/modules/core/04-channel/types"
 
-	gammtypes "github.com/MonOsmosis/osmosis/v10/x/gamm/pool-models/balancer"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -56,7 +55,6 @@ var CosmosMessageAddressesParser = JoinMessageParsers(
 	IBCTransferMessagesParser,
 	SlashingMessagesParser,
 	StakingMessagesParser,
-	OsmoMessageAddressesParser,
 	DefaultMessagesParser,
 )
 
@@ -231,18 +229,4 @@ func StakingMessagesParser(_ codec.Codec, cosmosMsg sdk.Msg) ([]string, error) {
 	}
 
 	return nil, MessageNotSupported(cosmosMsg)
-}
-
-// OsmoMessageAddressesParser returns the list of all the accounts involved in the given
-// message if it's related to the x/gamm module
-func OsmoMessageAddressesParser(_ codec.Codec, cosmosMsg sdk.Msg) ([]string, error) {
-	switch msg := cosmosMsg.(type) {
-
-	case *gammtypes.MsgCreateBalancerPool:
-		return []string{msg.Sender, msg.FuturePoolGovernor}, nil
-	default:
-		return []string{msg.String()}, nil
-	}
-
-	// return nil, MessageNotSupported(cosmosMsg)
 }
