@@ -1,7 +1,6 @@
 package start
 
 import (
-	"fmt"
 	"os"
 	"os/signal"
 	"sync"
@@ -125,16 +124,13 @@ func enqueueMissingBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
 	cfg := config.Cfg.Parser
 
 	// Get the latest height
-	latestBlockHeight, err := ctx.Node.LatestHeight()
-	if err != nil {
-		panic(fmt.Errorf("failed to get last block from RPCConfig client: %s", err))
-	}
+	latestBlockHeight, _ := mustGetLatestHeight(ctx)
 
 	if cfg.FastSync {
 		ctx.Logger.Info("fast sync is enabled, ignoring all previous blocks", "latest_block_height", latestBlockHeight)
 		for _, module := range ctx.Modules {
 			if mod, ok := module.(modules.FastSyncModule); ok {
-				err = mod.DownloadState(latestBlockHeight)
+				err := mod.DownloadState(latestBlockHeight)
 				if err != nil {
 					ctx.Logger.Error("error while performing fast sync",
 						"err", err,
@@ -155,17 +151,11 @@ func enqueueMissingBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
 
 // enqueueNewBlocks enqueues new block heights onto the provided queue.
 func enqueueNewBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
-	currHeight, err := ctx.Node.LatestHeight()
-	if err != nil {
-		panic(fmt.Errorf("failed to get last block from RPCConfig client: %s", err))
-	}
+	currHeight, _ := mustGetLatestHeight(ctx)
 
 	// Enqueue upcoming heights
 	for {
-		latestBlockHeight, err := ctx.Node.LatestHeight()
-		if err != nil {
-			panic(fmt.Errorf("failed to get last block from RPCConfig client: %s", err))
-		}
+		latestBlockHeight, _ := mustGetLatestHeight(ctx)
 
 		// Enqueue all heights from the current height up to the latest height
 		for ; currHeight <= latestBlockHeight; currHeight++ {
@@ -174,6 +164,21 @@ func enqueueNewBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
 		}
 		time.Sleep(config.Cfg.Parser.AvgBlockTime)
 	}
+}
+
+func mustGetLatestHeight(ctx *parser.Context) (int64, error) {
+	latestBlockHeight, err := ctx.Node.LatestHeight()
+	if err != nil {
+		avgBlockTime := config.Cfg.Parser.AvgBlockTime
+
+		ctx.Logger.Error("failed to get last block from RPCConfig client",
+			"err", err, "retry interval", avgBlockTime)
+		time.Sleep(avgBlockTime)
+
+		return mustGetLatestHeight(ctx)
+	}
+
+	return latestBlockHeight, nil
 }
 
 // trapSignal will listen for any OS signal and invoke Done on the main
