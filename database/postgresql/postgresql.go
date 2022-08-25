@@ -14,6 +14,7 @@ import (
 	_ "github.com/lib/pq" // nolint
 
 	"github.com/forbole/juno/v3/database"
+	dbtypes "github.com/forbole/juno/v3/database/types"
 	"github.com/forbole/juno/v3/types"
 	"github.com/forbole/juno/v3/types/config"
 )
@@ -94,6 +95,22 @@ func (db *Database) HasBlock(height int64) (bool, error) {
 	var res bool
 	err := db.Sql.QueryRow(`SELECT EXISTS(SELECT 1 FROM block WHERE height = $1);`, height).Scan(&res)
 	return res, err
+}
+
+// GetLastBlockHeight returns the last block height stored inside the database
+func (db *Database) GetLastBlockHeight() (int64, error) {
+	stmt := `SELECT * FROM block ORDER BY height DESC LIMIT 1`
+
+	var blocks []dbtypes.BlockRow
+	if err := db.Sql.QueryRow(stmt).Scan(&blocks); err != nil {
+		return 0, fmt.Errorf("Error while getting last block height, error: %s", err)
+	}
+
+	if len(blocks) == 0 {
+		return 0, fmt.Errorf("cannot get block, no blocks saved")
+	}
+
+	return blocks[0].Height, nil
 }
 
 // SaveBlock implements database.Database
