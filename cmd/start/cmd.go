@@ -181,6 +181,7 @@ func mustGetLatestHeight(ctx *parser.Context, retryCount int32) (int64, error) {
 			"err", err, "retry interval", avgBlockTime)
 		time.Sleep(avgBlockTime)
 
+		retryCount++
 		return mustGetLatestHeight(ctx, retryCount)
 	}
 
