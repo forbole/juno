@@ -1,7 +1,6 @@
 package start
 
 import (
-	"fmt"
 	"os"
 	"os/signal"
 	"sync"
@@ -125,7 +124,7 @@ func enqueueMissingBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
 	cfg := config.Cfg.Parser
 
 	// Get the latest height
-	latestBlockHeight, _ := mustGetLatestHeight(ctx, 0)
+	latestBlockHeight, _ := mustGetLatestHeight(ctx)
 
 	if cfg.FastSync {
 		ctx.Logger.Info("fast sync is enabled, ignoring all previous blocks", "latest_block_height", latestBlockHeight)
@@ -152,11 +151,11 @@ func enqueueMissingBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
 
 // enqueueNewBlocks enqueues new block heights onto the provided queue.
 func enqueueNewBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
-	currHeight, _ := mustGetLatestHeight(ctx, 0)
+	currHeight, _ := mustGetLatestHeight(ctx)
 
 	// Enqueue upcoming heights
 	for {
-		latestBlockHeight, _ := mustGetLatestHeight(ctx, 0)
+		latestBlockHeight, _ := mustGetLatestHeight(ctx)
 
 		// Enqueue all heights from the current height up to the latest height
 		for ; currHeight <= latestBlockHeight; currHeight++ {
@@ -168,10 +167,7 @@ func enqueueNewBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
 }
 
 // mustGetLatestHeight will keep trying until it gets the latest height from RPC client, panic after 10 retries
-func mustGetLatestHeight(ctx *parser.Context, retryCount int32) (int64, error) {
-	if retryCount >= 10 {
-		panic(fmt.Errorf("failed to get last block from RPCConfig client after %v retries", retryCount))
-	}
+func mustGetLatestHeight(ctx *parser.Context) (int64, error) {
 
 	latestBlockHeight, err := ctx.Node.LatestHeight()
 	if err != nil {
@@ -181,8 +177,7 @@ func mustGetLatestHeight(ctx *parser.Context, retryCount int32) (int64, error) {
 			"err", err, "retry interval", avgBlockTime)
 		time.Sleep(avgBlockTime)
 
-		retryCount++
-		return mustGetLatestHeight(ctx, retryCount)
+		return mustGetLatestHeight(ctx)
 	}
 
 	return latestBlockHeight, nil
