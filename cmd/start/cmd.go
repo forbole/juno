@@ -149,7 +149,7 @@ func enqueueMissingBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
 	}
 
 	if lastBlockHeightInDB > startHeight {
-		startHeight = latestBlockHeight
+		startHeight = lastBlockHeightInDB
 	}
 
 	if cfg.FastSync {
