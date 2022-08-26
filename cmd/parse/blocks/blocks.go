@@ -52,7 +52,7 @@ will be replaced with the data downloaded from the node.
 			// Get the start height, default to the config's height; use flagStart if set
 			startHeight := config.Cfg.Parser.StartHeight
 
-			if lastBlockHeight > startHeight{
+			if lastBlockHeight > startHeight {
 				startHeight = lastBlockHeight
 			}
 
