@@ -1,3 +1,9 @@
+## Unreleased
+### Changes
+#### Blocks
+- ([\#72](https://github.com/forbole/juno/pull/72)) Updated missing blocks parsing 
+
+
 ## v3.3.0
 ### Changes
 - ([\#67](https://github.com/forbole/juno/pull/67)) Added support for concurrent transaction handling
