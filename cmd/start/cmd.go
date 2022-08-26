@@ -130,6 +130,18 @@ func enqueueMissingBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
 		panic(fmt.Errorf("failed to get last block from RPCConfig client: %s", err))
 	}
 
+	lastBlockHeightInDB, err := ctx.Database.GetLastBlockHeight()
+	if err != nil {
+		fmt.Errorf("failed to get last block height from database: %s", err)
+	}
+
+	// Get the start height, default to the config's height
+	startHeight := cfg.StartHeight
+
+	if lastBlockHeightInDB > startHeight {
+		startHeight = latestBlockHeight
+	}
+
 	if cfg.FastSync {
 		ctx.Logger.Info("fast sync is enabled, ignoring all previous blocks", "latest_block_height", latestBlockHeight)
 		for _, module := range ctx.Modules {
@@ -146,7 +158,7 @@ func enqueueMissingBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
 		}
 	} else {
 		ctx.Logger.Info("syncing missing blocks...", "latest_block_height", latestBlockHeight)
-		for i := cfg.StartHeight; i <= latestBlockHeight; i++ {
+		for i := startHeight; i <= latestBlockHeight; i++ {
 			ctx.Logger.Debug("enqueueing missing block", "height", i)
 			exportQueue <- i
 		}
