@@ -44,8 +44,18 @@ will be replaced with the data downloaded from the node.
 			end, _ := cmd.Flags().GetInt64(flagEnd)
 			force, _ := cmd.Flags().GetBool(flagForce)
 
+			lastBlockHeight, err := parseCtx.Database.GetLastBlockHeight()
+			if err != nil {
+				return err
+			}
+
 			// Get the start height, default to the config's height; use flagStart if set
 			startHeight := config.Cfg.Parser.StartHeight
+
+			if lastBlockHeight > startHeight{
+				startHeight = lastBlockHeight
+			}
+
 			if start > 0 {
 				startHeight = start
 			}
