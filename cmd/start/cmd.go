@@ -132,7 +132,7 @@ func enqueueMissingBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
 
 	lastBlockHeightInDB, err := ctx.Database.GetLastBlockHeight()
 	if err != nil {
-		fmt.Errorf("failed to get last block height from database: %s", err)
+		ctx.Logger.Error("failed to get last block height from database", "error", err)
 	}
 
 	// Get the start height, default to the config's height
