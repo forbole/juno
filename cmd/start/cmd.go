@@ -124,7 +124,7 @@ func enqueueMissingBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
 	cfg := config.Cfg.Parser
 
 	// Get the latest height
-	latestBlockHeight, _ := mustGetLatestHeight(ctx)
+	latestBlockHeight := mustGetLatestHeight(ctx, 0)
 
 	if cfg.FastSync {
 		ctx.Logger.Info("fast sync is enabled, ignoring all previous blocks", "latest_block_height", latestBlockHeight)
@@ -151,11 +151,11 @@ func enqueueMissingBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
 
 // enqueueNewBlocks enqueues new block heights onto the provided queue.
 func enqueueNewBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
-	currHeight, _ := mustGetLatestHeight(ctx)
+	currHeight := mustGetLatestHeight(ctx, 0)
 
 	// Enqueue upcoming heights
 	for {
-		latestBlockHeight, _ := mustGetLatestHeight(ctx)
+		latestBlockHeight := mustGetLatestHeight(ctx, 0)
 
 		// Enqueue all heights from the current height up to the latest height
 		for ; currHeight <= latestBlockHeight; currHeight++ {
@@ -166,21 +166,25 @@ func enqueueNewBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
 	}
 }
 
-// mustGetLatestHeight will keep trying until it gets the latest height from RPC client, panic after 10 retries
-func mustGetLatestHeight(ctx *parser.Context) (int64, error) {
+// mustGetLatestHeight will keep trying until it gets the latest height from RPC client, return 0 if retry count > 300
+func mustGetLatestHeight(ctx *parser.Context, retryCount int16) int64 {
+	if retryCount > 300 {
+		return 0
+	}
 
 	latestBlockHeight, err := ctx.Node.LatestHeight()
 	if err != nil {
 		avgBlockTime := config.Cfg.Parser.AvgBlockTime
 
 		ctx.Logger.Error("failed to get last block from RPCConfig client",
-			"err", err, "retry interval", avgBlockTime)
+			"err", err, "retry interval", avgBlockTime, "retry count", retryCount)
 		time.Sleep(avgBlockTime)
 
-		return mustGetLatestHeight(ctx)
+		retryCount++
+		return mustGetLatestHeight(ctx, retryCount)
 	}
 
-	return latestBlockHeight, nil
+	return latestBlockHeight
 }
 
 // trapSignal will listen for any OS signal and invoke Done on the main
