@@ -166,7 +166,7 @@ func enqueueNewBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
 	}
 }
 
-// mustGetLatestHeight will keep trying until it gets the latest height from RPC client, return 0 if retry count > 300
+// mustGetLatestHeight will keep trying until it gets the latest height from RPC client, return 0 if retry count > 50
 func mustGetLatestHeight(ctx *parser.Context, retryCount int16) int64 {
 	if retryCount > 50 {
 		return 0
