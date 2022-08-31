@@ -1,6 +1,5 @@
 ## Unreleased
 ### Changes
-#### Blocks
 - ([\#73](https://github.com/forbole/juno/pull/73)) re-enqueue failed block after average block time
 
 ## v3.3.0
