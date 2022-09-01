@@ -142,8 +142,8 @@ func enqueueMissingBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
 	// Set startHeight to the latest height in database
 	// if is not set inside config.yaml file
 	if startHeight == 0 {
-		startHeightFloat := math.Max(float64(1), float64(lastDbBlockHeight))
-		startHeight = int64(startHeightFloat)
+		getStartHeight := math.Max(float64(1), float64(lastDbBlockHeight))
+		startHeight = int64(getStartHeight)
 	}
 
 	if lastDbBlockHeight > startHeight {
