@@ -2,6 +2,7 @@ package start
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"os/signal"
 	"sync"
@@ -130,7 +131,7 @@ func enqueueMissingBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
 		panic(fmt.Errorf("failed to get last block from RPCConfig client: %s", err))
 	}
 
-	lastBlockHeightInDB, err := ctx.Database.GetLastBlockHeight()
+	lastDbBlockHeight, err := ctx.Database.GetLastBlockHeight()
 	if err != nil {
 		ctx.Logger.Error("failed to get last block height from database", "error", err)
 	}
@@ -141,15 +142,12 @@ func enqueueMissingBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
 	// Set startHeight to the latest height in database
 	// if is not set inside config.yaml file
 	if startHeight == 0 {
-		if lastBlockHeightInDB > 0 {
-			startHeight = lastBlockHeightInDB
-		} else {
-			startHeight = 1
-		}
+		startHeightFloat := math.Max(float64(1), float64(lastDbBlockHeight))
+		startHeight = int64(startHeightFloat)
 	}
 
-	if lastBlockHeightInDB > startHeight {
-		startHeight = lastBlockHeightInDB
+	if lastDbBlockHeight > startHeight {
+		startHeight = lastDbBlockHeight
 	}
 
 	if cfg.FastSync {
