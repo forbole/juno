@@ -50,7 +50,8 @@ will be replaced with the data downloaded from the node.
 				return err
 			}
 
-			// Compate config and db height, set the higher block as start height
+			// Compare start height from config file and last block height in database
+			// and the the higher block as start height
 			startHeight := utils.MaxInt64(config.Cfg.Parser.StartHeight, lastDbBlockHeight)
 
 			if start > 0 {
