@@ -2,7 +2,6 @@ package start
 
 import (
 	"fmt"
-	"math"
 	"os"
 	"os/signal"
 	"sync"
@@ -10,6 +9,7 @@ import (
 	"time"
 
 	parsecmdtypes "github.com/forbole/juno/v3/cmd/parse/types"
+	"github.com/forbole/juno/v3/cmd/utils"
 
 	"github.com/forbole/juno/v3/logging"
 
@@ -142,8 +142,7 @@ func enqueueMissingBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
 	// Set startHeight to the latest height in database
 	// if is not set inside config.yaml file
 	if startHeight == 0 {
-		getStartHeight := math.Max(float64(1), float64(lastDbBlockHeight))
-		startHeight = int64(getStartHeight)
+		startHeight = utils.MaxInt64(1, lastDbBlockHeight)
 	}
 
 	if cfg.FastSync {

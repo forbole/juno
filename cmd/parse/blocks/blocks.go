@@ -2,9 +2,9 @@ package blocks
 
 import (
 	"fmt"
-	"math"
 
 	parsecmdtypes "github.com/forbole/juno/v3/cmd/parse/types"
+	"github.com/forbole/juno/v3/cmd/utils"
 
 	"github.com/rs/zerolog/log"
 
@@ -50,11 +50,8 @@ will be replaced with the data downloaded from the node.
 				return err
 			}
 
-			// Get the start height, default to the config's height; use flagStart if set
-			startHeight := config.Cfg.Parser.StartHeight
-
-			getStartHeight := math.Max(float64(startHeight), float64(lastDbBlockHeight))
-			startHeight = int64(getStartHeight)
+			// Compate config and db height, set the higher block as start height
+			startHeight := utils.MaxInt64(config.Cfg.Parser.StartHeight, lastDbBlockHeight)
 
 			if start > 0 {
 				startHeight = start
