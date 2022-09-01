@@ -97,7 +97,7 @@ func migrateConfig() (Config, error) {
 			ParseGenesis:    cfg.Parser.ParseGenesis,
 			StartHeight:     cfg.Parser.StartHeight,
 			FastSync:        cfg.Parser.FastSync,
-			AvgBlockTime:    averageBlockTime,
+			AvgBlockTime:    &averageBlockTime,
 		},
 		Logging:   cfg.Logging,
 		Telemetry: cfg.Telemetry,
