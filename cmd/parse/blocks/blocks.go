@@ -2,6 +2,7 @@ package blocks
 
 import (
 	"fmt"
+	"math"
 
 	parsecmdtypes "github.com/forbole/juno/v3/cmd/parse/types"
 
@@ -44,7 +45,7 @@ will be replaced with the data downloaded from the node.
 			end, _ := cmd.Flags().GetInt64(flagEnd)
 			force, _ := cmd.Flags().GetBool(flagForce)
 
-			lastBlockHeight, err := parseCtx.Database.GetLastBlockHeight()
+			lastDbBlockHeight, err := parseCtx.Database.GetLastBlockHeight()
 			if err != nil {
 				return err
 			}
@@ -52,9 +53,8 @@ will be replaced with the data downloaded from the node.
 			// Get the start height, default to the config's height; use flagStart if set
 			startHeight := config.Cfg.Parser.StartHeight
 
-			if lastBlockHeight > startHeight {
-				startHeight = lastBlockHeight
-			}
+			getStartHeight := math.Max(float64(startHeight), float64(lastDbBlockHeight))
+			startHeight = int64(getStartHeight)
 
 			if start > 0 {
 				startHeight = start
