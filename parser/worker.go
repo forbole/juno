@@ -62,7 +62,7 @@ func (w Worker) Start() {
 	for i := range w.queue {
 		if err := w.ProcessIfNotExists(i); err != nil {
 			// re-enqueue any failed job after average block time
-			time.Sleep(config.Cfg.Parser.AvgBlockTime)
+			time.Sleep(config.GetAvgBlockTime())
 
 			// TODO: Implement exponential backoff or max retries for a block height.
 			go func() {

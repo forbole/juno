@@ -172,7 +172,7 @@ func enqueueNewBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
 			ctx.Logger.Debug("enqueueing new block", "height", currHeight)
 			exportQueue <- currHeight
 		}
-		time.Sleep(*config.Cfg.Parser.AvgBlockTime)
+		time.Sleep(config.GetAvgBlockTime())
 	}
 }
 

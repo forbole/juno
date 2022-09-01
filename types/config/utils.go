@@ -18,5 +18,6 @@ func GetAvgBlockTime() time.Duration {
 	if Cfg.Parser.AvgBlockTime == nil {
 		return 3 * time.Second
 	}
+
 	return *Cfg.Parser.AvgBlockTime
 }
