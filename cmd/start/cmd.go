@@ -124,7 +124,7 @@ func enqueueMissingBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
 	cfg := config.Cfg.Parser
 
 	// Get the latest height
-	latestBlockHeight := mustGetLatestHeight(ctx, 0)
+	latestBlockHeight := mustGetLatestHeight(ctx)
 
 	if cfg.FastSync {
 		ctx.Logger.Info("fast sync is enabled, ignoring all previous blocks", "latest_block_height", latestBlockHeight)
@@ -151,11 +151,11 @@ func enqueueMissingBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
 
 // enqueueNewBlocks enqueues new block heights onto the provided queue.
 func enqueueNewBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
-	currHeight := mustGetLatestHeight(ctx, 0)
+	currHeight := mustGetLatestHeight(ctx)
 
 	// Enqueue upcoming heights
 	for {
-		latestBlockHeight := mustGetLatestHeight(ctx, 0)
+		latestBlockHeight := mustGetLatestHeight(ctx)
 
 		// Enqueue all heights from the current height up to the latest height
 		for ; currHeight <= latestBlockHeight; currHeight++ {
@@ -166,25 +166,25 @@ func enqueueNewBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
 	}
 }
 
-// mustGetLatestHeight will keep trying until it gets the latest height from RPC client, return 0 if retry count > 50
-func mustGetLatestHeight(ctx *parser.Context, retryCount int16) int64 {
-	if retryCount > 50 {
-		return 0
-	}
+// mustGetLatestHeight tries getting the latest height from the RPC client.
+// If after 50 tries no latest height can be found, it returns 0.
+func mustGetLatestHeight(ctx *parser.Context) int64 {
+	avgBlockTime := config.Cfg.Parser.AvgBlockTime
 
-	latestBlockHeight, err := ctx.Node.LatestHeight()
-	if err != nil {
-		avgBlockTime := config.Cfg.Parser.AvgBlockTime
+	for retryCount := 0; retryCount < 50; retryCount++ {
+		latestBlockHeight, err := ctx.Node.LatestHeight()
+		if err == nil {
+			return latestBlockHeight
+		}
 
 		ctx.Logger.Error("failed to get last block from RPCConfig client",
-			"err", err, "retry interval", avgBlockTime, "retry count", retryCount)
+			"err", err,
+			"retry interval", avgBlockTime,
+			"retry count", retryCount)
 		time.Sleep(avgBlockTime)
-
-		retryCount++
-		return mustGetLatestHeight(ctx, retryCount)
 	}
 
-	return latestBlockHeight
+	return 0
 }
 
 // trapSignal will listen for any OS signal and invoke Done on the main
