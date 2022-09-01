@@ -139,7 +139,7 @@ func enqueueMissingBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
 	startHeight := cfg.StartHeight
 
 	// Set startHeight to the latest height in database
-	// if is not set inside config.yaml file,
+	// if is not set inside config.yaml file
 	if startHeight == 0 {
 		if lastBlockHeightInDB > 0 {
 			startHeight = lastBlockHeightInDB
