@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	parsecmdtypes "github.com/forbole/juno/v3/cmd/parse/types"
-	"github.com/forbole/juno/v3/cmd/utils"
+	"github.com/forbole/juno/v3/types/utils"
 
 	"github.com/rs/zerolog/log"
 
