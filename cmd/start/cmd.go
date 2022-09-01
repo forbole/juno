@@ -146,10 +146,6 @@ func enqueueMissingBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
 		startHeight = int64(getStartHeight)
 	}
 
-	if lastDbBlockHeight > startHeight {
-		startHeight = lastDbBlockHeight
-	}
-
 	if cfg.FastSync {
 		ctx.Logger.Info("fast sync is enabled, ignoring all previous blocks", "latest_block_height", latestBlockHeight)
 		for _, module := range ctx.Modules {
