@@ -16,6 +16,10 @@ type Database interface {
 	// An error is returned if the operation fails.
 	HasBlock(height int64) (bool, error)
 
+	// GetLastBlockHeight returns the last block height stored in database..
+	// An error is returned if the operation fails.
+	GetLastBlockHeight() (int64, error)
+
 	// SaveBlock will be called when a new block is parsed, passing the block itself
 	// and the transactions contained inside that block.
 	// An error is returned if the operation fails.

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	parsecmdtypes "github.com/forbole/juno/v3/cmd/parse/types"
+	"github.com/forbole/juno/v3/types/utils"
 
 	"github.com/rs/zerolog/log"
 
@@ -44,8 +45,15 @@ will be replaced with the data downloaded from the node.
 			end, _ := cmd.Flags().GetInt64(flagEnd)
 			force, _ := cmd.Flags().GetBool(flagForce)
 
-			// Get the start height, default to the config's height; use flagStart if set
-			startHeight := config.Cfg.Parser.StartHeight
+			lastDbBlockHeight, err := parseCtx.Database.GetLastBlockHeight()
+			if err != nil {
+				return err
+			}
+
+			// Compare start height from config file and last block height in database
+			// and set higher block as start height
+			startHeight := utils.MaxInt64(config.Cfg.Parser.StartHeight, lastDbBlockHeight)
+
 			if start > 0 {
 				startHeight = start
 			}
