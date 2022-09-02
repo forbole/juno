@@ -1,3 +1,7 @@
+## Unreleased
+### Changes
+- ([\#71](https://github.com/forbole/juno/pull/71)) Retry RPC client connection upon failure instead of panic
+
 ## v3.3.0
 ### Changes
 - ([\#67](https://github.com/forbole/juno/pull/67)) Added support for concurrent transaction handling
