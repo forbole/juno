@@ -184,8 +184,6 @@ func enqueueNewBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
 // mustGetLatestHeight tries getting the latest height from the RPC client.
 // If after 50 tries no latest height can be found, it returns 0.
 func mustGetLatestHeight(ctx *parser.Context) int64 {
-	avgBlockTime := config.Cfg.Parser.AvgBlockTime
-
 	for retryCount := 0; retryCount < 50; retryCount++ {
 		latestBlockHeight, err := ctx.Node.LatestHeight()
 		if err == nil {
@@ -194,9 +192,10 @@ func mustGetLatestHeight(ctx *parser.Context) int64 {
 
 		ctx.Logger.Error("failed to get last block from RPCConfig client",
 			"err", err,
-			"retry interval", avgBlockTime,
+			"retry interval", config.GetAvgBlockTime(),
 			"retry count", retryCount)
-		time.Sleep(avgBlockTime)
+
+		time.Sleep(config.GetAvgBlockTime())
 	}
 
 	return 0
