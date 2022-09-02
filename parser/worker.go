@@ -3,6 +3,7 @@ package parser
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/forbole/juno/v3/logging"
 
@@ -60,7 +61,9 @@ func (w Worker) Start() {
 
 	for i := range w.queue {
 		if err := w.ProcessIfNotExists(i); err != nil {
-			// re-enqueue any failed job
+			// re-enqueue any failed job after average block time
+			time.Sleep(config.GetAvgBlockTime())
+
 			// TODO: Implement exponential backoff or max retries for a block height.
 			go func() {
 				w.logger.Error("re-enqueueing failed block", "height", i, "err", err)
