@@ -8,6 +8,7 @@ import (
 	"time"
 
 	parsecmdtypes "github.com/forbole/juno/v3/cmd/parse/types"
+	"github.com/forbole/juno/v3/types/utils"
 
 	"github.com/forbole/juno/v3/logging"
 
@@ -126,6 +127,20 @@ func enqueueMissingBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
 	// Get the latest height
 	latestBlockHeight := mustGetLatestHeight(ctx)
 
+	lastDbBlockHeight, err := ctx.Database.GetLastBlockHeight()
+	if err != nil {
+		ctx.Logger.Error("failed to get last block height from database", "error", err)
+	}
+
+	// Get the start height, default to the config's height
+	startHeight := cfg.StartHeight
+
+	// Set startHeight to the latest height in database
+	// if is not set inside config.yaml file
+	if startHeight == 0 {
+		startHeight = utils.MaxInt64(1, lastDbBlockHeight)
+	}
+
 	if cfg.FastSync {
 		ctx.Logger.Info("fast sync is enabled, ignoring all previous blocks", "latest_block_height", latestBlockHeight)
 		for _, module := range ctx.Modules {
@@ -142,7 +157,7 @@ func enqueueMissingBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
 		}
 	} else {
 		ctx.Logger.Info("syncing missing blocks...", "latest_block_height", latestBlockHeight)
-		for i := cfg.StartHeight; i <= latestBlockHeight; i++ {
+		for i := startHeight; i <= latestBlockHeight; i++ {
 			ctx.Logger.Debug("enqueueing missing block", "height", i)
 			exportQueue <- i
 		}
