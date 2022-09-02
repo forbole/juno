@@ -1,8 +1,7 @@
 ## Unreleased
 ### Changes
-#### Blocks
+- ([\#71](https://github.com/forbole/juno/pull/71)) Retry RPC client connection upon failure instead of panic
 - ([\#72](https://github.com/forbole/juno/pull/72)) Updated missing blocks parsing 
-
 
 ## v3.3.0
 ### Changes
