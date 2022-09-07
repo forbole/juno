@@ -96,6 +96,22 @@ func (db *Database) HasBlock(height int64) (bool, error) {
 	return res, err
 }
 
+// GetLastBlockHeight returns the last block height stored inside the database
+func (db *Database) GetLastBlockHeight() (int64, error) {
+	stmt := `SELECT height FROM block ORDER BY height DESC LIMIT 1;`
+
+	var height int64
+	if err := db.Sql.QueryRow(stmt).Scan(&height); err != nil {
+		return 0, fmt.Errorf("error while getting last block height, error: %s", err)
+	}
+
+	if height == 0 {
+		return 0, fmt.Errorf("cannot get block height, no blocks saved")
+	}
+
+	return height, nil
+}
+
 // SaveBlock implements database.Database
 func (db *Database) SaveBlock(block *types.Block) error {
 	sqlStatement := `

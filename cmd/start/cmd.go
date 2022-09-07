@@ -1,7 +1,6 @@
 package start
 
 import (
-	"fmt"
 	"os"
 	"os/signal"
 	"sync"
@@ -9,6 +8,7 @@ import (
 	"time"
 
 	parsecmdtypes "github.com/forbole/juno/v3/cmd/parse/types"
+	"github.com/forbole/juno/v3/types/utils"
 
 	"github.com/forbole/juno/v3/logging"
 
@@ -125,16 +125,27 @@ func enqueueMissingBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
 	cfg := config.Cfg.Parser
 
 	// Get the latest height
-	latestBlockHeight, err := ctx.Node.LatestHeight()
+	latestBlockHeight := mustGetLatestHeight(ctx)
+
+	lastDbBlockHeight, err := ctx.Database.GetLastBlockHeight()
 	if err != nil {
-		panic(fmt.Errorf("failed to get last block from RPCConfig client: %s", err))
+		ctx.Logger.Error("failed to get last block height from database", "error", err)
+	}
+
+	// Get the start height, default to the config's height
+	startHeight := cfg.StartHeight
+
+	// Set startHeight to the latest height in database
+	// if is not set inside config.yaml file
+	if startHeight == 0 {
+		startHeight = utils.MaxInt64(1, lastDbBlockHeight)
 	}
 
 	if cfg.FastSync {
 		ctx.Logger.Info("fast sync is enabled, ignoring all previous blocks", "latest_block_height", latestBlockHeight)
 		for _, module := range ctx.Modules {
 			if mod, ok := module.(modules.FastSyncModule); ok {
-				err = mod.DownloadState(latestBlockHeight)
+				err := mod.DownloadState(latestBlockHeight)
 				if err != nil {
 					ctx.Logger.Error("error while performing fast sync",
 						"err", err,
@@ -146,7 +157,7 @@ func enqueueMissingBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
 		}
 	} else {
 		ctx.Logger.Info("syncing missing blocks...", "latest_block_height", latestBlockHeight)
-		for i := cfg.StartHeight; i <= latestBlockHeight; i++ {
+		for i := startHeight; i <= latestBlockHeight; i++ {
 			ctx.Logger.Debug("enqueueing missing block", "height", i)
 			exportQueue <- i
 		}
@@ -155,25 +166,39 @@ func enqueueMissingBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
 
 // enqueueNewBlocks enqueues new block heights onto the provided queue.
 func enqueueNewBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
-	currHeight, err := ctx.Node.LatestHeight()
-	if err != nil {
-		panic(fmt.Errorf("failed to get last block from RPCConfig client: %s", err))
-	}
+	currHeight := mustGetLatestHeight(ctx)
 
 	// Enqueue upcoming heights
 	for {
-		latestBlockHeight, err := ctx.Node.LatestHeight()
-		if err != nil {
-			panic(fmt.Errorf("failed to get last block from RPCConfig client: %s", err))
-		}
+		latestBlockHeight := mustGetLatestHeight(ctx)
 
 		// Enqueue all heights from the current height up to the latest height
 		for ; currHeight <= latestBlockHeight; currHeight++ {
 			ctx.Logger.Debug("enqueueing new block", "height", currHeight)
 			exportQueue <- currHeight
 		}
-		time.Sleep(config.Cfg.Parser.AvgBlockTime)
+		time.Sleep(config.GetAvgBlockTime())
 	}
+}
+
+// mustGetLatestHeight tries getting the latest height from the RPC client.
+// If after 50 tries no latest height can be found, it returns 0.
+func mustGetLatestHeight(ctx *parser.Context) int64 {
+	for retryCount := 0; retryCount < 50; retryCount++ {
+		latestBlockHeight, err := ctx.Node.LatestHeight()
+		if err == nil {
+			return latestBlockHeight
+		}
+
+		ctx.Logger.Error("failed to get last block from RPCConfig client",
+			"err", err,
+			"retry interval", config.GetAvgBlockTime(),
+			"retry count", retryCount)
+
+		time.Sleep(config.GetAvgBlockTime())
+	}
+
+	return 0
 }
 
 // trapSignal will listen for any OS signal and invoke Done on the main
