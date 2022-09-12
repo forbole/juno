@@ -49,13 +49,13 @@ func NewStartCmd(cmdCfg *parsecmdtypes.Config) *cobra.Command {
 				}
 			}
 
-			return StartParsing(context)
+			return startParsing(context)
 		},
 	}
 }
 
-// StartParsing represents the function that should be called when the parse command is executed
-func StartParsing(ctx *parser.Context) error {
+// startParsing represents the function that should be called when the parse command is executed
+func startParsing(ctx *parser.Context) error {
 	// Get the config
 	cfg := config.Cfg.Parser
 	logging.StartHeight.Add(float64(cfg.StartHeight))
@@ -76,7 +76,7 @@ func StartParsing(ctx *parser.Context) error {
 	exportQueue := types.NewQueue(25)
 
 	// Create workers
-	workers := make([]parser.Worker, cfg.Workers, cfg.Workers)
+	workers := make([]parser.Worker, cfg.Workers)
 	for i := range workers {
 		workers[i] = parser.NewWorker(ctx, exportQueue, i)
 	}
@@ -204,7 +204,7 @@ func mustGetLatestHeight(ctx *parser.Context) int64 {
 // trapSignal will listen for any OS signal and invoke Done on the main
 // WaitGroup allowing the main process to gracefully exit.
 func trapSignal(ctx *parser.Context) {
-	var sigCh = make(chan os.Signal)
+	var sigCh = make(chan os.Signal, 1)
 
 	signal.Notify(sigCh, syscall.SIGTERM)
 	signal.Notify(sigCh, syscall.SIGINT)
