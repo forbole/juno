@@ -43,7 +43,7 @@ ALTER INDEX IF EXISTS transaction_hash_index RENAME TO transaction_old_hash_inde
 ALTER INDEX IF EXISTS transaction_height_index RENAME TO transaction_old_height_index;
 ALTER TABLE IF EXISTS transaction_old RENAME CONSTRAINT transaction_height_fkey TO transaction_old_height_fkey;`
 
-	_, err := db.Sql.Exec(stmt)
+	_, err := db.SQL.Exec(stmt)
 	return err
 }
 
@@ -54,7 +54,7 @@ ALTER INDEX IF EXISTS message_transaction_hash_index RENAME TO message_old_trans
 ALTER INDEX IF EXISTS message_type_index RENAME TO message_old_type_index;
 ALTER TABLE IF EXISTS message_old RENAME CONSTRAINT message_transaction_hash_fkey TO message_old_transaction_hash_fkey;`
 
-	_, err := db.Sql.Exec(stmt)
+	_, err := db.SQL.Exec(stmt)
 	return err
 }
 
@@ -93,7 +93,7 @@ GRANT ALL PRIVILEGES ON transaction TO "%s";
 `,
 		config.Cfg.Database.User)
 
-	_, err := db.Sql.Exec(stmt)
+	_, err := db.SQL.Exec(stmt)
 	return err
 }
 
@@ -120,7 +120,7 @@ CREATE INDEX message_involved_accounts_index ON message USING GIN(involved_accou
 GRANT ALL PRIVILEGES ON message TO "%s";
 `, config.Cfg.Database.User)
 
-	_, err := db.Sql.Exec(stmt)
+	_, err := db.SQL.Exec(stmt)
 	return err
 }
 
@@ -130,7 +130,7 @@ GRANT ALL PRIVILEGES ON message TO "%s";
 // the message table itself (as we've added this field with the new schema).
 func (db *Migrator) migrateMessagesByAddressFunction() error {
 	// Delete the old function
-	_, err := db.Sql.Exec("DROP FUNCTION IF EXISTS messages_by_address(text[],text[],bigint,bigint);")
+	_, err := db.SQL.Exec("DROP FUNCTION IF EXISTS messages_by_address(text[],text[],bigint,bigint);")
 	if err != nil {
 		return err
 	}
@@ -151,6 +151,6 @@ ORDER BY height DESC LIMIT "limit" OFFSET "offset"
 $$ LANGUAGE sql STABLE;
 `
 
-	_, err = db.Sql.Exec(stmt)
+	_, err = db.SQL.Exec(stmt)
 	return err
 }
