@@ -1,3 +1,8 @@
+## Unreleased 
+### Changes
+- Updated cosmos/cosmos-sdk to `v0.45.8`
+- Use `sqlx` instead of `sql` while dealing with a PostgreSQL database
+
 ## v3.4.0
 ### Changes
 - ([\#71](https://github.com/forbole/juno/pull/71)) Retry RPC client connection upon failure instead of panic
