@@ -34,14 +34,14 @@ On the other hand, to achieve a highly modular code, we implemented extension po
 ## Compatibility table
 Since the Cosmos SDK has evolved a lot, we have different versions of Juno available.
 
-| Juno version | Cosmos SDK Version  | Juno branch |
-| :----------------: | :---------: | :----------: |
-| v3.0.0 | Stargate <br> (`v0.40.x`, `v0.41.x`, `v0.42.x`) | `v3/cosmos-stargate` | 
-| v3.0.0 | `v0.44.x` | `v3/cosmos-v0.44.x` | 
-| v2.0.0 | Stargate <br> (`v0.40.x`, `v0.41.x`, `v0.42.x`) | `v2/cosmos-stargate`  |
-|  v2.0.0 |`v0.44.x` | `v2/cosmos-v0.44.x` | 
-
-
+|               Cosmos SDK Version                |   Juno branch    |
+|:-----------------------------------------------:|:----------------:|
+|                    `v0.37.x`                    | `cosmos-v0.37.x` |
+|                    `v0.38.x`                    | `cosmos-v0.38.x` |
+|                    `v0.39.x`                    | `cosmos-v0.39.x` |
+| Stargate <br> (`v0.40.x`, `v0.41.x`, `v0.42.x`) | `cosmos-v0.40.x` |
+|         `v0.43.x`, `v0.44.x`, `v0.45.1`         | `cosmos-v0.44.x` |
+|                   > `v0.45.1`                   | `cosmos-v0.45.x` |
 
 ## Usage
 To know how to set up and run Juno, please refer to the [docs folder](.docs).
