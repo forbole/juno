@@ -11,7 +11,9 @@ var DefaultAccountParser = []string{
 }
 
 func MessageParser(msg map[string]interface{}) (addresses string) {
-	accountParser := append(DefaultAccountParser, CustomAccountParser...)
+	var accountParser []string
+	accountParser = append(accountParser, DefaultAccountParser...)
+	accountParser = append(accountParser, CustomAccountParser...)
 
 	addresses += "{"
 	for _, role := range accountParser {

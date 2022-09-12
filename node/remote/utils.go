@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"strconv"
 
+	"google.golang.org/grpc/credentials/insecure"
+
 	"google.golang.org/grpc/credentials"
 
 	grpctypes "github.com/cosmos/cosmos-sdk/types/grpc"
@@ -39,9 +41,11 @@ func MustCreateGrpcConnection(cfg *GRPCConfig) *grpc.ClientConn {
 func CreateGrpcConnection(cfg *GRPCConfig) (*grpc.ClientConn, error) {
 	var grpcOpts []grpc.DialOption
 	if cfg.Insecure {
-		grpcOpts = append(grpcOpts, grpc.WithInsecure())
+		grpcOpts = append(grpcOpts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	} else {
-		grpcOpts = append(grpcOpts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})))
+		grpcOpts = append(grpcOpts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+			MinVersion: tls.VersionTLS12,
+		})))
 	}
 
 	address := HTTPProtocols.ReplaceAllString(cfg.Address, "")

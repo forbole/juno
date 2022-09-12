@@ -26,12 +26,12 @@ type Config struct {
 }
 
 type ParserConfig struct {
+	GenesisFilePath string `yaml:"genesis_file_path,omitempty"`
 	Workers         int64  `yaml:"workers"`
+	StartHeight     int64  `yaml:"start_height"`
 	ParseNewBlocks  bool   `yaml:"listen_new_blocks"`
 	ParseOldBlocks  bool   `yaml:"parse_old_blocks"`
-	GenesisFilePath string `yaml:"genesis_file_path,omitempty"`
 	ParseGenesis    bool   `yaml:"parse_genesis"`
-	StartHeight     int64  `yaml:"start_height"`
 	FastSync        bool   `yaml:"fast_sync,omitempty"`
 
 	// Following there are the new fields that have been added into v3. We use pointers and the "omitempty" clause

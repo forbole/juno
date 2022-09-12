@@ -45,12 +45,12 @@ type LoggingConfig struct {
 }
 
 type ParsingConfig struct {
+	GenesisFilePath string `toml:"genesis_file_path"`
 	Workers         int64  `toml:"workers"`
+	StartHeight     int64  `toml:"start_height"`
 	ParseNewBlocks  bool   `toml:"listen_new_blocks"`
 	ParseOldBlocks  bool   `toml:"parse_old_blocks"`
-	GenesisFilePath string `toml:"genesis_file_path"`
 	ParseGenesis    bool   `toml:"parse_genesis"`
-	StartHeight     int64  `toml:"start_height"`
 	FastSync        bool   `toml:"fast_sync"`
 }
 
