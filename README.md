@@ -38,7 +38,8 @@ Since the Cosmos SDK has evolved a lot, we have different versions of Juno avail
 |                    `v0.38.x`                    | `cosmos-v0.38.x` |
 |                    `v0.39.x`                    | `cosmos-v0.39.x` |
 | Stargate <br> (`v0.40.x`, `v0.41.x`, `v0.42.x`) | `cosmos-v0.40.x` |
-|         `v0.43.x`, `v0.44.x`, `v0.45.x`         | `cosmos-v0.44.x` |
+|         `v0.43.x`, `v0.44.x`, `v0.45.1`         | `cosmos-v0.44.x` |
+|                   > `v0.45.1`                   | `cosmos-v0.45.x` |
 
 ## Usage
 To know how to setup and run Juno, please refer to the [docs folder](.docs).
