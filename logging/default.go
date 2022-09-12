@@ -51,7 +51,6 @@ func (d *defaultLogger) SetLogFormat(format string) error {
 
 	case "text":
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
-		break
 
 	default:
 		return fmt.Errorf("invalid logging format: %s", format)

@@ -31,7 +31,7 @@ func RunMigration(_ *parsecmdtypes.Config) error {
 	}
 
 	v2File := config.GetConfigFilePath()
-	return ioutil.WriteFile(v2File, bz, 0666)
+	return ioutil.WriteFile(v2File, bz, 0600)
 }
 
 func migrateConfig() (Config, error) {

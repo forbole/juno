@@ -3,6 +3,7 @@ package telemetry
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -34,7 +35,15 @@ func startPrometheus(cfg *Config) {
 	router := mux.NewRouter()
 	router.Handle("/metrics", promhttp.Handler())
 
-	err := http.ListenAndServe(fmt.Sprintf(":%d", cfg.Port), router)
+	// Create a new server
+	server := http.Server{
+		Addr:         fmt.Sprintf(":%d", cfg.Port),
+		Handler:      router,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+	}
+
+	err := server.ListenAndServe()
 	if err != nil {
 		panic(err)
 	}

@@ -11,8 +11,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 	"github.com/lib/pq"
 
-	_ "github.com/lib/pq" // nolint
-
 	"github.com/forbole/juno/v3/database"
 	"github.com/forbole/juno/v3/types"
 	"github.com/forbole/juno/v3/types/config"
@@ -51,7 +49,7 @@ func Builder(ctx *database.Context) (database.Database, error) {
 	postgresDb.SetMaxIdleConns(ctx.Cfg.MaxIdleConnections)
 
 	return &Database{
-		Sql:            postgresDb,
+		SQL:            postgresDb,
 		EncodingConfig: ctx.EncodingConfig,
 		Logger:         ctx.Logger,
 	}, nil
@@ -63,7 +61,7 @@ var _ database.Database = &Database{}
 // Database defines a wrapper around a SQL database and implements functionality
 // for data aggregation and exporting.
 type Database struct {
-	Sql            *sql.DB
+	SQL            *sql.DB
 	EncodingConfig *params.EncodingConfig
 	Logger         logging.Logger
 }
@@ -78,7 +76,7 @@ func (db *Database) createPartitionIfNotExists(table string, partitionID int64) 
 		table,
 		partitionID,
 	)
-	_, err := db.Sql.Exec(stmt)
+	_, err := db.SQL.Exec(stmt)
 
 	if err != nil {
 		return err
@@ -92,7 +90,7 @@ func (db *Database) createPartitionIfNotExists(table string, partitionID int64) 
 // HasBlock implements database.Database
 func (db *Database) HasBlock(height int64) (bool, error) {
 	var res bool
-	err := db.Sql.QueryRow(`SELECT EXISTS(SELECT 1 FROM block WHERE height = $1);`, height).Scan(&res)
+	err := db.SQL.QueryRow(`SELECT EXISTS(SELECT 1 FROM block WHERE height = $1);`, height).Scan(&res)
 	return res, err
 }
 
@@ -101,7 +99,7 @@ func (db *Database) GetLastBlockHeight() (int64, error) {
 	stmt := `SELECT height FROM block ORDER BY height DESC LIMIT 1;`
 
 	var height int64
-	if err := db.Sql.QueryRow(stmt).Scan(&height); err != nil {
+	if err := db.SQL.QueryRow(stmt).Scan(&height); err != nil {
 		return 0, fmt.Errorf("error while getting last block height, error: %s", err)
 	}
 
@@ -119,7 +117,7 @@ INSERT INTO block (height, hash, num_txs, total_gas, proposer_address, timestamp
 VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING`
 
 	proposerAddress := sql.NullString{Valid: len(block.ProposerAddress) != 0, String: block.ProposerAddress}
-	_, err := db.Sql.Exec(sqlStatement,
+	_, err := db.SQL.Exec(sqlStatement,
 		block.Height, block.Hash, block.TxNum, block.TotalGas, proposerAddress, block.Timestamp,
 	)
 	return err
@@ -142,7 +140,7 @@ func (db *Database) SaveTx(tx *types.Tx) error {
 }
 
 // saveTxInsidePartition stores the given transaction inside the partition having the given id
-func (db *Database) saveTxInsidePartition(tx *types.Tx, partitionId int64) error {
+func (db *Database) saveTxInsidePartition(tx *types.Tx, partitionID int64) error {
 	sqlStatement := `
 INSERT INTO transaction 
 (hash, height, success, messages, memo, signatures, signer_infos, fee, gas_wanted, gas_used, raw_log, logs, partition_id) 
@@ -195,12 +193,12 @@ ON CONFLICT (hash, partition_id) DO UPDATE
 		return err
 	}
 
-	_, err = db.Sql.Exec(sqlStatement,
+	_, err = db.SQL.Exec(sqlStatement,
 		tx.TxHash, tx.Height, tx.Successful(),
 		msgsBz, tx.Body.Memo, pq.Array(sigs),
 		sigInfoBz, string(feeBz),
 		tx.GasWanted, tx.GasUsed, tx.RawLog, string(logsBz),
-		partitionId,
+		partitionID,
 	)
 	return err
 }
@@ -209,7 +207,7 @@ ON CONFLICT (hash, partition_id) DO UPDATE
 func (db *Database) HasValidator(addr string) (bool, error) {
 	var res bool
 	stmt := `SELECT EXISTS(SELECT 1 FROM validator WHERE consensus_address = $1);`
-	err := db.Sql.QueryRow(stmt, addr).Scan(&res)
+	err := db.SQL.QueryRow(stmt, addr).Scan(&res)
 	return res, err
 }
 
@@ -231,7 +229,7 @@ func (db *Database) SaveValidators(validators []*types.Validator) error {
 
 	stmt = stmt[:len(stmt)-1] // Remove trailing ,
 	stmt += " ON CONFLICT DO NOTHING"
-	_, err := db.Sql.Exec(stmt, vparams...)
+	_, err := db.SQL.Exec(stmt, vparams...)
 	return err
 }
 
@@ -253,7 +251,7 @@ func (db *Database) SaveCommitSignatures(signatures []*types.CommitSig) error {
 
 	stmt = stmt[:len(stmt)-1]
 	stmt += " ON CONFLICT (validator_address, timestamp) DO NOTHING"
-	_, err := db.Sql.Exec(stmt, sparams...)
+	_, err := db.SQL.Exec(stmt, sparams...)
 	return err
 }
 
@@ -283,13 +281,13 @@ ON CONFLICT (transaction_hash, index, partition_id) DO UPDATE
 		value = excluded.value,
 		involved_accounts_addresses = excluded.involved_accounts_addresses`
 
-	_, err := db.Sql.Exec(stmt, msg.TxHash, msg.Index, msg.Type, msg.Value, pq.Array(msg.Addresses), msg.Height, partitionID)
+	_, err := db.SQL.Exec(stmt, msg.TxHash, msg.Index, msg.Type, msg.Value, pq.Array(msg.Addresses), msg.Height, partitionID)
 	return err
 }
 
 // Close implements database.Database
 func (db *Database) Close() {
-	err := db.Sql.Close()
+	err := db.SQL.Close()
 	if err != nil {
 		db.Logger.Error("error while closing connection", "err", err)
 	}
@@ -300,29 +298,29 @@ func (db *Database) Close() {
 // GetLastPruned implements database.PruningDb
 func (db *Database) GetLastPruned() (int64, error) {
 	var lastPrunedHeight int64
-	err := db.Sql.QueryRow(`SELECT coalesce(MAX(last_pruned_height),0) FROM pruning LIMIT 1;`).Scan(&lastPrunedHeight)
+	err := db.SQL.QueryRow(`SELECT coalesce(MAX(last_pruned_height),0) FROM pruning LIMIT 1;`).Scan(&lastPrunedHeight)
 	return lastPrunedHeight, err
 }
 
 // StoreLastPruned implements database.PruningDb
 func (db *Database) StoreLastPruned(height int64) error {
-	_, err := db.Sql.Exec(`DELETE FROM pruning`)
+	_, err := db.SQL.Exec(`DELETE FROM pruning`)
 	if err != nil {
 		return err
 	}
 
-	_, err = db.Sql.Exec(`INSERT INTO pruning (last_pruned_height) VALUES ($1)`, height)
+	_, err = db.SQL.Exec(`INSERT INTO pruning (last_pruned_height) VALUES ($1)`, height)
 	return err
 }
 
 // Prune implements database.PruningDb
 func (db *Database) Prune(height int64) error {
-	_, err := db.Sql.Exec(`DELETE FROM pre_commit WHERE height = $1`, height)
+	_, err := db.SQL.Exec(`DELETE FROM pre_commit WHERE height = $1`, height)
 	if err != nil {
 		return err
 	}
 
-	_, err = db.Sql.Exec(`
+	_, err = db.SQL.Exec(`
 DELETE FROM message 
 USING transaction 
 WHERE message.transaction_hash = transaction.hash AND transaction.height = $1
