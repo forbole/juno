@@ -16,6 +16,6 @@ type Migrator struct {
 
 func NewMigrator(db *postgresql.Database) *Migrator {
 	return &Migrator{
-		SQL: sqlx.NewDb(db.SQL, "postgres"),
+		SQL: db.SQL,
 	}
 }
