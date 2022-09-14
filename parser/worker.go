@@ -355,5 +355,8 @@ func (w Worker) ExportTxs(txs []*types.Tx) error {
 		}
 	}
 
+	totalBlocks := w.db.GetTotalBlocks()
+	logging.DbBlockCount.WithLabelValues("total_blocks_in_db").Set(float64(totalBlocks))
+
 	return nil
 }
