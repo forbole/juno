@@ -47,7 +47,7 @@ will be replaced with the data downloaded from the node.
 
 			lastDbBlockHeight, err := parseCtx.Database.GetLastBlockHeight()
 			if err != nil {
-				return err
+				log.Error().Msgf("error while getting last DB block height: %s", err.Error())
 			}
 
 			// Compare start height from config file and last block height in database
