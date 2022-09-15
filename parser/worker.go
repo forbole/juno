@@ -314,7 +314,7 @@ func (w Worker) handleMessage(index int, msg sdk.Msg, tx *types.Tx) {
 
 			for _, module := range w.modules {
 				if messageModule, ok := module.(modules.AuthzMessageModule); ok {
-					err := messageModule.HandleMsgExec(index, msgExec, authzIndex, executedMsg, tx)
+					err = messageModule.HandleMsgExec(index, msgExec, authzIndex, executedMsg, tx)
 					if err != nil {
 						w.logger.MsgError(module, tx, executedMsg, err)
 					}
