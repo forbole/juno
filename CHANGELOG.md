@@ -1,4 +1,4 @@
-## Unreleased
+## Unreleased 
 ### Changes
 - Updated cosmos/cosmos-sdk to `v0.45.8`
 - Use `sqlx` instead of `sql` while dealing with a PostgreSQL database
