@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/x/authz"
+
 	"github.com/forbole/juno/v3/logging"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -291,11 +293,32 @@ func (w Worker) handleTx(tx *types.Tx) {
 // handleMessage accepts the transaction and handles messages contained
 // inside the transaction.
 func (w Worker) handleMessage(index int, msg sdk.Msg, tx *types.Tx) {
+	// Allow modules to handle the message
 	for _, module := range w.modules {
 		if messageModule, ok := module.(modules.MessageModule); ok {
 			err := messageModule.HandleMsg(index, msg, tx)
 			if err != nil {
 				w.logger.MsgError(module, tx, msg, err)
+			}
+		}
+	}
+
+	// If it's a MsgExecute, we need to make sure the included messages are handled as well
+	if msgExec, ok := msg.(*authz.MsgExec); ok {
+		for authzIndex, msgAny := range msgExec.Msgs {
+			var executedMsg sdk.Msg
+			err := w.codec.UnpackAny(msgAny, &executedMsg)
+			if err != nil {
+				w.logger.Error("unable to unpack MsgExec inner message", "index", authzIndex, "error", err)
+			}
+
+			for _, module := range w.modules {
+				if messageModule, ok := module.(modules.AuthzMessageModule); ok {
+					err := messageModule.HandleMsgExec(index, msgExec, authzIndex, executedMsg, tx)
+					if err != nil {
+						w.logger.MsgError(module, tx, executedMsg, err)
+					}
+				}
 			}
 		}
 	}
