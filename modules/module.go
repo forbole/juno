@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/cosmos/cosmos-sdk/x/authz"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/go-co-op/gocron"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -91,9 +93,18 @@ type TransactionModule interface {
 
 type MessageModule interface {
 	// HandleMsg handles a single message.
-	// For convenience of usa, the index of the message inside the transaction and the transaction itself
+	// For convenience of use, the index of the message inside the transaction and the transaction itself
 	// are passed as well.
 	// NOTE. The returned error will be logged using the MsgError method. All other modules' handlers
 	// will still be called.
 	HandleMsg(index int, msg sdk.Msg, tx *types.Tx) error
+}
+
+type AuthzMessageModule interface {
+	// HandleMsgExec handles a single message that is contained within an authz.MsgExec instance.
+	// For convenience of use, the index of the message inside the transaction and the transaction itself
+	// are passed as well.
+	// NOTE. The returned error will be logged using the MsgError method. All other modules' handlers
+	// will still be called.
+	HandleMsgExec(index int, msgExec *authz.MsgExec, authzMsgIndex int, executedMsg sdk.Msg, tx *types.Tx) error
 }
