@@ -37,6 +37,14 @@ var ErrorCount = prometheus.NewCounter(
 	},
 )
 
+var DbBlockCount = prometheus.NewGaugeVec(
+	prometheus.GaugeOpts{
+		Name: "juno_db_total_blocks",
+		Help: "Total number of blocks in database.",
+	},
+	[]string{"total_blocks_in_db"},
+)
+
 func init() {
 	err := prometheus.Register(StartHeight)
 	if err != nil {
@@ -54,6 +62,11 @@ func init() {
 	}
 
 	err = prometheus.Register(ErrorCount)
+	if err != nil {
+		panic(err)
+	}
+
+	err = prometheus.Register(DbBlockCount)
 	if err != nil {
 		panic(err)
 	}
