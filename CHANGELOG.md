@@ -1,3 +1,8 @@
+## Unreleased
+### Changes
+- ([\#74](https://github.com/forbole/juno/pull/74)) Added database block count to prometheus to improve alert monitoring
+- ([\#75](https://github.com/forbole/juno/pull/75)) Allow modules to handle MsgExec inner messages
+
 ## v3.4.0
 ### Changes
 - ([\#71](https://github.com/forbole/juno/pull/71)) Retry RPC client connection upon failure instead of panic
