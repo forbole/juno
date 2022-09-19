@@ -3,6 +3,7 @@ package parser
 import (
 	"encoding/json"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/x/authz"
@@ -278,16 +279,17 @@ func (w Worker) saveTx(tx *types.Tx) error {
 }
 
 // handleTx accepts the transaction and calls the tx handlers.
-func (w Worker) handleTx(tx *types.Tx) {
+func (w Worker) handleTx(tx *types.Tx) error {
 	// Call the tx handlers
 	for _, module := range w.modules {
 		if transactionModule, ok := module.(modules.TransactionModule); ok {
 			err := transactionModule.HandleTx(tx)
 			if err != nil {
-				w.logger.TxError(module, tx, err)
+				return err
 			}
 		}
 	}
+	return nil
 }
 
 // handleMessage accepts the transaction and handles messages contained
@@ -336,7 +338,10 @@ func (w Worker) ExportTxs(txs []*types.Tx) error {
 		}
 
 		// call the tx handlers
-		go w.handleTx(tx)
+		err = w.handleTx(tx)
+		if err != nil {
+			return fmt.Errorf("error while handling transaction: %s", err)
+		}
 
 		// handle all messages contained inside the transaction
 		sdkMsgs := make([]sdk.Msg, len(tx.Body.Messages))
@@ -349,9 +354,14 @@ func (w Worker) ExportTxs(txs []*types.Tx) error {
 			sdkMsgs[i] = stdMsg
 		}
 
-		// call the msg handlers
+		// call the msg handlers to handle the messages concurrently
+		var wg sync.WaitGroup
 		for i, sdkMsg := range sdkMsgs {
-			go w.handleMessage(i, sdkMsg, tx)
+			wg.Add(1)
+			go func(i int, sdkMsg sdk.Msg) {
+				defer wg.Done()
+				w.handleMessage(i, sdkMsg, tx)
+			}(i, sdkMsg)
 		}
 	}
 
