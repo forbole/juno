@@ -363,6 +363,7 @@ func (w Worker) ExportTxs(txs []*types.Tx) error {
 				w.handleMessage(i, sdkMsg, tx)
 			}(i, sdkMsg)
 		}
+		wg.Wait()
 	}
 
 	totalBlocks := w.db.GetTotalBlocks()
