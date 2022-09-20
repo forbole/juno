@@ -101,12 +101,13 @@ func (db *Database) GetLastBlockHeight() (int64, error) {
 	stmt := `SELECT height FROM block ORDER BY height DESC LIMIT 1;`
 
 	var height int64
-	if err := db.SQL.QueryRow(stmt).Scan(&height); err != nil {
+	err := db.SQL.QueryRow(stmt).Scan(&height)
+	if err != nil {
+		if strings.Contains(err.Error(), "no rows in result set") {
+			// If no rows stored in block table, return 0 as height
+			return 0, nil
+		}
 		return 0, fmt.Errorf("error while getting last block height, error: %s", err)
-	}
-
-	if height == 0 {
-		return 0, fmt.Errorf("cannot get block height, no blocks saved")
 	}
 
 	return height, nil
