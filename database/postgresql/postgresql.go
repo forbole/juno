@@ -105,6 +105,10 @@ func (db *Database) GetLastBlockHeight() (int64, error) {
 		return 0, fmt.Errorf("error while getting last block height, error: %s", err)
 	}
 
+	if height == 0 {
+		return 0, fmt.Errorf("cannot get block height, no blocks saved")
+	}
+
 	return height, nil
 }
 
