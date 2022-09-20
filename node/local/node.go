@@ -21,7 +21,6 @@ import (
 	tmquery "github.com/tendermint/tendermint/libs/pubsub/query"
 	"github.com/tendermint/tendermint/privval"
 	"github.com/tendermint/tendermint/proxy"
-	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	sm "github.com/tendermint/tendermint/state"
 	"github.com/tendermint/tendermint/state/indexer"
 	blockidxkv "github.com/tendermint/tendermint/state/indexer/block/kv"
@@ -173,13 +172,13 @@ func NewNode(config *Details, txConfig client.TxConfig, codec codec.Codec) (*Nod
 
 func initDBs(config *cfg.Config, dbProvider tmnode.DBProvider) (blockStore *store.BlockStore, stateDB dbm.DB, err error) {
 	var blockStoreDB dbm.DB
-	blockStoreDB, err = dbProvider(&tmnode.DBContext{"blockstore", config})
+	blockStoreDB, err = dbProvider(&tmnode.DBContext{ID: "blockstore", Config: config})
 	if err != nil {
 		return
 	}
 	blockStore = store.NewBlockStore(blockStoreDB)
 
-	stateDB, err = dbProvider(&tmnode.DBContext{"state", config})
+	stateDB, err = dbProvider(&tmnode.DBContext{ID: "state", Config: config})
 	if err != nil {
 		return
 	}
@@ -210,7 +209,7 @@ func createAndStartIndexerService(
 
 	switch config.TxIndex.Indexer {
 	case "kv":
-		store, err := dbProvider(&tmnode.DBContext{"tx_index", config})
+		store, err := dbProvider(&tmnode.DBContext{ID: "tx_index", Config: config})
 		if err != nil {
 			return nil, nil, nil, err
 		}
@@ -507,12 +506,12 @@ func (cp *Node) TxSearch(query string, pagePtr *int, perPagePtr *int, orderBy st
 	skipCount := validateSkipCount(page, perPage)
 	pageSize := tmmath.MinInt(perPage, totalCount-skipCount)
 
-	apiResults := make([]*ctypes.ResultTx, 0, pageSize)
+	apiResults := make([]*tmctypes.ResultTx, 0, pageSize)
 	for i := skipCount; i < skipCount+pageSize; i++ {
 		r := results[i]
 
 		var proof tmtypes.TxProof
-		apiResults = append(apiResults, &ctypes.ResultTx{
+		apiResults = append(apiResults, &tmctypes.ResultTx{
 			Hash:     tmtypes.Tx(r.Tx).Hash(),
 			Height:   r.Height,
 			Index:    r.Index,
@@ -522,7 +521,7 @@ func (cp *Node) TxSearch(query string, pagePtr *int, perPagePtr *int, orderBy st
 		})
 	}
 
-	return &ctypes.ResultTxSearch{Txs: apiResults, TotalCount: totalCount}, nil
+	return &tmctypes.ResultTxSearch{Txs: apiResults, TotalCount: totalCount}, nil
 }
 
 // SubscribeEvents implements node.Node

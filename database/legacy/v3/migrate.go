@@ -147,13 +147,15 @@ func (db *Migrator) insertTransactionMessages(tx types.TransactionRow, partition
 		return fmt.Errorf("error while unmarshaling messages: %s", err)
 	}
 
-	for i, m := range msgs {
-		// Append params
-		msgType := m["@type"].(string)[1:] // remove head "/"
-		involvedAddresses := types.MessageParser(m)
-		delete(m, "@type")
+	for i, msg := range msgs {
+		msg := msg
 
-		mBz, err := json.Marshal(&m)
+		// Append params
+		msgType := msg["@type"].(string)[1:] // remove head "/"
+		involvedAddresses := types.MessageParser(msg)
+		delete(msg, "@type")
+
+		mBz, err := json.Marshal(&msg)
 		if err != nil {
 			return fmt.Errorf("error while marshaling msg value to json: %s", err)
 		}

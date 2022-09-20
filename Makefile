@@ -42,6 +42,24 @@ install: go.sum
 .PHONY: install
 
 ###############################################################################
+###                          Tools & Dependencies                           ###
+###############################################################################
+
+go-mod-cache: go.sum
+	@echo "--> Download go modules to local cache"
+	@go mod download
+
+go.sum: go.mod
+	@echo "--> Ensure dependencies have not been modified"
+	@go mod verify
+	@go mod tidy
+
+clean:
+	rm -rf $(BUILDDIR)/
+
+.PHONY: go-mod-cache go.sum clean
+
+###############################################################################
 ###                           Tests & Simulation                            ###
 ###############################################################################
 
@@ -65,20 +83,25 @@ test-unit: start-docker-test
 	@go test -mod=readonly -v -coverprofile coverage.txt ./...
 .PHONY: test-unit
 
+###############################################################################
+###                                Linting                                  ###
+###############################################################################
+golangci_lint_cmd=github.com/golangci/golangci-lint/cmd/golangci-lint
+
 lint:
-	golangci-lint run --out-format=tab
-.PHONY: lint
+	@echo "--> Running linter"
+	@go run $(golangci_lint_cmd) run --timeout=10m
 
 lint-fix:
-	golangci-lint run --fix --out-format=tab --issues-exit-code=0
-.PHONY: lint-fix
+	@echo "--> Running linter"
+	@go run $(golangci_lint_cmd) run --fix --out-format=tab --issues-exit-code=0
+
+.PHONY: lint lint-fix
 
 format:
-	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -name '*.pb.go' | xargs gofmt -w -s
-	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -name '*.pb.go' | xargs misspell -w
-	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -name '*.pb.go' | xargs goimports -w -local github.com/forbole/juno
+	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -name '*.pb.go' -not -path "./venv" | xargs gofmt -w -s
+	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -name '*.pb.go' -not -path "./venv" | xargs misspell -w
+	find . -name '*.go' -type f -not -path "./vendor*" -not -path "*.git*" -not -name '*.pb.go' -not -path "./venv" | xargs goimports -w -local github.com/forbole/juno
 .PHONY: format
 
-clean:
-	rm -f tools-stamp ./build/**
-.PHONY: clean
+.PHONY: lint lint-fix format
