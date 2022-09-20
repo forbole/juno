@@ -63,7 +63,7 @@ func (db *Migrator) getOldTransactions(batchSize int64, offset int64) ([]types.T
 	stmt := fmt.Sprintf("SELECT * FROM transaction_old ORDER BY height LIMIT %v OFFSET %v", batchSize, offset)
 
 	var rows []types.TransactionRow
-	err := db.Sql.Select(&rows, stmt)
+	err := db.SQL.Select(&rows, stmt)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,7 @@ func (db *Migrator) createPartitionTable(table string, partitionID int64) error 
 	partitionTable := fmt.Sprintf("%s_%v", table, partitionID)
 
 	stmt := fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s PARTITION OF %s FOR VALUES IN (%v)`, partitionTable, table, partitionID)
-	_, err := db.Sql.Exec(stmt)
+	_, err := db.SQL.Exec(stmt)
 	return err
 }
 
@@ -106,7 +106,7 @@ func (db *Migrator) migrateTransactions(rows []types.TransactionRow, partitionSi
 	stmt = stmt[:len(stmt)-1] // remove trailing ,
 	stmt += " ON CONFLICT DO NOTHING"
 
-	_, err := db.Sql.Exec(stmt, params...)
+	_, err := db.SQL.Exec(stmt, params...)
 	if err != nil {
 		return fmt.Errorf("error while inserting transaction: %s", err)
 	}
@@ -168,6 +168,6 @@ func (db *Migrator) insertTransactionMessages(tx types.TransactionRow, partition
 	stmt = stmt[:len(stmt)-1] // remove trailing ","
 	stmt += " ON CONFLICT DO NOTHING"
 
-	_, err = db.Sql.Exec(stmt, params...)
+	_, err = db.SQL.Exec(stmt, params...)
 	return err
 }
