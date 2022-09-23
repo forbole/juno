@@ -4,6 +4,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/forbole/juno/v3/modules"
 	"github.com/forbole/juno/v3/types"
 )
@@ -29,4 +30,5 @@ type Logger interface {
 	EventsError(module modules.Module, results *tmctypes.ResultBlock, err error)
 	TxError(module modules.Module, tx *types.Tx, err error)
 	MsgError(module modules.Module, tx *types.Tx, msg sdk.Msg, err error)
+	RawMsgError(module modules.Module, tx *types.Tx, msg *codectypes.Any, err error)
 }
