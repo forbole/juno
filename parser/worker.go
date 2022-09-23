@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cosmos/cosmos-sdk/x/authz"
-
 	"github.com/forbole/juno/v3/logging"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -16,10 +14,12 @@ import (
 
 	"github.com/forbole/juno/v3/modules"
 
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 
+	// codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/forbole/juno/v3/node"
 	"github.com/forbole/juno/v3/types"
 	"github.com/forbole/juno/v3/types/utils"
@@ -292,36 +292,36 @@ func (w Worker) handleTx(tx *types.Tx) {
 
 // handleMessage accepts the transaction and handles messages contained
 // inside the transaction.
-func (w Worker) handleMessage(index int, msg sdk.Msg, tx *types.Tx) {
+func (w Worker) handleMessage(index int, msg *codectypes.Any, tx *types.Tx) {
 	// Allow modules to handle the message
 	for _, module := range w.modules {
-		if messageModule, ok := module.(modules.MessageModule); ok {
+		if messageModule, ok := module.(modules.RawMessageModule); ok {
 			err := messageModule.HandleMsg(index, msg, tx)
 			if err != nil {
-				w.logger.MsgError(module, tx, msg, err)
+				w.logger.RawMsgError(module, tx, msg, err)
 			}
 		}
 	}
 
-	// If it's a MsgExecute, we need to make sure the included messages are handled as well
-	if msgExec, ok := msg.(*authz.MsgExec); ok {
-		for authzIndex, msgAny := range msgExec.Msgs {
-			var executedMsg sdk.Msg
-			err := w.codec.UnpackAny(msgAny, &executedMsg)
-			if err != nil {
-				w.logger.Error("unable to unpack MsgExec inner message", "index", authzIndex, "error", err)
-			}
+	// // If it's a MsgExecute, we need to make sure the included messages are handled as well
+	// if msgExec, ok := msg.(*authz.MsgExec); ok {
+	// 	for authzIndex, msgAny := range msgExec.Msgs {
+	// 		var executedMsg sdk.Msg
+	// 		err := w.codec.UnpackAny(msgAny, &executedMsg)
+	// 		if err != nil {
+	// 			w.logger.Error("unable to unpack MsgExec inner message", "index", authzIndex, "error", err)
+	// 		}
 
-			for _, module := range w.modules {
-				if messageModule, ok := module.(modules.AuthzMessageModule); ok {
-					err = messageModule.HandleMsgExec(index, msgExec, authzIndex, executedMsg, tx)
-					if err != nil {
-						w.logger.MsgError(module, tx, executedMsg, err)
-					}
-				}
-			}
-		}
-	}
+	// 		for _, module := range w.modules {
+	// 			if messageModule, ok := module.(modules.AuthzMessageModule); ok {
+	// 				err = messageModule.HandleMsgExec(index, msgExec, authzIndex, executedMsg, tx)
+	// 				if err != nil {
+	// 					w.logger.MsgError(module, tx, executedMsg, err)
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// }
 }
 
 // ExportTxs accepts a slice of transactions and persists then inside the database.
@@ -339,14 +339,13 @@ func (w Worker) ExportTxs(txs []*types.Tx) error {
 		go w.handleTx(tx)
 
 		// handle all messages contained inside the transaction
-		sdkMsgs := make([]sdk.Msg, len(tx.Body.Messages))
+		sdkMsgs := make([]*codectypes.Any, len(tx.Body.Messages))
+
 		for i, msg := range tx.Body.Messages {
-			var stdMsg sdk.Msg
-			err := w.codec.UnpackAny(msg, &stdMsg)
+			sdkMsgs[i], err = codectypes.NewAnyWithValue(msg)
 			if err != nil {
-				return err
+				return fmt.Errorf("error while unpacking msg %s", err)
 			}
-			sdkMsgs[i] = stdMsg
 		}
 
 		// call the msg handlers
