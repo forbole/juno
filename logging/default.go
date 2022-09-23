@@ -11,6 +11,7 @@ import (
 	"github.com/rs/zerolog/log"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/forbole/juno/v3/modules"
 	"github.com/forbole/juno/v3/types"
 )
@@ -113,6 +114,17 @@ func (d *defaultLogger) TxError(module modules.Module, tx *types.Tx, err error) 
 
 // MsgError implements Logger
 func (d *defaultLogger) MsgError(module modules.Module, tx *types.Tx, msg sdk.Msg, err error) {
+	d.Error("error while handling message",
+		"err", err,
+		LogKeyModule, module.Name(),
+		LogKeyHeight, tx.Height,
+		LogKeyTxHash, tx.TxHash,
+		LogKeyMsgType, proto.MessageName(msg),
+	)
+}
+
+// RawMsgError implements Logger
+func (d *defaultLogger) RawMsgError(module modules.Module, tx *types.Tx, msg *codectypes.Any, err error) {
 	d.Error("error while handling message",
 		"err", err,
 		LogKeyModule, module.Name(),
