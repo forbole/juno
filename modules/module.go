@@ -11,6 +11,7 @@ import (
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/forbole/juno/v3/types"
 )
 
@@ -107,4 +108,13 @@ type AuthzMessageModule interface {
 	// NOTE. The returned error will be logged using the MsgError method. All other modules' handlers
 	// will still be called.
 	HandleMsgExec(index int, msgExec *authz.MsgExec, authzMsgIndex int, executedMsg sdk.Msg, tx *types.Tx) error
+}
+
+type RawMessageModule interface {
+	// HandleMsg handles a single message.
+	// For convenience of use, the index of the message inside the transaction and the transaction itself
+	// are passed as well.
+	// NOTE. The returned error will be logged using the MsgError method. All other modules' handlers
+	// will still be called.
+	HandleMsg(index int, msg *codectypes.Any, tx *types.Tx) error
 }
