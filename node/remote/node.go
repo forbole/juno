@@ -11,7 +11,6 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc"
 
 	constypes "github.com/tendermint/tendermint/consensus/types"
@@ -206,15 +205,6 @@ func (cp *Node) Tx(hash string) (*types.Tx, error) {
 	res, err := cp.txServiceClient.GetTx(context.Background(), &tx.GetTxRequest{Hash: hash})
 	if err != nil {
 		return nil, err
-	}
-
-	// Decode messages
-	for _, msg := range res.Tx.Body.Messages {
-		var stdMsg sdk.Msg
-		err = cp.codec.UnpackAny(msg, &stdMsg)
-		if err != nil {
-			return nil, fmt.Errorf("error while unpacking message: %s", err)
-		}
 	}
 
 	convTx, err := types.NewTx(res.TxResponse, res.Tx)

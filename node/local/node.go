@@ -8,7 +8,6 @@ import (
 	"sort"
 
 	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/types/tx"
@@ -428,15 +427,6 @@ func (cp *Node) Tx(hash string) (*types.Tx, error) {
 	protoTx, ok := txResponse.Tx.GetCachedValue().(*tx.Tx)
 	if !ok {
 		return nil, fmt.Errorf("expected %T, got %T", tx.Tx{}, txResponse.Tx.GetCachedValue())
-	}
-
-	// Decode messages
-	for _, msg := range protoTx.Body.Messages {
-		var stdMsg sdk.Msg
-		err = cp.codec.UnpackAny(msg, &stdMsg)
-		if err != nil {
-			return nil, fmt.Errorf("error while unpacking message: %s", err)
-		}
 	}
 
 	convTx, err := types.NewTx(txResponse, protoTx)
