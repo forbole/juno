@@ -29,7 +29,8 @@ func HandleMsg(
 		return fmt.Errorf("error when unmarshaling msg %s", err)
 	}
 
-	addressRegex := regexp.MustCompile("osmo[0-9a-zA-Z]+")
+	bech32AddrPrefix := sdk.GetConfig().GetBech32AccountAddrPrefix()
+	addressRegex := regexp.MustCompile(fmt.Sprintf("%s[0-9a-zA-Z]+", bech32AddrPrefix))
 	if addressRegex.MatchString(string(msgData.Data)) {
 		addresses = addressRegex.FindAllStringSubmatch(string(msgData.Data), -1)
 	}
