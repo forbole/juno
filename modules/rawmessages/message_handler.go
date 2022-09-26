@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"regexp"
 
-	// "strings"
-
 	"github.com/cosmos/cosmos-sdk/codec"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -40,11 +38,13 @@ func HandleMsg(
 		involvedAddresses = append(involvedAddresses, addr...)
 	}
 
+	msgType := msgData.MsgType[1:] // remove head "/"
+
 	return db.SaveMessage(types.NewMessage(
 		tx.TxHash,
 		index,
-		msgData.MsgType,
-		string(msg.Value),
+		msgType,
+		msgData,
 		involvedAddresses,
 		tx.Height,
 	))
