@@ -5,11 +5,11 @@ import (
 	"regexp"
 
 	"github.com/cosmos/cosmos-sdk/codec"
-
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/forbole/juno/v3/database"
 	"github.com/forbole/juno/v3/types"
+	// "github.com/cosmos/gogoproto/proto"
 )
 
 // HandleMsg represents a message handler that stores the given message inside the proper database table
@@ -38,13 +38,22 @@ func HandleMsg(
 		involvedAddresses = append(involvedAddresses, addr...)
 	}
 
+	// Marshal the value
+	bz, err := cdc.MarshalJSON(&msgData)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("\n bz %s \n", string(bz))
+	fmt.Printf("\n msg %s \n", msg.GoString())
+
 	msgType := msgData.MsgType[1:] // remove head "/"
 
 	return db.SaveMessage(types.NewMessage(
 		tx.TxHash,
 		index,
 		msgType,
-		msgData,
+		string(bz),
 		involvedAddresses,
 		tx.Height,
 	))
