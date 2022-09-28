@@ -8,6 +8,7 @@ import (
 	"github.com/forbole/juno/v3/logging"
 
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/x/authz"
 
 	"github.com/forbole/juno/v3/database"
 	"github.com/forbole/juno/v3/types/config"
@@ -290,38 +291,52 @@ func (w Worker) handleTx(tx *types.Tx) {
 	}
 }
 
-// handleMessage accepts the transaction and handles messages contained
-// inside the transaction.
-func (w Worker) handleMessage(index int, msg *codectypes.Any, tx *types.Tx) {
+// handleRawMessage accepts the transaction and handles messages contained
+// inside the transaction that have been previously encoded into Any type
+func (w Worker) handleRawMessage(index int, msg *codectypes.Any, tx *types.Tx) {
 	// Allow modules to handle the message
 	for _, module := range w.modules {
-		if messageModule, ok := module.(modules.RawMessageModule); ok {
-			err := messageModule.HandleMsg(index, msg, tx)
+		if rawmessageModule, ok := module.(modules.RawMessageModule); ok {
+			err := rawmessageModule.HandleMsg(index, msg, tx)
 			if err != nil {
 				w.logger.RawMsgError(module, tx, msg, err)
 			}
 		}
 	}
+}
 
-	// // If it's a MsgExecute, we need to make sure the included messages are handled as well
-	// if msgExec, ok := msg.(*authz.MsgExec); ok {
-	// 	for authzIndex, msgAny := range msgExec.Msgs {
-	// 		var executedMsg sdk.Msg
-	// 		err := w.codec.UnpackAny(msgAny, &executedMsg)
-	// 		if err != nil {
-	// 			w.logger.Error("unable to unpack MsgExec inner message", "index", authzIndex, "error", err)
-	// 		}
+// handleMessage accepts the transaction and handles messages contained
+// inside the transaction.
+func (w Worker) handleMessage(index int, msg sdk.Msg, tx *types.Tx) {
+	// Allow modules to handle the message
+	for _, module := range w.modules {
+		if messageModule, ok := module.(modules.MessageModule); ok {
+			err := messageModule.HandleMsg(index, msg, tx)
+			if err != nil {
+				w.logger.MsgError(module, tx, msg, err)
+			}
+		}
+	}
 
-	// 		for _, module := range w.modules {
-	// 			if messageModule, ok := module.(modules.AuthzMessageModule); ok {
-	// 				err = messageModule.HandleMsgExec(index, msgExec, authzIndex, executedMsg, tx)
-	// 				if err != nil {
-	// 					w.logger.MsgError(module, tx, executedMsg, err)
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// }
+	// If it's a MsgExecute, we need to make sure the included messages are handled as well
+	if msgExec, ok := msg.(*authz.MsgExec); ok {
+		for authzIndex, msgAny := range msgExec.Msgs {
+			var executedMsg sdk.Msg
+			err := w.codec.UnpackAny(msgAny, &executedMsg)
+			if err != nil {
+				w.logger.Error("unable to unpack MsgExec inner message", "index", authzIndex, "error", err)
+			}
+
+			for _, module := range w.modules {
+				if messageModule, ok := module.(modules.AuthzMessageModule); ok {
+					err = messageModule.HandleMsgExec(index, msgExec, authzIndex, executedMsg, tx)
+					if err != nil {
+						w.logger.MsgError(module, tx, executedMsg, err)
+					}
+				}
+			}
+		}
+	}
 }
 
 // ExportTxs accepts a slice of transactions and persists then inside the database.
@@ -339,18 +354,38 @@ func (w Worker) ExportTxs(txs []*types.Tx) error {
 		go w.handleTx(tx)
 
 		// handle all messages contained inside the transaction
-		sdkMsgs := make([]*codectypes.Any, len(tx.Body.Messages))
-
-		for i, msg := range tx.Body.Messages {
-			sdkMsgs[i], err = codectypes.NewAnyWithValue(msg)
+		var sdkMsgs []sdk.Msg
+		for _, msg := range tx.Body.Messages {
+			var stdMsg sdk.Msg
+			err := w.codec.UnpackAny(msg, &stdMsg)
 			if err != nil {
-				return fmt.Errorf("error while unpacking msg %s", err)
+				// TODO: We need better error checking to make sure that we are not missing out other errors
+				w.logger.Info("unsupported message type", "msg_type", msg.TypeUrl)
+				continue
 			}
+			sdkMsgs = append(sdkMsgs, stdMsg)
+		}
+
+		// handle all messages contained inside the transaction
+		var sdkRawMsg []*codectypes.Any
+		for _, msg := range tx.Body.Messages {
+			message, err := codectypes.NewAnyWithValue(msg)
+			if err != nil {
+				w.logger.Info("unsupported message type", "msg_type", msg.TypeUrl)
+				continue
+			}
+			sdkRawMsg = append(sdkRawMsg, message)
+			fmt.Printf("\n msg %v \n ", string(msg.Value))
 		}
 
 		// call the msg handlers
 		for i, sdkMsg := range sdkMsgs {
 			go w.handleMessage(i, sdkMsg, tx)
+		}
+
+		// call the rawmsg handlers
+		for i, rawMsg := range sdkRawMsg {
+			go w.handleRawMessage(i, rawMsg, tx)
 		}
 	}
 
