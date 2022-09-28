@@ -20,7 +20,6 @@ import (
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 
-	// codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/forbole/juno/v3/node"
 	"github.com/forbole/juno/v3/types"
 	"github.com/forbole/juno/v3/types/utils"
@@ -292,7 +291,7 @@ func (w Worker) handleTx(tx *types.Tx) {
 }
 
 // handleRawMessage accepts the transaction and handles messages contained
-// inside the transaction that have been previously encoded into Any type
+// inside the transaction that have been previously encoded into *codectypes.Any type
 func (w Worker) handleRawMessage(index int, msg *codectypes.Any, tx *types.Tx) {
 	// Allow modules to handle the message
 	for _, module := range w.modules {
