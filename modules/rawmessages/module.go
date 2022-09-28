@@ -29,7 +29,7 @@ func (m *Module) Name() string {
 	return "rawmessages"
 }
 
-// HandleMsg implements modules.MessageModule
+// HandleMsg implements modules.RawMessageModule
 func (m *Module) HandleMsg(index int, msg *codectypes.Any, tx *types.Tx) error {
 	return HandleMsg(index, msg, tx, m.cdc, m.db)
 }
