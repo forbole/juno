@@ -5,6 +5,7 @@ import (
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+
 	"github.com/forbole/juno/v3/modules"
 	"github.com/forbole/juno/v3/types"
 )

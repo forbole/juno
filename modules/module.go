@@ -12,6 +12,7 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
+
 	"github.com/forbole/juno/v3/types"
 )
 
@@ -33,6 +34,15 @@ func (m Modules) FindByName(name string) (module Module, found bool) {
 		}
 	}
 	return nil, false
+}
+
+func (m Modules) HasMessageModule() bool {
+	for _, m := range m {
+		if _, ok := m.(MessageModule); ok {
+			return true
+		}
+	}
+	return false
 }
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -102,12 +112,12 @@ type MessageModule interface {
 }
 
 type RawMessageModule interface {
-	// HandleMsg handles a single message.
+	// HandleRawMsg handles a single raw message, without de-serializing it.
 	// For convenience of use, the index of the message inside the transaction and the transaction itself
 	// are passed as well.
 	// NOTE. The returned error will be logged using the RawMsgError method. All other modules' handlers
 	// will still be called.
-	HandleMsg(index int, msg *codectypes.Any, tx *types.Tx) error
+	HandleRawMsg(index int, msg *codectypes.Any, tx *types.Tx) error
 }
 
 type AuthzMessageModule interface {
