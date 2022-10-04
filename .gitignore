@@ -15,5 +15,6 @@ tools-stamp
 *.out
 coverage.txt
 
-# configuration
+# Configuration
 *.toml
+*.yaml
