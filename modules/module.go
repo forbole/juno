@@ -36,7 +36,7 @@ func (m Modules) FindByName(name string) (module Module, found bool) {
 	return nil, false
 }
 
-func (m Modules) HasMessageModule() bool {
+func (m Modules) HasMessageModuleEnabled() bool {
 	for _, m := range m {
 		if _, ok := m.(MessageModule); ok {
 			return true

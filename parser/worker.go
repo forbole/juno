@@ -293,7 +293,7 @@ func (w Worker) handleTx(tx *types.Tx) {
 // handleMessage accepts the transaction and handles messages contained
 // inside the transaction.
 func (w Worker) handleMessage(index int, msg *codectypes.Any, tx *types.Tx) {
-	// Handle raw messages
+	// Handle raw message
 	for _, module := range w.modules {
 		if rawMsgModule, ok := module.(modules.RawMessageModule); ok {
 			err := rawMsgModule.HandleRawMsg(index, msg, tx)
@@ -303,8 +303,8 @@ func (w Worker) handleMessage(index int, msg *codectypes.Any, tx *types.Tx) {
 		}
 	}
 
-	// Do nothing more if there is no message module
-	if !w.modules.HasMessageModule() {
+	// Do nothing more if there is no message module enabled
+	if !w.modules.HasMessageModuleEnabled() {
 		return
 	}
 
