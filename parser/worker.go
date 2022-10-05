@@ -293,16 +293,22 @@ func (w Worker) handleTx(tx *types.Tx) {
 // handleMessage accepts the transaction and handles messages contained
 // inside the transaction.
 func (w Worker) handleMessage(index int, msg *codectypes.Any, tx *types.Tx) {
-	// Allow modules to handle the message
+	// Handle raw messages
 	for _, module := range w.modules {
-		if rawmessageModule, ok := module.(modules.RawMessageModule); ok {
-			err := rawmessageModule.HandleMsg(index, msg, tx)
+		if rawMsgModule, ok := module.(modules.RawMessageModule); ok {
+			err := rawMsgModule.HandleRawMsg(index, msg, tx)
 			if err != nil {
 				w.logger.RawMsgError(module, tx, msg, err)
 			}
 		}
 	}
 
+	// Do nothing more if there is no message module
+	if !w.modules.HasMessageModule() {
+		return
+	}
+
+	// Unpack the message
 	var sdkMsg sdk.Msg
 	err := w.codec.UnpackAny(msg, &sdkMsg)
 	if err != nil {
@@ -345,18 +351,18 @@ func (w Worker) handleMessage(index int, msg *codectypes.Any, tx *types.Tx) {
 // ExportTxs accepts a slice of transactions and persists then inside the database.
 // An error is returned if the write fails.
 func (w Worker) ExportTxs(txs []*types.Tx) error {
-	// handle all transactions inside the block
+	// Handle all transactions inside the block
 	for _, tx := range txs {
-		// save the transaction
+		// Save the transaction
 		err := w.saveTx(tx)
 		if err != nil {
 			return fmt.Errorf("error while storing txs: %s", err)
 		}
 
-		// call the tx handlers
+		// Call the tx handlers
 		go w.handleTx(tx)
 
-		// handle all messages contained inside the transaction
+		// Call the msg handlers
 		for i, sdkMsg := range tx.Body.Messages {
 			go w.handleMessage(i, sdkMsg, tx)
 		}
