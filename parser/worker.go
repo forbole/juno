@@ -32,7 +32,7 @@ type Worker struct {
 
 	queue   types.HeightQueue
 	codec   codec.Codec
-	modules []modules.Module
+	modules modules.Modules
 
 	node   node.Node
 	db     database.Database
@@ -354,7 +354,10 @@ func (w Worker) ExportTxs(txs []*types.Tx) error {
 
 		// handle all messages contained inside the transaction
 		var sdkMsgs []sdk.Msg
+		var sdkRawMsg []*codectypes.Any
 		for _, msg := range tx.Body.Messages {
+			sdkRawMsg = append(sdkRawMsg, msg)
+
 			var stdMsg sdk.Msg
 			err := w.codec.UnpackAny(msg, &stdMsg)
 			if err != nil {
@@ -363,18 +366,6 @@ func (w Worker) ExportTxs(txs []*types.Tx) error {
 				continue
 			}
 			sdkMsgs = append(sdkMsgs, stdMsg)
-		}
-
-		// handle all messages contained inside the transaction
-		var sdkRawMsg []*codectypes.Any
-		for _, msg := range tx.Body.Messages {
-			message, err := codectypes.NewAnyWithValue(msg)
-			if err != nil {
-				w.logger.Info("unsupported message type", "msg_type", msg.TypeUrl)
-				continue
-			}
-			sdkRawMsg = append(sdkRawMsg, message)
-			fmt.Printf("\n msg %v \n ", string(msg.Value))
 		}
 
 		// call the msg handlers
