@@ -7,6 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/forbole/juno/v3/database"
 	"github.com/forbole/juno/v3/types"
 )
@@ -15,7 +16,6 @@ import (
 func HandleMsg(
 	index int, msg *codectypes.Any, tx *types.Tx, cdc codec.Codec, db database.Database,
 ) error {
-
 	var msgData sdk.MsgData
 	var addresses [][]string
 	var involvedAddresses []string
@@ -24,6 +24,12 @@ func HandleMsg(
 	err := cdc.Unmarshal(msg.Value, &msgData)
 	if err != nil {
 		return fmt.Errorf("error when unmarshaling msg %s", err)
+	}
+
+	// marshal msg value
+	bz, err := cdc.MarshalJSON(msg)
+	if err != nil {
+		return err
 	}
 
 	// find all addresses contained inside the data string
@@ -37,15 +43,6 @@ func HandleMsg(
 	for _, addr := range addresses {
 		involvedAddresses = append(involvedAddresses, addr...)
 	}
-
-	// marshal msgData value
-	bz, err := cdc.MarshalJSON(&msgData)
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("\n bz %s \n", string(bz))
-	fmt.Printf("\n msg %s \n", msg.GoString())
 
 	msgType := msgData.MsgType[1:] // remove head "/"
 
