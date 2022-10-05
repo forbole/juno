@@ -306,19 +306,27 @@ func (w Worker) handleRawMessage(index int, msg *codectypes.Any, tx *types.Tx) {
 
 // handleMessage accepts the transaction and handles messages contained
 // inside the transaction.
-func (w Worker) handleMessage(index int, msg sdk.Msg, tx *types.Tx) {
+func (w Worker) handleMessage(index int, msg *codectypes.Any, tx *types.Tx) {
+	var sdkMsg sdk.Msg
+	err := w.codec.UnpackAny(msg, &sdkMsg)
+	if err != nil {
+		// TODO: We need better error checking to make sure that we are not missing out other errors
+		w.logger.Info("unsupported message type", "msg_type", msg.TypeUrl)
+		return
+	}
+
 	// Allow modules to handle the message
 	for _, module := range w.modules {
 		if messageModule, ok := module.(modules.MessageModule); ok {
-			err := messageModule.HandleMsg(index, msg, tx)
+			err := messageModule.HandleMsg(index, sdkMsg, tx)
 			if err != nil {
-				w.logger.MsgError(module, tx, msg, err)
+				w.logger.MsgError(module, tx, sdkMsg, err)
 			}
 		}
 	}
 
 	// If it's a MsgExecute, we need to make sure the included messages are handled as well
-	if msgExec, ok := msg.(*authz.MsgExec); ok {
+	if msgExec, ok := sdkMsg.(*authz.MsgExec); ok {
 		for authzIndex, msgAny := range msgExec.Msgs {
 			var executedMsg sdk.Msg
 			err := w.codec.UnpackAny(msgAny, &executedMsg)
@@ -353,29 +361,12 @@ func (w Worker) ExportTxs(txs []*types.Tx) error {
 		go w.handleTx(tx)
 
 		// handle all messages contained inside the transaction
-		var sdkMsgs []sdk.Msg
-		var sdkRawMsg []*codectypes.Any
-		for _, msg := range tx.Body.Messages {
-			sdkRawMsg = append(sdkRawMsg, msg)
-
-			var stdMsg sdk.Msg
-			err := w.codec.UnpackAny(msg, &stdMsg)
-			if err != nil {
-				// TODO: We need better error checking to make sure that we are not missing out other errors
-				w.logger.Info("unsupported message type", "msg_type", msg.TypeUrl)
-				continue
-			}
-			sdkMsgs = append(sdkMsgs, stdMsg)
-		}
-
-		// call the msg handlers
-		for i, sdkMsg := range sdkMsgs {
+		for i, sdkMsg := range tx.Body.Messages {
+			// process sdk messages
 			go w.handleMessage(i, sdkMsg, tx)
-		}
 
-		// call the rawmsg handlers
-		for i, rawMsg := range sdkRawMsg {
-			go w.handleRawMessage(i, rawMsg, tx)
+			// process raw messages
+			go w.handleRawMessage(i, sdkMsg, tx)
 		}
 	}
 
