@@ -290,9 +290,9 @@ func (w Worker) handleTx(tx *types.Tx) {
 	}
 }
 
-// handleRawMessage accepts the transaction and handles messages contained
-// inside the transaction that have been previously encoded into *codectypes.Any type
-func (w Worker) handleRawMessage(index int, msg *codectypes.Any, tx *types.Tx) {
+// handleMessage accepts the transaction and handles messages contained
+// inside the transaction.
+func (w Worker) handleMessage(index int, msg *codectypes.Any, tx *types.Tx) {
 	// Allow modules to handle the message
 	for _, module := range w.modules {
 		if rawmessageModule, ok := module.(modules.RawMessageModule); ok {
@@ -302,11 +302,7 @@ func (w Worker) handleRawMessage(index int, msg *codectypes.Any, tx *types.Tx) {
 			}
 		}
 	}
-}
 
-// handleMessage accepts the transaction and handles messages contained
-// inside the transaction.
-func (w Worker) handleMessage(index int, msg *codectypes.Any, tx *types.Tx) {
 	var sdkMsg sdk.Msg
 	err := w.codec.UnpackAny(msg, &sdkMsg)
 	if err != nil {
@@ -362,11 +358,7 @@ func (w Worker) ExportTxs(txs []*types.Tx) error {
 
 		// handle all messages contained inside the transaction
 		for i, sdkMsg := range tx.Body.Messages {
-			// process sdk messages
 			go w.handleMessage(i, sdkMsg, tx)
-
-			// process raw messages
-			go w.handleRawMessage(i, sdkMsg, tx)
 		}
 	}
 
