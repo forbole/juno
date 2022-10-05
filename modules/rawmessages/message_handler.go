@@ -1,6 +1,7 @@
 package rawmessages
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 
@@ -16,15 +17,9 @@ import (
 func HandleMsg(
 	index int, msg *codectypes.Any, tx *types.Tx, cdc codec.Codec, db database.Database,
 ) error {
-	var msgData sdk.MsgData
 	var addresses [][]string
 	var involvedAddresses []string
-
-	// unmarshal the value properly
-	err := cdc.Unmarshal(msg.Value, &msgData)
-	if err != nil {
-		return fmt.Errorf("error when unmarshaling msg %s", err)
-	}
+	var rawMsg map[string]json.RawMessage
 
 	// marshal msg value
 	bz, err := cdc.MarshalJSON(msg)
@@ -32,25 +27,35 @@ func HandleMsg(
 		return err
 	}
 
+	// unmarshal the value properly
+	err = json.Unmarshal(bz, &rawMsg)
+	if err != nil {
+		return err
+	}
+
+	msgValue, err := json.Marshal(&rawMsg)
+	if err != nil {
+		return err
+	}
+
 	// find all addresses contained inside the data string
 	bech32AddrPrefix := sdk.GetConfig().GetBech32AccountAddrPrefix()
 	addressRegex := regexp.MustCompile(fmt.Sprintf("%s[0-9a-zA-Z]+", bech32AddrPrefix))
-	if addressRegex.MatchString(string(msgData.Data)) {
-		addresses = addressRegex.FindAllStringSubmatch(string(msgData.Data), -1)
+	if addressRegex.MatchString(string(bz)) {
+		addresses = addressRegex.FindAllStringSubmatch(string(bz), -1)
 	}
 
 	// rewrite into 1d array
 	for _, addr := range addresses {
 		involvedAddresses = append(involvedAddresses, addr...)
 	}
-
-	msgType := msgData.MsgType[1:] // remove head "/"
+	msgType := msg.TypeUrl[1:] // remove head "/"
 
 	return db.SaveMessage(types.NewMessage(
 		tx.TxHash,
 		index,
 		msgType,
-		string(bz),
+		string(msgValue),
 		involvedAddresses,
 		tx.Height,
 	))
