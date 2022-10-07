@@ -131,7 +131,7 @@ func (d *defaultLogger) RawMsgError(module modules.Module, tx *types.Tx, msg *co
 		LogKeyModule, module.Name(),
 		LogKeyHeight, tx.Height,
 		LogKeyTxHash, tx.TxHash,
-		LogKeyMsgType, proto.MessageName(msg),
+		LogKeyMsgType, msg.TypeUrl,
 	)
 }
 
