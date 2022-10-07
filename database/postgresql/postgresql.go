@@ -176,15 +176,15 @@ ON CONFLICT (hash, partition_id) DO UPDATE
 	for index, sig := range tx.Signatures {
 		sigs[index] = base64.StdEncoding.EncodeToString(sig)
 	}
-
-	var msgs = make([]string, len(tx.Body.Messages))
-	for index, msg := range tx.Body.Messages {
-		bz, err := db.EncodingConfig.Marshaler.MarshalJSON(msg)
-		if err != nil {
-			return err
-		}
-		msgs[index] = string(bz)
-	}
+	var msgs []string
+	// var msgs = make([]string, len(tx.Body.Messages))
+	// for index, msg := range tx.Body.Messages {
+	// 	bz, err := db.EncodingConfig.Marshaler.MarshalJSON(msg)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	msgs[index] = string(bz)
+	// }
 	msgsBz := fmt.Sprintf("[%s]", strings.Join(msgs, ","))
 
 	feeBz, err := db.EncodingConfig.Marshaler.MarshalJSON(tx.AuthInfo.Fee)
