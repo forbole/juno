@@ -22,8 +22,8 @@ func (m *Module) HandleRawMsg(index int, msg *codectypes.Any, tx *types.Tx) erro
 
 	// Find all addresses contained inside the data string
 	bech32AddrPrefix := sdk.GetConfig().GetBech32AccountAddrPrefix()
-	addressRegex := regexp.MustCompile(fmt.Sprintf("%s[0-9a-zA-Z]+", bech32AddrPrefix))
-	involvedAddresses := addressRegex.FindAllString(msgValueJSON, -1)
+	addressRegex := regexp.MustCompile(fmt.Sprintf("%s[0-9a-zA-Z]{6,}", bech32AddrPrefix))
+	involvedAddresses := addressRegex.FindAllString(string(msg.Value), -1)
 
 	// Remove the leading "/"
 	msgType := msg.TypeUrl[1:]
