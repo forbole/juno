@@ -39,7 +39,7 @@ func (m *Module) HandleRawMsg(index int, msg *codectypes.Any, tx *types.Tx) erro
 }
 
 // parseMsgValue reads the given codectypes.Any message and gets its inner value by serializing
-// it to a JSON map and removing the @type key
+// it to a JSON map and removing the msg_type key
 func (m *Module) parseMsgValue(msg *codectypes.Any) ([]byte, error) {
 	msgData := sdk.MsgData{
 		MsgType: msg.TypeUrl,
@@ -57,7 +57,7 @@ func (m *Module) parseMsgValue(msg *codectypes.Any) ([]byte, error) {
 	}
 	delete(msgMap, "msg_type")
 
-	// Re-serialize the map without the @type key
+	// Re-serialize the map without the msg_type key
 	noTypeMsgBz, err := json.Marshal(&msgMap)
 	if err != nil {
 		return nil, fmt.Errorf("error while marshalling no type msg to json: %s", err)
