@@ -41,21 +41,21 @@ func (m *Module) HandleRawMsg(index int, msg *codectypes.Any, tx *types.Tx) erro
 // parseMsgValue reads the given codectypes.Any message and gets its inner value by serializing
 // it to a JSON map and removing the @type key
 func (m *Module) parseMsgValue(msg *codectypes.Any) ([]byte, error) {
-	// Serialize the msg to its JSON representation
-	msgJSONBz, err := m.cdc.MarshalJSON(msg)
+	msgData := sdk.MsgData{
+		MsgType: msg.TypeUrl,
+		Data:    msg.Value,
+	}
+
+	msgJSONBz, err := m.cdc.MarshalJSON(&msgData)
 	if err != nil {
 		return nil, fmt.Errorf("error while marshalling msg any to json: %s", err)
 	}
-
-	// Read the JSON representation as a map
 	var msgMap map[string]json.RawMessage
 	err = json.Unmarshal(msgJSONBz, &msgMap)
 	if err != nil {
 		return nil, fmt.Errorf("error while unmarshalling msg to map: %s", err)
 	}
-
-	// Delete the @type key
-	delete(msgMap, "@type")
+	delete(msgMap, "msg_type")
 
 	// Re-serialize the map without the @type key
 	noTypeMsgBz, err := json.Marshal(&msgMap)
