@@ -329,6 +329,8 @@ func (w Worker) handleMessage(index int, msg sdk.Msg, tx *types.Tx) {
 // ExportTxs accepts a slice of transactions and persists then inside the database.
 // An error is returned if the write fails.
 func (w Worker) ExportTxs(txs []*types.Tx) error {
+	var wg sync.WaitGroup
+
 	// handle all transactions inside the block
 	for _, tx := range txs {
 		// save the transaction
@@ -338,10 +340,11 @@ func (w Worker) ExportTxs(txs []*types.Tx) error {
 		}
 
 		// call the tx handlers
-		err = w.handleTx(tx)
-		if err != nil {
-			return fmt.Errorf("error while handling transaction: %s", err)
-		}
+		wg.Add(1)
+		go func(tx *types.Tx) {
+			defer wg.Done()
+			w.handleTx(tx)
+		}(tx)
 
 		// handle all messages contained inside the transaction
 		sdkMsgs := make([]sdk.Msg, len(tx.Body.Messages))
@@ -355,7 +358,6 @@ func (w Worker) ExportTxs(txs []*types.Tx) error {
 		}
 
 		// call the msg handlers to handle the messages concurrently
-		var wg sync.WaitGroup
 		for i, sdkMsg := range sdkMsgs {
 			wg.Add(1)
 			go func(i int, sdkMsg sdk.Msg) {
