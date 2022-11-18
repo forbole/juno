@@ -5,8 +5,8 @@ import (
 
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 
-	"github.com/forbole/juno/v3/database"
-	"github.com/forbole/juno/v3/types"
+	"github.com/saifullah619/juno/v3/database"
+	"github.com/saifullah619/juno/v3/types"
 )
 
 // HandleBlock implements modules.BlockModule

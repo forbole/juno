@@ -3,7 +3,7 @@ package v3
 import (
 	"fmt"
 
-	"github.com/forbole/juno/v3/types/config"
+	"github.com/saifullah619/juno/v3/types/config"
 )
 
 // PrepareMigration prepares the database for the migration by renaming the old tables and creating the new ones

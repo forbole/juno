@@ -11,7 +11,7 @@ import (
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 
-	"github.com/forbole/juno/v3/types"
+	"github.com/saifullah619/juno/v3/types"
 )
 
 // Module represents a generic module without any particular handling of data

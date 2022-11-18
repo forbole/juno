@@ -8,14 +8,14 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
-	"github.com/forbole/juno/v3/logging"
+	"github.com/saifullah619/juno/v3/logging"
 
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 	"github.com/lib/pq"
 
-	"github.com/forbole/juno/v3/database"
-	"github.com/forbole/juno/v3/types"
-	"github.com/forbole/juno/v3/types/config"
+	"github.com/saifullah619/juno/v3/database"
+	"github.com/saifullah619/juno/v3/types"
+	"github.com/saifullah619/juno/v3/types/config"
 )
 
 // Builder creates a database connection with the given database connection info
@@ -179,7 +179,7 @@ ON CONFLICT (hash, partition_id) DO UPDATE
 
 	var msgs = make([]string, len(tx.Body.Messages))
 	for index, msg := range tx.Body.Messages {
-		bz, err := db.EncodingConfig.Marshaler.MarshalJSON(msg)
+		bz, err := db.EncodingConfig.Codec.MarshalJSON(msg)
 		if err != nil {
 			return err
 		}
@@ -187,14 +187,14 @@ ON CONFLICT (hash, partition_id) DO UPDATE
 	}
 	msgsBz := fmt.Sprintf("[%s]", strings.Join(msgs, ","))
 
-	feeBz, err := db.EncodingConfig.Marshaler.MarshalJSON(tx.AuthInfo.Fee)
+	feeBz, err := db.EncodingConfig.Codec.MarshalJSON(tx.AuthInfo.Fee)
 	if err != nil {
 		return fmt.Errorf("failed to JSON encode tx fee: %s", err)
 	}
 
 	var sigInfos = make([]string, len(tx.AuthInfo.SignerInfos))
 	for index, info := range tx.AuthInfo.SignerInfos {
-		bz, err := db.EncodingConfig.Marshaler.MarshalJSON(info)
+		bz, err := db.EncodingConfig.Codec.MarshalJSON(info)
 		if err != nil {
 			return err
 		}

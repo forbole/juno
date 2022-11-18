@@ -22,7 +22,7 @@ FROM golang:alpine AS build-env
 ENV PACKAGES curl make git libc-dev bash gcc linux-headers eudev-dev py-pip
 
 # Set working directory for the build
-WORKDIR /go/src/github.com/forbole/juno
+WORKDIR /go/src/github.com/saifullah619/juno
 
 # Add source files
 COPY . .
