@@ -1,13 +1,10 @@
 ## Unreleased
 ### Changes
 - Updated cosmos/cosmos-sdk to `v0.45.8`
-- Use `sqlx` instead of `sql` while dealing with a PostgreSQL database
 - ([\#74](https://github.com/forbole/juno/pull/74)) Added database block count to prometheus to improve alert monitoring
 - ([\#75](https://github.com/forbole/juno/pull/75)) Allow modules to handle MsgExec inner messages
-- ([\#76](https://github.com/forbole/juno/pull/76)) Return 0 as height for `GetLastBlockHeight()` method while no block is saved
-- Updated cosmos/cosmos-sdk to `v0.45.8`
-- Use `sqlx` instead of `sql` while dealing with a PostgreSQL database
-- ([\#75](https://github.com/forbole/juno/pull/75)) Allow modules to handle MsgExec inner messages
+- ([\#79](https://github.com/forbole/juno/pull/79)) Use `sqlx` instead of `sql` while dealing with a PostgreSQL database
+- ([\#83](https://github.com/forbole/juno/pull/79)) Bump `github.com/tendermint/tendermint` to `v0.34.22`
 
 ## v3.4.0
 ### Changes
