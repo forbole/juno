@@ -22,26 +22,7 @@ import (
 // from config. It returns a database connection handle or an error if the
 // connection fails.
 func Builder(ctx *database.Context) (database.Database, error) {
-	sslMode := "disable"
-	if ctx.Cfg.SSLMode != "" {
-		sslMode = ctx.Cfg.SSLMode
-	}
-
-	schema := "public"
-	if ctx.Cfg.Schema != "" {
-		schema = ctx.Cfg.Schema
-	}
-
-	connStr := fmt.Sprintf(
-		"host=%s port=%d dbname=%s user=%s sslmode=%s search_path=%s",
-		ctx.Cfg.Host, ctx.Cfg.Port, ctx.Cfg.Name, ctx.Cfg.User, sslMode, schema,
-	)
-
-	if ctx.Cfg.Password != "" {
-		connStr += fmt.Sprintf(" password=%s", ctx.Cfg.Password)
-	}
-
-	postgresDb, err := sqlx.Open("postgres", connStr)
+	postgresDb, err := sqlx.Open("postgres", ctx.Cfg.URL)
 	if err != nil {
 		return nil, err
 	}
