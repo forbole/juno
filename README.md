@@ -12,6 +12,9 @@
 
 > Juno is a Cosmos Hub blockchain data aggregator and exporter that provides the ability for developers and clients to query for indexed chain data.
 
+> ### Stargate support dropped
+> Please note that we have stopped supporting Cosmos Stargate, and this branch will not receive any more updates.
+
 ## Table of Contents
   - [Background](#background)
   - [Usage](#usage)
