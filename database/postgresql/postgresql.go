@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jmoiron/sqlx"
+
 	"github.com/forbole/juno/v3/logging"
 
 	"github.com/cosmos/cosmos-sdk/simapp/params"
@@ -39,7 +41,7 @@ func Builder(ctx *database.Context) (database.Database, error) {
 		connStr += fmt.Sprintf(" password=%s", ctx.Cfg.Password)
 	}
 
-	postgresDb, err := sql.Open("postgres", connStr)
+	postgresDb, err := sqlx.Open("postgres", connStr)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +63,7 @@ var _ database.Database = &Database{}
 // Database defines a wrapper around a SQL database and implements functionality
 // for data aggregation and exporting.
 type Database struct {
-	SQL            *sql.DB
+	SQL            *sqlx.DB
 	EncodingConfig *params.EncodingConfig
 	Logger         logging.Logger
 }
@@ -101,10 +103,6 @@ func (db *Database) GetLastBlockHeight() (int64, error) {
 	var height int64
 	if err := db.SQL.QueryRow(stmt).Scan(&height); err != nil {
 		return 0, fmt.Errorf("error while getting last block height, error: %s", err)
-	}
-
-	if height == 0 {
-		return 0, fmt.Errorf("cannot get block height, no blocks saved")
 	}
 
 	return height, nil
