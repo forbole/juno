@@ -6,6 +6,7 @@
 - ([\#76](https://github.com/forbole/juno/pull/76)) Return 0 as height for `GetLastBlockHeight()` method if there are no blocks saved in database
 - ([\#79](https://github.com/forbole/juno/pull/79)) Use `sqlx` instead of `sql` while dealing with a PostgreSQL database
 - ([\#83](https://github.com/forbole/juno/pull/83)) Bump `github.com/tendermint/tendermint` to `v0.34.22`
+- ([\#84](https://github.com/forbole/juno/pull/84)) Replace database configuration params with URI
 
 ## v3.4.0
 ### Changes
