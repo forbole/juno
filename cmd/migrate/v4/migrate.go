@@ -34,7 +34,7 @@ func RunMigration(parseConfig *parsecmdtypes.Config) error {
 
 	err = ioutil.WriteFile(config.GetConfigFilePath(), bz, 0600)
 	if err != nil {
-		return fmt.Errorf("error while writing v3 config: %s", err)
+		return fmt.Errorf("error while writing v4 config: %s", err)
 	}
 
 	return nil
