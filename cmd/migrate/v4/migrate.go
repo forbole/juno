@@ -13,7 +13,7 @@ import (
 	"github.com/forbole/juno/v3/types/config"
 )
 
-// RunMigration runs the migrations from v2 to v3
+// RunMigration runs the migrations from v3 to v4
 func RunMigration(parseConfig *parsecmdtypes.Config) error {
 	// Migrate the config
 	cfg, err := migrateConfig()
