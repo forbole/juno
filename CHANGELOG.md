@@ -1,4 +1,4 @@
-## Unreleased
+## v4.0.0
 ### Changes
 - Updated cosmos/cosmos-sdk to `v0.45.8`
 - ([\#74](https://github.com/forbole/juno/pull/74)) Added database block count to prometheus to improve alert monitoring
