@@ -8,7 +8,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	v2 "github.com/forbole/juno/v3/cmd/migrate/v3"
+	v3 "github.com/forbole/juno/v3/cmd/migrate/v3"
 	databaseconfig "github.com/forbole/juno/v3/database/config"
 	"github.com/forbole/juno/v3/types/config"
 )
@@ -41,7 +41,7 @@ func RunMigration(parseConfig *parsecmdtypes.Config) error {
 }
 
 func migrateConfig() (Config, error) {
-	cfg, err := v2.GetConfig()
+	cfg, err := v3.GetConfig()
 	if err != nil {
 		return Config{}, fmt.Errorf("error while reading v2 config: %s", err)
 	}
