@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"os"
 
-	parsecmdtypes "github.com/forbole/juno/v3/cmd/parse/types"
+	parsecmdtypes "github.com/forbole/juno/v4/cmd/parse/types"
 
 	"github.com/spf13/cobra"
 
-	v4 "github.com/forbole/juno/v3/cmd/migrate/v4"
+	v4 "github.com/forbole/juno/v4/cmd/migrate/v4"
 )
 
 type Migrator func(parseCfg *parsecmdtypes.Config) error
