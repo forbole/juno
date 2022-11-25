@@ -43,7 +43,7 @@ func RunMigration(parseConfig *parsecmdtypes.Config) error {
 func migrateConfig() (Config, error) {
 	cfg, err := v3.GetConfig()
 	if err != nil {
-		return Config{}, fmt.Errorf("error while reading v2 config: %s", err)
+		return Config{}, fmt.Errorf("error while reading v3 config: %s", err)
 	}
 
 	sslMode := cfg.Database.SSLMode
