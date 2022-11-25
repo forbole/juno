@@ -91,7 +91,7 @@ CREATE INDEX transaction_height_index ON transaction (height);
 CREATE INDEX transaction_partition_id_index ON transaction (partition_id);
 GRANT ALL PRIVILEGES ON transaction TO "%s";
 `,
-		config.Cfg.Database.User)
+		config.Cfg.Database.GetUser())
 
 	_, err := db.SQL.Exec(stmt)
 	return err
@@ -118,7 +118,7 @@ CREATE INDEX message_transaction_hash_index ON message (transaction_hash);
 CREATE INDEX message_type_index ON message (type);
 CREATE INDEX message_involved_accounts_index ON message USING GIN(involved_accounts_addresses);
 GRANT ALL PRIVILEGES ON message TO "%s";
-`, config.Cfg.Database.User)
+`, config.Cfg.Database.GetUser())
 
 	_, err := db.SQL.Exec(stmt)
 	return err
