@@ -330,22 +330,21 @@ func (w Worker) handleMessage(index int, msg sdk.Msg, tx *types.Tx) {
 func (w Worker) ExportTxs(txs []*types.Tx) error {
 	var wg sync.WaitGroup
 
-	// handle all transactions inside the block
 	for _, tx := range txs {
-		// save the transaction
+		// Save the transaction
 		err := w.saveTx(tx)
 		if err != nil {
 			return fmt.Errorf("error while storing txs: %s", err)
 		}
 
-		// call the tx handlers
+		// Handle the transaction concurrently
 		wg.Add(1)
 		go func(tx *types.Tx) {
 			defer wg.Done()
 			w.handleTx(tx)
 		}(tx)
 
-		// handle all messages contained inside the transaction
+		// Parse all the messages contained inside the transaction
 		sdkMsgs := make([]sdk.Msg, len(tx.Body.Messages))
 		for i, msg := range tx.Body.Messages {
 			var stdMsg sdk.Msg
@@ -356,7 +355,7 @@ func (w Worker) ExportTxs(txs []*types.Tx) error {
 			sdkMsgs[i] = stdMsg
 		}
 
-		// call the msg handlers to handle the messages concurrently
+		// Handle all the messages concurrently
 		for i, sdkMsg := range sdkMsgs {
 			wg.Add(1)
 			go func(i int, sdkMsg sdk.Msg) {
@@ -364,8 +363,10 @@ func (w Worker) ExportTxs(txs []*types.Tx) error {
 				w.handleMessage(i, sdkMsg, tx)
 			}(i, sdkMsg)
 		}
-		wg.Wait()
 	}
+
+	// Wait all transactions and messages to be parsed
+	wg.Wait()
 
 	totalBlocks := w.db.GetTotalBlocks()
 	logging.DbBlockCount.WithLabelValues("total_blocks_in_db").Set(float64(totalBlocks))
