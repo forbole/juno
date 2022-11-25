@@ -279,17 +279,16 @@ func (w Worker) saveTx(tx *types.Tx) error {
 }
 
 // handleTx accepts the transaction and calls the tx handlers.
-func (w Worker) handleTx(tx *types.Tx) error {
+func (w Worker) handleTx(tx *types.Tx) {
 	// Call the tx handlers
 	for _, module := range w.modules {
 		if transactionModule, ok := module.(modules.TransactionModule); ok {
 			err := transactionModule.HandleTx(tx)
 			if err != nil {
-				return err
+				w.logger.TxError(module, tx, err)
 			}
 		}
 	}
-	return nil
 }
 
 // handleMessage accepts the transaction and handles messages contained
