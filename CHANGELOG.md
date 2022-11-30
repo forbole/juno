@@ -1,13 +1,13 @@
-## Unreleased
+## v4.0.0
 ### Changes
 - Updated cosmos/cosmos-sdk to `v0.45.8`
 - ([\#74](https://github.com/forbole/juno/pull/74)) Added database block count to prometheus to improve alert monitoring
 - ([\#75](https://github.com/forbole/juno/pull/75)) Allow modules to handle MsgExec inner messages
 - ([\#76](https://github.com/forbole/juno/pull/76)) Return 0 as height for `GetLastBlockHeight()` method if there are no blocks saved in database
-- ([\#77](https://github.com/forbole/juno/pull/77)) Add wait group to handle messages concurrently
 - ([\#79](https://github.com/forbole/juno/pull/79)) Use `sqlx` instead of `sql` while dealing with a PostgreSQL database
 - ([\#83](https://github.com/forbole/juno/pull/83)) Bump `github.com/tendermint/tendermint` to `v0.34.22`
 - ([\#84](https://github.com/forbole/juno/pull/84)) Replace database configuration params with URI
+- ([\#86](https://github.com/forbole/juno/pull/86)) Revert concurrent handling of transactions and messages
 
 ## v3.4.0
 ### Changes

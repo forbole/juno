@@ -3,27 +3,26 @@ package parser
 import (
 	"encoding/json"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/x/authz"
 
-	"github.com/forbole/juno/v3/logging"
+	"github.com/forbole/juno/v4/logging"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 
-	"github.com/forbole/juno/v3/database"
-	"github.com/forbole/juno/v3/types/config"
+	"github.com/forbole/juno/v4/database"
+	"github.com/forbole/juno/v4/types/config"
 
-	"github.com/forbole/juno/v3/modules"
+	"github.com/forbole/juno/v4/modules"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 
-	"github.com/forbole/juno/v3/node"
-	"github.com/forbole/juno/v3/types"
-	"github.com/forbole/juno/v3/types/utils"
+	"github.com/forbole/juno/v4/node"
+	"github.com/forbole/juno/v4/types"
+	"github.com/forbole/juno/v4/types/utils"
 )
 
 // Worker defines a job consumer that is responsible for getting and
@@ -328,23 +327,18 @@ func (w Worker) handleMessage(index int, msg sdk.Msg, tx *types.Tx) {
 // ExportTxs accepts a slice of transactions and persists then inside the database.
 // An error is returned if the write fails.
 func (w Worker) ExportTxs(txs []*types.Tx) error {
-	var wg sync.WaitGroup
-
+	// handle all transactions inside the block
 	for _, tx := range txs {
-		// Save the transaction
+		// save the transaction
 		err := w.saveTx(tx)
 		if err != nil {
 			return fmt.Errorf("error while storing txs: %s", err)
 		}
 
-		// Handle the transaction concurrently
-		wg.Add(1)
-		go func(tx *types.Tx) {
-			defer wg.Done()
-			w.handleTx(tx)
-		}(tx)
+		// call the tx handlers
+		w.handleTx(tx)
 
-		// Parse all the messages contained inside the transaction
+		// handle all messages contained inside the transaction
 		sdkMsgs := make([]sdk.Msg, len(tx.Body.Messages))
 		for i, msg := range tx.Body.Messages {
 			var stdMsg sdk.Msg
@@ -355,18 +349,11 @@ func (w Worker) ExportTxs(txs []*types.Tx) error {
 			sdkMsgs[i] = stdMsg
 		}
 
-		// Handle all the messages concurrently
+		// call the msg handlers
 		for i, sdkMsg := range sdkMsgs {
-			wg.Add(1)
-			go func(i int, sdkMsg sdk.Msg) {
-				defer wg.Done()
-				w.handleMessage(i, sdkMsg, tx)
-			}(i, sdkMsg)
+			w.handleMessage(i, sdkMsg, tx)
 		}
 	}
-
-	// Wait all transactions and messages to be parsed
-	wg.Wait()
 
 	totalBlocks := w.db.GetTotalBlocks()
 	logging.DbBlockCount.WithLabelValues("total_blocks_in_db").Set(float64(totalBlocks))
