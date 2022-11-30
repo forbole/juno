@@ -31,8 +31,8 @@ import (
 	"github.com/tendermint/tendermint/store"
 	tmtypes "github.com/tendermint/tendermint/types"
 
-	"github.com/forbole/juno/v3/node"
-	"github.com/forbole/juno/v3/types"
+	"github.com/forbole/juno/v4/node"
+	"github.com/forbole/juno/v4/types"
 
 	"path"
 	"time"

@@ -10,12 +10,37 @@ type Config struct {
 	PartitionBatchSize int64  `yaml:"partition_batch"`
 }
 
-func (c *Config) GetUser() string {
+func (c *Config) getURL() *url.URL {
 	parsedURL, err := url.Parse(c.URL)
 	if err != nil {
 		panic(err)
 	}
-	return parsedURL.User.Username()
+	return parsedURL
+}
+
+func (c *Config) GetUser() string {
+	return c.getURL().User.Username()
+}
+
+func (c *Config) GetPassword() string {
+	password, _ := c.getURL().User.Password()
+	return password
+}
+
+func (c *Config) GetHost() string {
+	return c.getURL().Host
+}
+
+func (c *Config) GetPort() string {
+	return c.getURL().Port()
+}
+
+func (c *Config) GetSchema() string {
+	return c.getURL().Query().Get("search_path")
+}
+
+func (c *Config) GetSSLMode() string {
+	return c.getURL().Query().Get("sslmode")
 }
 
 func NewDatabaseConfig(
