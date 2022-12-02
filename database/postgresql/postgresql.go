@@ -16,13 +16,15 @@ import (
 	"github.com/forbole/juno/v4/database"
 	"github.com/forbole/juno/v4/types"
 	"github.com/forbole/juno/v4/types/config"
+	"github.com/forbole/juno/v4/types/env"
+	"github.com/forbole/juno/v4/types/utils"
 )
 
 // Builder creates a database connection with the given database connection info
 // from config. It returns a database connection handle or an error if the
 // connection fails.
 func Builder(ctx *database.Context) (database.Database, error) {
-	postgresDb, err := sqlx.Open("postgres", ctx.Cfg.URL)
+	postgresDb, err := sqlx.Open("postgres", utils.GetEnvOr(env.DatabaseURI, ctx.Cfg.URL))
 	if err != nil {
 		return nil, err
 	}
