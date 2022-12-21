@@ -1,3 +1,6 @@
+## Unreleased
+- ([\#88](https://github.com/forbole/juno/pull/88)) Added `DbLatestHeight` metric to prometheus monitoring
+
 ## v4.0.0
 ### Changes
 - Updated cosmos/cosmos-sdk to `v0.45.8`
