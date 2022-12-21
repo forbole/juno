@@ -79,4 +79,9 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+
+	err = prometheus.Register(DbLatestHeight)
+	if err != nil {
+		panic(err)
+	}
 }
