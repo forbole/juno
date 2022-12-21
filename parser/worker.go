@@ -358,5 +358,8 @@ func (w Worker) ExportTxs(txs []*types.Tx) error {
 	totalBlocks := w.db.GetTotalBlocks()
 	logging.DbBlockCount.WithLabelValues("total_blocks_in_db").Set(float64(totalBlocks))
 
+	dbLatestHeight, _ := w.db.GetLastBlockHeight()
+	logging.DbLatestHeight.WithLabelValues("db_latest_height").Set(float64(dbLatestHeight))
+
 	return nil
 }
