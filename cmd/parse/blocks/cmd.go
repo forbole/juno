@@ -15,6 +15,7 @@ func NewBlocksCmd(parseConfig *parsecmdtypes.Config) *cobra.Command {
 
 	cmd.AddCommand(
 		newAllCmd(parseConfig),
+		newMissingCmd(parseConfig),
 	)
 
 	return cmd
