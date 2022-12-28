@@ -20,6 +20,9 @@ type Database interface {
 	// An error is returned if the operation fails.
 	GetLastBlockHeight() (int64, error)
 
+	// GetMissingHeights returns a slice of missing block heights between startHeight and endHeight
+	GetMissingHeights(startHeight, endHeight int64) []int64
+
 	// SaveBlock will be called when a new block is parsed, passing the block itself
 	// and the transactions contained inside that block.
 	// An error is returned if the operation fails.
