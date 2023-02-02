@@ -225,7 +225,7 @@ func createAndStartIndexerService(
 		blockIndexer = &blockidxnull.BlockerIndexer{}
 	}
 
-	indexerService := txindex.NewIndexerService(txIndexer, blockIndexer, eventBus, false)
+	indexerService := txindex.NewIndexerService(txIndexer, blockIndexer, eventBus)
 	indexerService.SetLogger(logger.With("module", "txindex"))
 
 	if err := indexerService.Start(); err != nil {
