@@ -157,7 +157,7 @@ func enqueueMissingBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
 		}
 	} else {
 		ctx.Logger.Info("syncing missing blocks...", "latest_block_height", latestBlockHeight)
-		for i := startHeight; i <= latestBlockHeight; i++ {
+		for _, i := range ctx.Database.GetMissingHeights(startHeight, latestBlockHeight) {
 			ctx.Logger.Debug("enqueueing missing block", "height", i)
 			exportQueue <- i
 		}
