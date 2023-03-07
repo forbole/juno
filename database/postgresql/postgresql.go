@@ -96,6 +96,22 @@ func (db *Database) GetLastBlockHeight() (int64, error) {
 	return height, nil
 }
 
+// GetMissingHeights returns a slice of missing block heights between startHeight and endHeight
+func (db *Database) GetMissingHeights(startHeight, endHeight int64) []int64 {
+	var result []int64
+	stmt := `SELECT generate_series($1::int,$2::int) EXCEPT SELECT height FROM block ORDER BY 1;`
+	err := db.SQL.Select(&result, stmt, startHeight, endHeight)
+	if err != nil {
+		return nil
+	}
+
+	if len(result) == 0 {
+		return nil
+	}
+
+	return result
+}
+
 // SaveBlock implements database.Database
 func (db *Database) SaveBlock(block *types.Block) error {
 	sqlStatement := `

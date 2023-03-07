@@ -1,3 +1,8 @@
+## v4.1.0
+### Changes
+- ([\#74](https://github.com/forbole/juno/pull/74)) Applied `GetMissingHeights()` in `enqueueMissingBlocks()` & in `parse blocks missing` cmd
+- ([\#88](https://github.com/forbole/juno/pull/88)) Added `juno_db_latest_height` metric to prometheus monitoring
+
 ## v4.0.0
 ### Changes
 - Updated cosmos/cosmos-sdk to `v0.45.8`

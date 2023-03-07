@@ -45,6 +45,15 @@ var DbBlockCount = prometheus.NewGaugeVec(
 	[]string{"total_blocks_in_db"},
 )
 
+// DbLatestHeight represents the Telemetry counter used to track the last indexed height in the database
+var DbLatestHeight = prometheus.NewGaugeVec(
+	prometheus.GaugeOpts{
+		Name: "juno_db_latest_height",
+		Help: "Latest block height in the database.",
+	},
+	[]string{"db_latest_height"},
+)
+
 func init() {
 	err := prometheus.Register(StartHeight)
 	if err != nil {
@@ -67,6 +76,11 @@ func init() {
 	}
 
 	err = prometheus.Register(DbBlockCount)
+	if err != nil {
+		panic(err)
+	}
+
+	err = prometheus.Register(DbLatestHeight)
 	if err != nil {
 		panic(err)
 	}
