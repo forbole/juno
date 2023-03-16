@@ -3,8 +3,8 @@ module github.com/forbole/juno/v4
 go 1.18
 
 require (
-	github.com/cosmos/cosmos-sdk v0.45.8
-	github.com/cosmos/ibc-go/v3 v3.2.0
+	github.com/cosmos/cosmos-sdk v0.45.10
+	github.com/cosmos/ibc-go/v2 v2.5.0
 	github.com/go-co-op/gocron v1.13.0
 	github.com/gogo/protobuf v1.3.3
 	github.com/golangci/golangci-lint v1.49.0
@@ -58,7 +58,7 @@ require (
 	github.com/cosmos/btcutil v1.0.4 // indirect
 	github.com/cosmos/go-bip39 v1.0.0 // indirect
 	github.com/cosmos/gorocksdb v1.2.0 // indirect
-	github.com/cosmos/iavl v0.19.1 // indirect
+	github.com/cosmos/iavl v0.19.3 // indirect
 	github.com/cosmos/ledger-cosmos-go v0.11.1 // indirect
 	github.com/cosmos/ledger-go v0.9.2 // indirect
 	github.com/creachadair/taskgroup v0.3.2 // indirect
