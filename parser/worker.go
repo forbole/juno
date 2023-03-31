@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -14,9 +15,9 @@ import (
 	"github.com/forbole/juno/v4/database"
 	"github.com/forbole/juno/v4/types/config"
 
-	"github.com/forbole/juno/v4/modules"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	channeltypes "github.com/cosmos/ibc-go/v3/modules/core/04-channel/types"
+	"github.com/forbole/juno/v4/modules"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 
@@ -321,6 +322,14 @@ func (w Worker) handleMessage(index int, msg sdk.Msg, tx *types.Tx) {
 				}
 			}
 		}
+	}
+
+	if msgIBC, ok := msg.(*channeltypes.MsgRecvPacket); ok {
+		rawDecodedText, err := base64.StdEncoding.DecodeString(string(msgIBC.Packet.Data))
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("\n\n Decoded text: %s\n\n", rawDecodedText)
 	}
 }
 
