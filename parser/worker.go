@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -325,11 +324,11 @@ func (w Worker) handleMessage(index int, msg sdk.Msg, tx *types.Tx) {
 	}
 
 	if msgIBC, ok := msg.(*channeltypes.MsgRecvPacket); ok {
-		rawDecodedText, err := base64.StdEncoding.DecodeString(string(msgIBC.Packet.Data))
-		if err != nil {
-			panic(err)
-		}
-		fmt.Printf("\n\n Decoded text: %s\n\n", rawDecodedText)
+		// rawDecodedText, err := base64.StdEncoding.DecodeString(string(msgIBC.Packet.Data))
+		// if err != nil {
+		// 	panic(err)
+		// }
+		fmt.Printf("\n\n Data: %s\n\n", string(msgIBC.Packet.Data))
 	}
 }
 
