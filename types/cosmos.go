@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/tx"
+	clienttypes "github.com/cosmos/ibc-go/v3/modules/core/02-client/types"
+	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
 // Validator contains the data of a single validator
@@ -152,4 +152,22 @@ func NewMessage(txHash string, index int, msgType string, value string, addresse
 		Addresses: addresses,
 		Height:    height,
 	}
+}
+
+type MsgRecvPacket struct {
+	Packet          Packet
+	ProofCommitment []byte
+	ProofHeight     clienttypes.Height
+	Signer          string
+}
+
+type Packet struct {
+	Sequence           uint64
+	SourcePort         string
+	SourceChannel      string
+	DestinationPort    string
+	DestinationChannel string
+	Data               string
+	TimeoutHeight      clienttypes.Height
+	TimeoutTimestamp   uint64
 }
