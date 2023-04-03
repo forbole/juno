@@ -16,7 +16,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	// clienttypes "github.com/cosmos/ibc-go/v3/modules/core/02-client/types"
-	channeltypes "github.com/cosmos/ibc-go/v3/modules/core/04-channel/types"
+
 	"github.com/forbole/juno/v4/modules"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -322,35 +322,6 @@ func (w Worker) handleMessage(index int, msg sdk.Msg, tx *types.Tx) {
 				}
 			}
 		}
-	}
-
-	if msgIBC, ok := msg.(*channeltypes.MsgRecvPacket); ok {
-		packet := types.Packet{
-			Sequence:           msgIBC.Packet.Sequence,
-			SourcePort:         msgIBC.Packet.SourcePort,
-			SourceChannel:      msgIBC.Packet.SourceChannel,
-			DestinationPort:    msgIBC.Packet.DestinationPort,
-			DestinationChannel: msgIBC.Packet.DestinationChannel,
-			Data:               string(msgIBC.Packet.Data),
-			TimeoutHeight:      msgIBC.Packet.TimeoutHeight,
-			TimeoutTimestamp:   msgIBC.Packet.TimeoutTimestamp,
-		}
-		msgRecvPacket := types.MsgRecvPacket{
-			Packet:          packet,
-			ProofCommitment: msgIBC.ProofCommitment,
-			ProofHeight:     msgIBC.ProofHeight,
-			Signer:          msgIBC.Signer,
-		}
-
-		for _, module := range w.modules {
-			if messageModule, ok := module.(modules.IBCMessageModule); ok {
-				err := messageModule.HandleMsgRecvPacket(index, msgIBC, msgRecvPacket, tx)
-				if err != nil {
-					w.logger.MsgError(module, tx, msgIBC, err)
-				}
-			}
-		}
-
 	}
 }
 
