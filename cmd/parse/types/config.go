@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/forbole/juno/v3/types/config"
+	"github.com/forbole/juno/v4/types/config"
 
 	"github.com/spf13/cobra"
 
-	"github.com/forbole/juno/v3/types"
+	"github.com/forbole/juno/v4/types"
 )
 
 // ReadConfigPreRunE represents a Cobra cmd function allowing to read the config before executing the command itself
@@ -24,7 +24,7 @@ func ReadConfig(cfg *Config) (config.Config, error) {
 
 	// Make sure the path exists
 	if _, err := os.Stat(file); os.IsNotExist(err) {
-		return config.Config{}, fmt.Errorf("config file does not exist. Make sure you have run the init command")
+		return config.Config{}, fmt.Errorf("config file does not exist (%s). Make sure you have run the init command", file)
 	}
 
 	// Read the config

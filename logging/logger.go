@@ -1,13 +1,12 @@
 package logging
 
 import (
+	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
-
-	"github.com/forbole/juno/v3/modules"
-	"github.com/forbole/juno/v3/types"
+	"github.com/forbole/juno/v4/modules"
+	"github.com/forbole/juno/v4/types"
 )
 
 const (

@@ -3,11 +3,11 @@ package database
 import (
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 
-	"github.com/forbole/juno/v3/logging"
+	"github.com/forbole/juno/v4/logging"
 
-	databaseconfig "github.com/forbole/juno/v3/database/config"
+	databaseconfig "github.com/forbole/juno/v4/database/config"
 
-	"github.com/forbole/juno/v3/types"
+	"github.com/forbole/juno/v4/types"
 )
 
 // Database represents an abstract database that can be used to save data inside it
@@ -19,6 +19,9 @@ type Database interface {
 	// GetLastBlockHeight returns the last block height stored in database..
 	// An error is returned if the operation fails.
 	GetLastBlockHeight() (int64, error)
+
+	// GetMissingHeights returns a slice of missing block heights between startHeight and endHeight
+	GetMissingHeights(startHeight, endHeight int64) []int64
 
 	// SaveBlock will be called when a new block is parsed, passing the block itself
 	// and the transactions contained inside that block.

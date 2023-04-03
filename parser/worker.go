@@ -5,24 +5,24 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/forbole/juno/v3/logging"
+	"github.com/forbole/juno/v4/logging"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/x/authz"
 
-	"github.com/forbole/juno/v3/database"
-	"github.com/forbole/juno/v3/types/config"
+	"github.com/forbole/juno/v4/database"
+	"github.com/forbole/juno/v4/types/config"
 
-	"github.com/forbole/juno/v3/modules"
+	"github.com/forbole/juno/v4/modules"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 
-	"github.com/forbole/juno/v3/node"
-	"github.com/forbole/juno/v3/types"
-	"github.com/forbole/juno/v3/types/utils"
+	"github.com/forbole/juno/v4/node"
+	"github.com/forbole/juno/v4/types"
+	"github.com/forbole/juno/v4/types/utils"
 )
 
 // Worker defines a job consumer that is responsible for getting and
@@ -346,6 +346,26 @@ func (w Worker) handleMessage(index int, msg *codectypes.Any, tx *types.Tx) {
 			}
 		}
 	}
+
+	// If it's a MsgExecute, we need to make sure the included messages are handled as well
+	if msgExec, ok := sdkMsg.(*authz.MsgExec); ok {
+		for authzIndex, msgAny := range msgExec.Msgs {
+			var executedMsg sdk.Msg
+			err := w.codec.UnpackAny(msgAny, &executedMsg)
+			if err != nil {
+				w.logger.Error("unable to unpack MsgExec inner message", "index", authzIndex, "error", err)
+			}
+
+			for _, module := range w.modules {
+				if messageModule, ok := module.(modules.AuthzMessageModule); ok {
+					err = messageModule.HandleMsgExec(index, msgExec, authzIndex, executedMsg, tx)
+					if err != nil {
+						w.logger.MsgError(module, tx, executedMsg, err)
+					}
+				}
+			}
+		}
+	}
 }
 
 // ExportTxs accepts a slice of transactions and persists then inside the database.
@@ -370,6 +390,12 @@ func (w Worker) ExportTxs(txs []*types.Tx) error {
 
 	totalBlocks := w.db.GetTotalBlocks()
 	logging.DbBlockCount.WithLabelValues("total_blocks_in_db").Set(float64(totalBlocks))
+
+	dbLatestHeight, err := w.db.GetLastBlockHeight()
+	if err != nil {
+		return err
+	}
+	logging.DbLatestHeight.WithLabelValues("db_latest_height").Set(float64(dbLatestHeight))
 
 	return nil
 }

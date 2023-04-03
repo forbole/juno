@@ -3,15 +3,15 @@ package blocks
 import (
 	"fmt"
 
-	parsecmdtypes "github.com/forbole/juno/v3/cmd/parse/types"
-	"github.com/forbole/juno/v3/types/utils"
+	parsecmdtypes "github.com/forbole/juno/v4/cmd/parse/types"
+	"github.com/forbole/juno/v4/types/utils"
 
 	"github.com/rs/zerolog/log"
 
 	"github.com/spf13/cobra"
 
-	"github.com/forbole/juno/v3/parser"
-	"github.com/forbole/juno/v3/types/config"
+	"github.com/forbole/juno/v4/parser"
+	"github.com/forbole/juno/v4/types/config"
 )
 
 const (
@@ -24,7 +24,7 @@ const (
 func newAllCmd(parseConfig *parsecmdtypes.Config) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "all",
-		Short: "Fix missing blocks and transactions in database",
+		Short: "Reparse blocks and transactions ranged from the given start height to the given end height",
 		Long: fmt.Sprintf(`Refetch all the blocks in the specified range and stores them inside the database. 
 You can specify a custom blocks range by using the %s and %s flags. 
 By default, all the blocks fetched from the node will not be stored inside the database if they are already present. 

@@ -7,8 +7,7 @@ import (
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	"github.com/forbole/juno/v3/types"
+	"github.com/forbole/juno/v4/types"
 )
 
 // HandleRawMsg implements modules.RawMessageModule

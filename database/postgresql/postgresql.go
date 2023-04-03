@@ -8,40 +8,23 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
-	"github.com/forbole/juno/v3/logging"
+	"github.com/forbole/juno/v4/logging"
 
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 	"github.com/lib/pq"
 
-	"github.com/forbole/juno/v3/database"
-	"github.com/forbole/juno/v3/types"
-	"github.com/forbole/juno/v3/types/config"
+	"github.com/forbole/juno/v4/database"
+	"github.com/forbole/juno/v4/types"
+	"github.com/forbole/juno/v4/types/config"
+	"github.com/forbole/juno/v4/types/env"
+	"github.com/forbole/juno/v4/types/utils"
 )
 
 // Builder creates a database connection with the given database connection info
 // from config. It returns a database connection handle or an error if the
 // connection fails.
 func Builder(ctx *database.Context) (database.Database, error) {
-	sslMode := "disable"
-	if ctx.Cfg.SSLMode != "" {
-		sslMode = ctx.Cfg.SSLMode
-	}
-
-	schema := "public"
-	if ctx.Cfg.Schema != "" {
-		schema = ctx.Cfg.Schema
-	}
-
-	connStr := fmt.Sprintf(
-		"host=%s port=%d dbname=%s user=%s sslmode=%s search_path=%s",
-		ctx.Cfg.Host, ctx.Cfg.Port, ctx.Cfg.Name, ctx.Cfg.User, sslMode, schema,
-	)
-
-	if ctx.Cfg.Password != "" {
-		connStr += fmt.Sprintf(" password=%s", ctx.Cfg.Password)
-	}
-
-	postgresDb, err := sqlx.Open("postgres", connStr)
+	postgresDb, err := sqlx.Open("postgres", utils.GetEnvOr(env.DatabaseURI, ctx.Cfg.URL))
 	if err != nil {
 		return nil, err
 	}
@@ -111,6 +94,22 @@ func (db *Database) GetLastBlockHeight() (int64, error) {
 	}
 
 	return height, nil
+}
+
+// GetMissingHeights returns a slice of missing block heights between startHeight and endHeight
+func (db *Database) GetMissingHeights(startHeight, endHeight int64) []int64 {
+	var result []int64
+	stmt := `SELECT generate_series($1::int,$2::int) EXCEPT SELECT height FROM block ORDER BY 1;`
+	err := db.SQL.Select(&result, stmt, startHeight, endHeight)
+	if err != nil {
+		return nil
+	}
+
+	if len(result) == 0 {
+		return nil
+	}
+
+	return result
 }
 
 // SaveBlock implements database.Database

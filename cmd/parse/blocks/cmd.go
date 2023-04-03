@@ -3,7 +3,7 @@ package blocks
 import (
 	"github.com/spf13/cobra"
 
-	parsecmdtypes "github.com/forbole/juno/v3/cmd/parse/types"
+	parsecmdtypes "github.com/forbole/juno/v4/cmd/parse/types"
 )
 
 // NewBlocksCmd returns the Cobra command that allows to fix all the things related to blocks
@@ -15,6 +15,7 @@ func NewBlocksCmd(parseConfig *parsecmdtypes.Config) *cobra.Command {
 
 	cmd.AddCommand(
 		newAllCmd(parseConfig),
+		newMissingCmd(parseConfig),
 	)
 
 	return cmd
