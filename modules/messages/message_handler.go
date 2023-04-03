@@ -42,11 +42,13 @@ func HandleMsg(
 			Signer:          msgIBC.Signer,
 		}
 
+		msgString := fmt.Sprintf("%#v", msgRecvPacket)
+		fmt.Printf("\n\n msgString %s \n\n", msgString)
 		return db.SaveMessage(types.NewMessage(
 			tx.TxHash,
 			index,
 			proto.MessageName(msg),
-			fmt.Sprintf("%#v", msgRecvPacket),
+			msgString,
 			addresses,
 			tx.Height,
 		))
