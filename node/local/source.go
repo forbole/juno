@@ -7,21 +7,20 @@ import (
 	"reflect"
 	"unsafe"
 
+	params "cosmossdk.io/simapp/params"
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/simapp/params"
 
+	bftdb "github.com/cometbft/cometbft-db"
+	cfg "github.com/cometbft/cometbft/config"
+	log "github.com/cometbft/cometbft/libs/log"
+	bftnode "github.com/cometbft/cometbft/node"
+	bftproto "github.com/cometbft/cometbft/proto/tendermint/types"
+	bftstore "github.com/cometbft/cometbft/store"
 	"github.com/cosmos/cosmos-sdk/store"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	storetypes "github.com/cosmos/cosmos-sdk/store/types"
-	"github.com/spf13/viper"
-	cfg "github.com/tendermint/tendermint/config"
-	"github.com/tendermint/tendermint/libs/log"
-	tmnode "github.com/tendermint/tendermint/node"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	tmstore "github.com/tendermint/tendermint/store"
-	db "github.com/tendermint/tm-db"
-
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/forbole/juno/v4/node"
+	"github.com/spf13/viper"
 )
 
 var (
@@ -32,19 +31,19 @@ var (
 type Source struct {
 	Initialized bool
 
-	StoreDB db.DB
+	StoreDB bftdb.DB
 
 	Codec       codec.Codec
 	LegacyAmino *codec.LegacyAmino
 
-	BlockStore *tmstore.BlockStore
+	BlockStore *bftstore.BlockStore
 	Logger     log.Logger
 	Cms        sdk.CommitMultiStore
 }
 
 // NewSource returns a new Source instance
 func NewSource(home string, encodingConfig *params.EncodingConfig) (*Source, error) {
-	levelDB, err := sdk.NewLevelDB("application", path.Join(home, "data"))
+	levelDB, err := bftdb.NewGoLevelDB("application", path.Join(home, "data"))
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +53,7 @@ func NewSource(home string, encodingConfig *params.EncodingConfig) (*Source, err
 		return nil, err
 	}
 
-	blockStoreDB, err := tmnode.DefaultDBProvider(&tmnode.DBContext{ID: "blockstore", Config: tmCfg})
+	blockStoreDB, err := bftnode.DefaultDBProvider(&bftnode.DBContext{ID: "blockstore", Config: tmCfg})
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +64,7 @@ func NewSource(home string, encodingConfig *params.EncodingConfig) (*Source, err
 		Codec:       encodingConfig.Codec,
 		LegacyAmino: encodingConfig.Amino,
 
-		BlockStore: tmstore.NewBlockStore(blockStoreDB),
+		BlockStore: bftstore.NewBlockStore(blockStoreDB),
 		Logger:     log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "explorer"),
 		Cms:        store.NewCommitMultiStore(levelDB),
 	}, nil
@@ -173,5 +172,5 @@ func (k Source) LoadHeight(height int64) (sdk.Context, error) {
 		}
 	}
 
-	return sdk.NewContext(cms, tmproto.Header{}, false, k.Logger), nil
+	return sdk.NewContext(cms, bftproto.Header{}, false, k.Logger), nil
 }

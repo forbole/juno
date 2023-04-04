@@ -1,7 +1,7 @@
 package database
 
 import (
-	"github.com/cosmos/cosmos-sdk/simapp/params"
+	params "cosmossdk.io/simapp/params"
 
 	"github.com/forbole/juno/v4/logging"
 

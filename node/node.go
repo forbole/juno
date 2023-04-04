@@ -3,15 +3,15 @@ package node
 import (
 	"context"
 
-	constypes "github.com/tendermint/tendermint/consensus/types"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+	constypes "github.com/cometbft/cometbft/consensus/types"
+	bftcoretypes "github.com/cometbft/cometbft/rpc/core/types"
 
 	"github.com/forbole/juno/v4/types"
 )
 
 type Node interface {
 	// Genesis returns the genesis state
-	Genesis() (*tmctypes.ResultGenesis, error)
+	Genesis() (*bftcoretypes.ResultGenesis, error)
 
 	// ConsensusState returns the consensus state of the chain
 	ConsensusState() (*constypes.RoundStateSimple, error)
@@ -25,13 +25,13 @@ type Node interface {
 
 	// Validators returns all the known Tendermint validators for a given block
 	// height. An error is returned if the query fails.
-	Validators(height int64) (*tmctypes.ResultValidators, error)
+	Validators(height int64) (*bftcoretypes.ResultValidators, error)
 
 	// Block queries for a block by height. An error is returned if the query fails.
-	Block(height int64) (*tmctypes.ResultBlock, error)
+	Block(height int64) (*bftcoretypes.ResultBlock, error)
 
 	// BlockResults queries the results of a block by height. An error is returnes if the query fails
-	BlockResults(height int64) (*tmctypes.ResultBlockResults, error)
+	BlockResults(height int64) (*bftcoretypes.ResultBlockResults, error)
 
 	// Tx queries for a transaction from the REST client and decodes it into a sdk.Tx
 	// if the transaction exists. An error is returned if the tx doesn't exist or
@@ -41,22 +41,22 @@ type Node interface {
 	// Txs queries for all the transactions in a block. Transactions are returned
 	// in the sdk.TxResponse format which internally contains an sdk.Tx. An error is
 	// returned if any query fails.
-	Txs(block *tmctypes.ResultBlock) ([]*types.Tx, error)
+	Txs(block *bftcoretypes.ResultBlock) ([]*types.Tx, error)
 
 	// TxSearch defines a method to search for a paginated set of transactions by DeliverTx event search criteria.
-	TxSearch(query string, page *int, perPage *int, orderBy string) (*tmctypes.ResultTxSearch, error)
+	TxSearch(query string, page *int, perPage *int, orderBy string) (*bftcoretypes.ResultTxSearch, error)
 
 	// SubscribeEvents subscribes to new events with the given query through the RPCConfig
 	// client with the given subscriber name. A receiving only channel, context
 	// cancel function and an error is returned. It is up to the caller to cancel
 	// the context and handle any errors appropriately.
-	SubscribeEvents(subscriber, query string) (<-chan tmctypes.ResultEvent, context.CancelFunc, error)
+	SubscribeEvents(subscriber, query string) (<-chan bftcoretypes.ResultEvent, context.CancelFunc, error)
 
 	// SubscribeNewBlocks subscribes to the new block event handler through the RPCConfig
 	// client with the given subscriber name. An receiving only channel, context
 	// cancel function and an error is returned. It is up to the caller to cancel
 	// the context and handle any errors appropriately.
-	SubscribeNewBlocks(subscriber string) (<-chan tmctypes.ResultEvent, context.CancelFunc, error)
+	SubscribeNewBlocks(subscriber string) (<-chan bftcoretypes.ResultEvent, context.CancelFunc, error)
 
 	// Stop defers the node stop execution to the client.
 	Stop()

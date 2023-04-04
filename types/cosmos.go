@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+	bftcoretypes "github.com/cometbft/cometbft/rpc/core/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/tx"
@@ -73,7 +73,7 @@ func NewBlock(
 }
 
 // NewBlockFromTmBlock builds a new Block instance from a given ResultBlock object
-func NewBlockFromTmBlock(blk *tmctypes.ResultBlock, totalGas uint64) *Block {
+func NewBlockFromTmBlock(blk *bftcoretypes.ResultBlock, totalGas uint64) *Block {
 	return NewBlock(
 		blk.Block.Height,
 		blk.Block.Hash().String(),

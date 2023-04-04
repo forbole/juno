@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"time"
 
+	cfg "github.com/cometbft/cometbft/config"
+	bftctypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/viper"
-	cfg "github.com/tendermint/tendermint/config"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
 func ParseConfig() (*cfg.Config, error) {
@@ -34,7 +34,7 @@ type intoAny interface {
 	AsAny() *codectypes.Any
 }
 
-func makeTxResult(txConfig client.TxConfig, resTx *tmctypes.ResultTx, resBlock *tmctypes.ResultBlock) (*sdk.TxResponse, error) {
+func makeTxResult(txConfig client.TxConfig, resTx *bftctypes.ResultTx, resBlock *bftctypes.ResultBlock) (*sdk.TxResponse, error) {
 	txb, err := txConfig.TxDecoder()(resTx.Tx)
 	if err != nil {
 		return nil, err

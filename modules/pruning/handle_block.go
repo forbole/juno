@@ -3,7 +3,7 @@ package pruning
 import (
 	"fmt"
 
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+	bftcoretypes "github.com/cometbft/cometbft/rpc/core/types"
 
 	"github.com/forbole/juno/v4/database"
 	"github.com/forbole/juno/v4/types"
@@ -11,7 +11,7 @@ import (
 
 // HandleBlock implements modules.BlockModule
 func (m *Module) HandleBlock(
-	block *tmctypes.ResultBlock, _ *tmctypes.ResultBlockResults, _ []*types.Tx, _ *tmctypes.ResultValidators,
+	block *bftcoretypes.ResultBlock, _ *bftcoretypes.ResultBlockResults, _ []*types.Tx, _ *bftcoretypes.ResultValidators,
 ) error {
 	if block.Block.Height%m.cfg.Interval != 0 {
 		// Not an interval height, so just skip

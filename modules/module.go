@@ -6,11 +6,11 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/x/authz"
 
+	bftcoretypes "github.com/cometbft/cometbft/rpc/core/types"
+	bfttypes "github.com/cometbft/cometbft/types"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/go-co-op/gocron"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
-	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/forbole/juno/v4/types"
 )
@@ -81,7 +81,7 @@ type GenesisModule interface {
 	// For convenience of use, the already-unmarshalled AppState is provided along with the full GenesisDoc.
 	// NOTE. The returned error will be logged using the GenesisError method. All other modules' handlers
 	// will still be called.
-	HandleGenesis(doc *tmtypes.GenesisDoc, appState map[string]json.RawMessage) error
+	HandleGenesis(doc *bfttypes.GenesisDoc, appState map[string]json.RawMessage) error
 }
 
 type BlockModule interface {
@@ -90,7 +90,7 @@ type BlockModule interface {
 	// For each transaction present inside the block, HandleTx will be called as well.
 	// NOTE. The returned error will be logged using the BlockError method. All other modules' handlers
 	// will still be called.
-	HandleBlock(block *tmctypes.ResultBlock, results *tmctypes.ResultBlockResults, txs []*types.Tx, vals *tmctypes.ResultValidators) error
+	HandleBlock(block *bftcoretypes.ResultBlock, results *bftcoretypes.ResultBlockResults, txs []*types.Tx, vals *bftcoretypes.ResultValidators) error
 }
 
 type TransactionModule interface {

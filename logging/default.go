@@ -6,11 +6,11 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 
+	bfttypes "github.com/cometbft/cometbft/rpc/core/types"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	"github.com/forbole/juno/v4/modules"
 	"github.com/forbole/juno/v4/types"
@@ -85,7 +85,7 @@ func (d *defaultLogger) GenesisError(module modules.Module, err error) {
 }
 
 // BlockError implements Logger
-func (d *defaultLogger) BlockError(module modules.Module, block *tmctypes.ResultBlock, err error) {
+func (d *defaultLogger) BlockError(module modules.Module, block *bfttypes.ResultBlock, err error) {
 	d.Error("error while handling block",
 		"err", err,
 		LogKeyModule, module.Name(),
@@ -94,7 +94,7 @@ func (d *defaultLogger) BlockError(module modules.Module, block *tmctypes.Result
 }
 
 // EventsError implements Logger
-func (d *defaultLogger) EventsError(module modules.Module, block *tmctypes.ResultBlock, err error) {
+func (d *defaultLogger) EventsError(module modules.Module, block *bfttypes.ResultBlock, err error) {
 	d.Error("error while handling block events",
 		"err", err,
 		LogKeyModule, module.Name(),

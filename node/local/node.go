@@ -9,26 +9,26 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 
+	cfg "github.com/cometbft/cometbft/config"
+	cs "github.com/cometbft/cometbft/consensus"
+	"github.com/cometbft/cometbft/evidence"
+	"github.com/cometbft/cometbft/libs/log"
+	bftmath "github.com/cometbft/cometbft/libs/math"
+	bftquery "github.com/cometbft/cometbft/libs/pubsub/query"
+	"github.com/cometbft/cometbft/privval"
+	"github.com/cometbft/cometbft/proxy"
+	bftstate "github.com/cometbft/cometbft/state"
+	"github.com/cometbft/cometbft/state/indexer"
+	blockidxkv "github.com/cometbft/cometbft/state/indexer/block/kv"
+	blockidxnull "github.com/cometbft/cometbft/state/indexer/block/null"
+	"github.com/cometbft/cometbft/state/txindex"
+	"github.com/cometbft/cometbft/state/txindex/kv"
+	"github.com/cometbft/cometbft/state/txindex/null"
+	"github.com/cometbft/cometbft/store"
+	bfttypes "github.com/cometbft/cometbft/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/types/tx"
 	"github.com/spf13/viper"
-	cfg "github.com/tendermint/tendermint/config"
-	cs "github.com/tendermint/tendermint/consensus"
-	"github.com/tendermint/tendermint/evidence"
-	"github.com/tendermint/tendermint/libs/log"
-	tmmath "github.com/tendermint/tendermint/libs/math"
-	tmquery "github.com/tendermint/tendermint/libs/pubsub/query"
-	"github.com/tendermint/tendermint/privval"
-	"github.com/tendermint/tendermint/proxy"
-	sm "github.com/tendermint/tendermint/state"
-	"github.com/tendermint/tendermint/state/indexer"
-	blockidxkv "github.com/tendermint/tendermint/state/indexer/block/kv"
-	blockidxnull "github.com/tendermint/tendermint/state/indexer/block/null"
-	"github.com/tendermint/tendermint/state/txindex"
-	"github.com/tendermint/tendermint/state/txindex/kv"
-	"github.com/tendermint/tendermint/state/txindex/null"
-	"github.com/tendermint/tendermint/store"
-	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/forbole/juno/v4/node"
 	"github.com/forbole/juno/v4/types"
@@ -36,11 +36,11 @@ import (
 	"path"
 	"time"
 
-	constypes "github.com/tendermint/tendermint/consensus/types"
-	tmjson "github.com/tendermint/tendermint/libs/json"
-	tmnode "github.com/tendermint/tendermint/node"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
-	dbm "github.com/tendermint/tm-db"
+	dbm "github.com/cometbft/cometbft-db"
+	constypes "github.com/cometbft/cometbft/consensus/types"
+	bftjson "github.com/cometbft/cometbft/libs/json"
+	bftnode "github.com/cometbft/cometbft/node"
+	bftcoretypes "github.com/cometbft/cometbft/rpc/core/types"
 )
 
 const (
@@ -61,11 +61,11 @@ type Node struct {
 
 	// config
 	tmCfg      *cfg.Config
-	genesisDoc *tmtypes.GenesisDoc
+	genesisDoc *bfttypes.GenesisDoc
 
 	// services
-	eventBus       *tmtypes.EventBus
-	stateStore     sm.Store
+	eventBus       *bfttypes.EventBus
+	stateStore     bftstate.Store
 	blockStore     *store.BlockStore
 	consensusState *cs.State
 	txIndexer      txindex.TxIndexer
@@ -83,11 +83,11 @@ func NewNode(config *Details, txConfig client.TxConfig, codec codec.Codec) (*Nod
 	tmCfg.SetRoot(config.Home)
 
 	// Build the local node
-	dbProvider := tmnode.DefaultDBProvider
-	genesisDocProvider := tmnode.DefaultGenesisDocProviderFunc(tmCfg)
+	dbProvider := bftnode.DefaultDBProvider
+	genesisDocProvider := bftnode.DefaultGenesisDocProviderFunc(tmCfg)
 	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "explorer")
 	clientCreator := proxy.DefaultClientCreator(tmCfg.ProxyApp, tmCfg.ABCI, tmCfg.DBDir())
-	metricsProvider := tmnode.DefaultMetricsProvider(tmCfg.Instrumentation)
+	metricsProvider := bftnode.DefaultMetricsProvider(tmCfg.Instrumentation)
 
 	privval.LoadOrGenFilePV(tmCfg.PrivValidatorKeyFile(), tmCfg.PrivValidatorStateFile())
 	proxy.DefaultClientCreator(tmCfg.ProxyApp, tmCfg.ABCI, tmCfg.DBDir())
@@ -97,11 +97,11 @@ func NewNode(config *Details, txConfig client.TxConfig, codec codec.Codec) (*Nod
 		return nil, err
 	}
 
-	stateStore := sm.NewStore(stateDB, sm.StoreOptions{
+	stateStore := bftstate.NewStore(stateDB, bftstate.StoreOptions{
 		DiscardABCIResponses: false,
 	})
 
-	_, genDoc, err := tmnode.LoadStateFromDBOrGenesisDocProvider(stateDB, genesisDocProvider)
+	_, genDoc, err := bftnode.LoadStateFromDBOrGenesisDocProvider(stateDB, genesisDocProvider)
 	if err != nil {
 		return nil, err
 	}
@@ -121,29 +121,29 @@ func NewNode(config *Details, txConfig client.TxConfig, codec codec.Codec) (*Nod
 		return nil, err
 	}
 
-	proxyApp := proxy.NewAppConns(clientCreator)
+	csMetrics, _, _, smMetrics, proxyMetrics := metricsProvider(genDoc.ChainID)
 
-	csMetrics, _, _, smMetrics := metricsProvider(genDoc.ChainID)
+	proxyApp := proxy.NewAppConns(clientCreator, proxyMetrics)
 
-	evidenceDB, err := dbProvider(&tmnode.DBContext{ID: "evidence", Config: tmCfg})
+	evidenceDB, err := dbProvider(&bftnode.DBContext{ID: "evidence", Config: tmCfg})
 	if err != nil {
 		return nil, err
 	}
 
-	evidencePool, err := evidence.NewPool(evidenceDB, sm.NewStore(stateDB, sm.StoreOptions{
+	evidencePool, err := evidence.NewPool(evidenceDB, bftstate.NewStore(stateDB, bftstate.StoreOptions{
 		DiscardABCIResponses: false,
 	}), blockStore)
 	if err != nil {
 		return nil, err
 	}
 
-	blockExec := sm.NewBlockExecutor(
+	blockExec := bftstate.NewBlockExecutor(
 		stateStore,
 		logger.With("module", "state"),
 		proxyApp.Consensus(),
 		nil,
 		evidencePool,
-		sm.BlockExecutorWithMetrics(smMetrics),
+		bftstate.BlockExecutorWithMetrics(smMetrics),
 	)
 
 	consensusState := cs.NewState(
@@ -173,15 +173,15 @@ func NewNode(config *Details, txConfig client.TxConfig, codec codec.Codec) (*Nod
 	}, nil
 }
 
-func initDBs(config *cfg.Config, dbProvider tmnode.DBProvider) (blockStore *store.BlockStore, stateDB dbm.DB, err error) {
+func initDBs(config *cfg.Config, dbProvider bftnode.DBProvider) (blockStore *store.BlockStore, stateDB dbm.DB, err error) {
 	var blockStoreDB dbm.DB
-	blockStoreDB, err = dbProvider(&tmnode.DBContext{ID: "blockstore", Config: config})
+	blockStoreDB, err = dbProvider(&bftnode.DBContext{ID: "blockstore", Config: config})
 	if err != nil {
 		return
 	}
 	blockStore = store.NewBlockStore(blockStoreDB)
 
-	stateDB, err = dbProvider(&tmnode.DBContext{ID: "state", Config: config})
+	stateDB, err = dbProvider(&bftnode.DBContext{ID: "state", Config: config})
 	if err != nil {
 		return
 	}
@@ -189,8 +189,8 @@ func initDBs(config *cfg.Config, dbProvider tmnode.DBProvider) (blockStore *stor
 	return
 }
 
-func createAndStartEventBus(logger log.Logger) (*tmtypes.EventBus, error) {
-	eventBus := tmtypes.NewEventBus()
+func createAndStartEventBus(logger log.Logger) (*bfttypes.EventBus, error) {
+	eventBus := bfttypes.NewEventBus()
 	eventBus.SetLogger(logger.With("module", "events"))
 	if err := eventBus.Start(); err != nil {
 		return nil, err
@@ -200,8 +200,8 @@ func createAndStartEventBus(logger log.Logger) (*tmtypes.EventBus, error) {
 
 func createAndStartIndexerService(
 	config *cfg.Config,
-	dbProvider tmnode.DBProvider,
-	eventBus *tmtypes.EventBus,
+	dbProvider bftnode.DBProvider,
+	eventBus *bfttypes.EventBus,
 	logger log.Logger,
 ) (*txindex.IndexerService, txindex.TxIndexer, indexer.BlockIndexer, error) {
 
@@ -212,7 +212,7 @@ func createAndStartIndexerService(
 
 	switch config.TxIndex.Indexer {
 	case "kv":
-		store, err := dbProvider(&tmnode.DBContext{ID: "tx_index", Config: config})
+		store, err := dbProvider(&bftnode.DBContext{ID: "tx_index", Config: config})
 		if err != nil {
 			return nil, nil, nil, err
 		}
@@ -300,8 +300,8 @@ func validateSkipCount(page, perPage int) int {
 }
 
 // Genesis implements node.Node
-func (cp *Node) Genesis() (*tmctypes.ResultGenesis, error) {
-	return &tmctypes.ResultGenesis{Genesis: cp.genesisDoc}, nil
+func (cp *Node) Genesis() (*bftcoretypes.ResultGenesis, error) {
+	return &bftcoretypes.ResultGenesis{Genesis: cp.genesisDoc}, nil
 }
 
 // ConsensusState implements node.Node
@@ -312,7 +312,7 @@ func (cp *Node) ConsensusState() (*constypes.RoundStateSimple, error) {
 	}
 
 	var data constypes.RoundStateSimple
-	err = tmjson.Unmarshal(bz, &data)
+	err = bftjson.Unmarshal(bz, &data)
 	if err != nil {
 		return nil, err
 	}
@@ -330,7 +330,7 @@ func (cp *Node) ChainID() (string, error) {
 }
 
 // Validators implements node.Node
-func (cp *Node) Validators(height int64) (*tmctypes.ResultValidators, error) {
+func (cp *Node) Validators(height int64) (*bftcoretypes.ResultValidators, error) {
 	height, err := cp.getHeight(cp.blockStore.Height(), &height)
 	if err != nil {
 		return nil, err
@@ -341,7 +341,7 @@ func (cp *Node) Validators(height int64) (*tmctypes.ResultValidators, error) {
 		return nil, err
 	}
 
-	return &tmctypes.ResultValidators{
+	return &bftcoretypes.ResultValidators{
 		BlockHeight: height,
 		Validators:  valSet.Validators,
 		Count:       len(valSet.Validators),
@@ -350,7 +350,7 @@ func (cp *Node) Validators(height int64) (*tmctypes.ResultValidators, error) {
 }
 
 // Block implements node.Node
-func (cp *Node) Block(height int64) (*tmctypes.ResultBlock, error) {
+func (cp *Node) Block(height int64) (*bftcoretypes.ResultBlock, error) {
 	height, err := cp.getHeight(cp.blockStore.Height(), &height)
 	if err != nil {
 		return nil, err
@@ -359,13 +359,13 @@ func (cp *Node) Block(height int64) (*tmctypes.ResultBlock, error) {
 	block := cp.blockStore.LoadBlock(height)
 	blockMeta := cp.blockStore.LoadBlockMeta(height)
 	if blockMeta == nil {
-		return &tmctypes.ResultBlock{BlockID: tmtypes.BlockID{}, Block: block}, nil
+		return &bftcoretypes.ResultBlock{BlockID: bfttypes.BlockID{}, Block: block}, nil
 	}
-	return &tmctypes.ResultBlock{BlockID: blockMeta.BlockID, Block: block}, nil
+	return &bftcoretypes.ResultBlock{BlockID: blockMeta.BlockID, Block: block}, nil
 }
 
 // BlockResults implements node.Node
-func (cp *Node) BlockResults(height int64) (*tmctypes.ResultBlockResults, error) {
+func (cp *Node) BlockResults(height int64) (*bftcoretypes.ResultBlockResults, error) {
 	height, err := cp.getHeight(cp.blockStore.Height(), &height)
 	if err != nil {
 		return nil, err
@@ -376,7 +376,7 @@ func (cp *Node) BlockResults(height int64) (*tmctypes.ResultBlockResults, error)
 		return nil, err
 	}
 
-	return &tmctypes.ResultBlockResults{
+	return &bftcoretypes.ResultBlockResults{
 		Height:                height,
 		TxsResults:            results.DeliverTxs,
 		BeginBlockEvents:      results.BeginBlock.Events,
@@ -410,7 +410,7 @@ func (cp *Node) Tx(hash string) (*types.Tx, error) {
 	height := r.Height
 	index := r.Index
 
-	resTx := &tmctypes.ResultTx{
+	resTx := &bftcoretypes.ResultTx{
 		Hash:     []byte(hash),
 		Height:   height,
 		Index:    index,
@@ -442,7 +442,7 @@ func (cp *Node) Tx(hash string) (*types.Tx, error) {
 }
 
 // Txs implements node.Node
-func (cp *Node) Txs(block *tmctypes.ResultBlock) ([]*types.Tx, error) {
+func (cp *Node) Txs(block *bftcoretypes.ResultBlock) ([]*types.Tx, error) {
 	txResponses := make([]*types.Tx, len(block.Block.Txs))
 	for i, tmTx := range block.Block.Txs {
 		txResponse, err := cp.Tx(fmt.Sprintf("%X", tmTx.Hash()))
@@ -457,8 +457,8 @@ func (cp *Node) Txs(block *tmctypes.ResultBlock) ([]*types.Tx, error) {
 }
 
 // TxSearch implements node.Node
-func (cp *Node) TxSearch(query string, pagePtr *int, perPagePtr *int, orderBy string) (*tmctypes.ResultTxSearch, error) {
-	q, err := tmquery.New(query)
+func (cp *Node) TxSearch(query string, pagePtr *int, perPagePtr *int, orderBy string) (*bftcoretypes.ResultTxSearch, error) {
+	q, err := bftquery.New(query)
 	if err != nil {
 		return nil, err
 	}
@@ -498,15 +498,15 @@ func (cp *Node) TxSearch(query string, pagePtr *int, perPagePtr *int, orderBy st
 	}
 
 	skipCount := validateSkipCount(page, perPage)
-	pageSize := tmmath.MinInt(perPage, totalCount-skipCount)
+	pageSize := bftmath.MinInt(perPage, totalCount-skipCount)
 
-	apiResults := make([]*tmctypes.ResultTx, 0, pageSize)
+	apiResults := make([]*bftcoretypes.ResultTx, 0, pageSize)
 	for i := skipCount; i < skipCount+pageSize; i++ {
 		r := results[i]
 
-		var proof tmtypes.TxProof
-		apiResults = append(apiResults, &tmctypes.ResultTx{
-			Hash:     tmtypes.Tx(r.Tx).Hash(),
+		var proof bfttypes.TxProof
+		apiResults = append(apiResults, &bftcoretypes.ResultTx{
+			Hash:     bfttypes.Tx(r.Tx).Hash(),
 			Height:   r.Height,
 			Index:    r.Index,
 			TxResult: r.Result,
@@ -515,18 +515,18 @@ func (cp *Node) TxSearch(query string, pagePtr *int, perPagePtr *int, orderBy st
 		})
 	}
 
-	return &tmctypes.ResultTxSearch{Txs: apiResults, TotalCount: totalCount}, nil
+	return &bftcoretypes.ResultTxSearch{Txs: apiResults, TotalCount: totalCount}, nil
 }
 
 // SubscribeEvents implements node.Node
-func (cp *Node) SubscribeEvents(subscriber, query string) (<-chan tmctypes.ResultEvent, context.CancelFunc, error) {
+func (cp *Node) SubscribeEvents(subscriber, query string) (<-chan bftcoretypes.ResultEvent, context.CancelFunc, error) {
 	_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	eventCh := make(<-chan tmctypes.ResultEvent)
+	eventCh := make(<-chan bftcoretypes.ResultEvent)
 	return eventCh, cancel, nil
 }
 
 // SubscribeNewBlocks implements node.Node
-func (cp *Node) SubscribeNewBlocks(subscriber string) (<-chan tmctypes.ResultEvent, context.CancelFunc, error) {
+func (cp *Node) SubscribeNewBlocks(subscriber string) (<-chan bftcoretypes.ResultEvent, context.CancelFunc, error) {
 	return cp.SubscribeEvents(subscriber, "tm.event = 'NewBlock'")
 }
 

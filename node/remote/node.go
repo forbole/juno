@@ -8,13 +8,13 @@ import (
 	"strings"
 	"time"
 
-	tmtypes "github.com/tendermint/tendermint/types"
+	bfttypes "github.com/cometbft/cometbft/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"google.golang.org/grpc"
 
-	constypes "github.com/tendermint/tendermint/consensus/types"
-	tmjson "github.com/tendermint/tendermint/libs/json"
+	constypes "github.com/cometbft/cometbft/consensus/types"
+	bftjson "github.com/cometbft/cometbft/libs/json"
 
 	"github.com/forbole/juno/v4/node"
 
@@ -22,9 +22,9 @@ import (
 
 	"github.com/forbole/juno/v4/types"
 
-	httpclient "github.com/tendermint/tendermint/rpc/client/http"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
-	jsonrpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
+	httpclient "github.com/cometbft/cometbft/rpc/client/http"
+	bftcoretypes "github.com/cometbft/cometbft/rpc/core/types"
+	jsonrpcclient "github.com/cometbft/cometbft/rpc/jsonrpc/client"
 )
 
 var (
@@ -81,7 +81,7 @@ func NewNode(cfg *Details, codec codec.Codec) (*Node, error) {
 }
 
 // Genesis implements node.Node
-func (cp *Node) Genesis() (*tmctypes.ResultGenesis, error) {
+func (cp *Node) Genesis() (*bftcoretypes.ResultGenesis, error) {
 	res, err := cp.client.Genesis(cp.ctx)
 	if err != nil && strings.Contains(err.Error(), "use the genesis_chunked API instead") {
 		return cp.getGenesisChunked()
@@ -90,19 +90,19 @@ func (cp *Node) Genesis() (*tmctypes.ResultGenesis, error) {
 }
 
 // getGenesisChunked gets the genesis data using the chinked API instead
-func (cp *Node) getGenesisChunked() (*tmctypes.ResultGenesis, error) {
+func (cp *Node) getGenesisChunked() (*bftcoretypes.ResultGenesis, error) {
 	bz, err := cp.getGenesisChunksStartingFrom(0)
 	if err != nil {
 		return nil, err
 	}
 
-	var genDoc *tmtypes.GenesisDoc
-	err = tmjson.Unmarshal(bz, &genDoc)
+	var genDoc *bfttypes.GenesisDoc
+	err = bftjson.Unmarshal(bz, &genDoc)
 	if err != nil {
 		return nil, err
 	}
 
-	return &tmctypes.ResultGenesis{Genesis: genDoc}, nil
+	return &bftcoretypes.ResultGenesis{Genesis: genDoc}, nil
 }
 
 // getGenesisChunksStartingFrom returns all the genesis chunks data starting from the chunk with the given id
@@ -137,7 +137,7 @@ func (cp *Node) ConsensusState() (*constypes.RoundStateSimple, error) {
 	}
 
 	var data constypes.RoundStateSimple
-	err = tmjson.Unmarshal(state.RoundState, &data)
+	err = bftjson.Unmarshal(state.RoundState, &data)
 	if err != nil {
 		return nil, err
 	}
@@ -167,8 +167,8 @@ func (cp *Node) ChainID() (string, error) {
 }
 
 // Validators implements node.Node
-func (cp *Node) Validators(height int64) (*tmctypes.ResultValidators, error) {
-	vals := &tmctypes.ResultValidators{
+func (cp *Node) Validators(height int64) (*bftcoretypes.ResultValidators, error) {
+	vals := &bftcoretypes.ResultValidators{
 		BlockHeight: height,
 	}
 
@@ -191,12 +191,12 @@ func (cp *Node) Validators(height int64) (*tmctypes.ResultValidators, error) {
 }
 
 // Block implements node.Node
-func (cp *Node) Block(height int64) (*tmctypes.ResultBlock, error) {
+func (cp *Node) Block(height int64) (*bftcoretypes.ResultBlock, error) {
 	return cp.client.Block(cp.ctx, &height)
 }
 
 // BlockResults implements node.Node
-func (cp *Node) BlockResults(height int64) (*tmctypes.ResultBlockResults, error) {
+func (cp *Node) BlockResults(height int64) (*bftcoretypes.ResultBlockResults, error) {
 	return cp.client.BlockResults(cp.ctx, &height)
 }
 
@@ -216,7 +216,7 @@ func (cp *Node) Tx(hash string) (*types.Tx, error) {
 }
 
 // Txs implements node.Node
-func (cp *Node) Txs(block *tmctypes.ResultBlock) ([]*types.Tx, error) {
+func (cp *Node) Txs(block *bftcoretypes.ResultBlock) ([]*types.Tx, error) {
 	txResponses := make([]*types.Tx, len(block.Block.Txs))
 	for i, tmTx := range block.Block.Txs {
 		txResponse, err := cp.Tx(fmt.Sprintf("%X", tmTx.Hash()))
@@ -231,19 +231,19 @@ func (cp *Node) Txs(block *tmctypes.ResultBlock) ([]*types.Tx, error) {
 }
 
 // TxSearch implements node.Node
-func (cp *Node) TxSearch(query string, page *int, perPage *int, orderBy string) (*tmctypes.ResultTxSearch, error) {
+func (cp *Node) TxSearch(query string, page *int, perPage *int, orderBy string) (*bftcoretypes.ResultTxSearch, error) {
 	return cp.client.TxSearch(cp.ctx, query, false, page, perPage, orderBy)
 }
 
 // SubscribeEvents implements node.Node
-func (cp *Node) SubscribeEvents(subscriber, query string) (<-chan tmctypes.ResultEvent, context.CancelFunc, error) {
+func (cp *Node) SubscribeEvents(subscriber, query string) (<-chan bftcoretypes.ResultEvent, context.CancelFunc, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	eventCh, err := cp.client.Subscribe(ctx, subscriber, query)
 	return eventCh, cancel, err
 }
 
 // SubscribeNewBlocks implements node.Node
-func (cp *Node) SubscribeNewBlocks(subscriber string) (<-chan tmctypes.ResultEvent, context.CancelFunc, error) {
+func (cp *Node) SubscribeNewBlocks(subscriber string) (<-chan bftcoretypes.ResultEvent, context.CancelFunc, error) {
 	return cp.SubscribeEvents(subscriber, "tm.event = 'NewBlock'")
 }
 
