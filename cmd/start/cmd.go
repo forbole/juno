@@ -54,6 +54,7 @@ func NewStartCmd(cmdCfg *parsecmdtypes.Config) *cobra.Command {
 	}
 }
 
+// startParsing represents the function that should be called when the parse command is executed
 func startParsing(ctx *parser.Context) error {
 	// Get the config
 	cfg := config.Cfg.Parser
