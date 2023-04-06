@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/tx"
+	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
 // Validator contains the data of a single validator
