@@ -195,7 +195,7 @@ ON CONFLICT (hash, partition_id) DO UPDATE
 	for index, info := range tx.AuthInfo.SignerInfos {
 		bz, err := db.EncodingConfig.Codec.MarshalJSON(info)
 		if err != nil {
-			return err
+			return fmt.Errorf("error when marshaling sig infos %s", err)
 		}
 		sigInfos[index] = string(bz)
 	}
@@ -203,7 +203,7 @@ ON CONFLICT (hash, partition_id) DO UPDATE
 
 	logsBz, err := db.EncodingConfig.Amino.MarshalJSON(tx.Logs)
 	if err != nil {
-		return err
+		return fmt.Errorf("error when marshaling logs %s", err)
 	}
 
 	_, err = db.SQL.Exec(sqlStatement,

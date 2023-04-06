@@ -26,6 +26,7 @@ func (m *Module) HandleRawMsg(index int, msg *codectypes.Any, tx *types.Tx) erro
 
 	// Remove the leading "/"
 	msgType := msg.TypeUrl[1:]
+	fmt.Printf("\n\n msgValueJSON %s\n\n", msgValueJSON)
 
 	return m.db.SaveMessage(types.NewMessage(
 		tx.TxHash,
