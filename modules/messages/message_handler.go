@@ -23,41 +23,52 @@ func HandleMsg(
 	if err != nil {
 		return err
 	}
-	var msgRecvPacket types.MsgRecvPacket
-	if msgIBC, ok := msg.(*channeltypes.MsgRecvPacket); ok {
-		packet := types.Packet{
-			Sequence:           msgIBC.Packet.Sequence,
-			SourcePort:         msgIBC.Packet.SourcePort,
-			SourceChannel:      msgIBC.Packet.SourceChannel,
-			DestinationPort:    msgIBC.Packet.DestinationPort,
-			DestinationChannel: msgIBC.Packet.DestinationChannel,
-			Data:               string(msgIBC.Packet.Data),
-			TimeoutHeight:      msgIBC.Packet.TimeoutHeight,
-			TimeoutTimestamp:   msgIBC.Packet.TimeoutTimestamp,
-		}
-		msgRecvPacket = types.MsgRecvPacket{
-			Packet:          packet,
-			ProofCommitment: msgIBC.ProofCommitment,
-			ProofHeight:     msgIBC.ProofHeight,
-			Signer:          msgIBC.Signer,
-		}
-
-		msgString := fmt.Sprintf("%#v", msgRecvPacket)
-		fmt.Printf("\n\n msgString %s \n\n", msgString)
-		return db.SaveMessage(types.NewMessage(
-			tx.TxHash,
-			index,
-			proto.MessageName(msg),
-			msgString,
-			addresses,
-			tx.Height,
-		))
-	}
 
 	// Marshal the value properly
 	bz, err := cdc.MarshalJSON(msg)
 	if err != nil {
 		return err
+	}
+
+	if msgIBC, ok := msg.(*channeltypes.MsgRecvPacket); ok {
+		// packet := types.Packet{
+		// 	Sequence:           msgIBC.Packet.Sequence,
+		// 	SourcePort:         msgIBC.Packet.SourcePort,
+		// 	SourceChannel:      msgIBC.Packet.SourceChannel,
+		// 	DestinationPort:    msgIBC.Packet.DestinationPort,
+		// 	DestinationChannel: msgIBC.Packet.DestinationChannel,
+		// 	Data:               string(msgIBC.Packet.Data),
+		// 	TimeoutHeight:      msgIBC.Packet.TimeoutHeight,
+		// 	TimeoutTimestamp:   msgIBC.Packet.TimeoutTimestamp,
+		// }
+		// msgRecvPacket = types.MsgRecvPacket{
+		// 	Packet:          packet,
+		// 	ProofCommitment: msgIBC.ProofCommitment,
+		// 	ProofHeight:     msgIBC.ProofHeight,
+		// 	Signer:          msgIBC.Signer,
+		// }
+
+		// msgString := fmt.Sprintf("%#v", msgRecvPacket)
+		// fmt.Printf("\n\n msgString %s \n\n", msgString)
+		// return db.SaveMessage(types.NewMessage(
+		// 	tx.TxHash,
+		// 	index,
+		// 	proto.MessageName(msg),
+		// 	msgString,
+		// 	addresses,
+		// 	tx.Height,
+		// ))
+		datas := string(msgIBC.Packet.Data)
+		messageString := fmt.Sprintf("%s,%s", string(bz), datas)
+		return db.SaveMessage(types.NewMessage(
+			tx.TxHash,
+			index,
+			proto.MessageName(msg),
+			messageString,
+			addresses,
+			tx.Height,
+		))
+
 	}
 
 	return db.SaveMessage(types.NewMessage(
