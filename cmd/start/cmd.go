@@ -8,6 +8,7 @@ import (
 	"time"
 
 	parsecmdtypes "github.com/forbole/juno/v4/cmd/parse/types"
+	"github.com/forbole/juno/v4/modules"
 	"github.com/forbole/juno/v4/types/utils"
 
 	"github.com/forbole/juno/v4/logging"
@@ -16,7 +17,6 @@ import (
 
 	"github.com/go-co-op/gocron"
 
-	"github.com/forbole/juno/v4/modules"
 	"github.com/forbole/juno/v4/parser"
 	"github.com/forbole/juno/v4/types"
 
