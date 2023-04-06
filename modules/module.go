@@ -7,7 +7,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/authz"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	channeltypes "github.com/cosmos/ibc-go/v3/modules/core/04-channel/types"
 	"github.com/forbole/juno/v4/types"
 	"github.com/go-co-op/gocron"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -107,13 +106,4 @@ type AuthzMessageModule interface {
 	// NOTE. The returned error will be logged using the MsgError method. All other modules' handlers
 	// will still be called.
 	HandleMsgExec(index int, msgExec *authz.MsgExec, authzMsgIndex int, executedMsg sdk.Msg, tx *types.Tx) error
-}
-
-type IBCMessageModule interface {
-	// HandleMsgRecvPacket handles a single ibc recv packet message that is contained within an ibcchannel.MsgRecvPacket instance.
-	// For convenience of use, the index of the message inside the transaction and the transaction itself
-	// are passed as well.
-	// NOTE. The returned error will be logged using the MsgError method. All other modules' handlers
-	// will still be called.
-	HandleMsgRecvPacket(index int, msgIBC *channeltypes.MsgRecvPacket, msgRecvPacket types.MsgRecvPacket, tx *types.Tx) error
 }

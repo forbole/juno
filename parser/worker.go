@@ -15,8 +15,6 @@ import (
 	"github.com/forbole/juno/v4/types/config"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	// clienttypes "github.com/cosmos/ibc-go/v3/modules/core/02-client/types"
-
 	"github.com/forbole/juno/v4/modules"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
