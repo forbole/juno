@@ -2,6 +2,7 @@ package messages
 
 import (
 	"fmt"
+	"unicode/utf8"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -31,35 +32,12 @@ func HandleMsg(
 	}
 
 	if msgIBC, ok := msg.(*channeltypes.MsgRecvPacket); ok {
-		// packet := types.Packet{
-		// 	Sequence:           msgIBC.Packet.Sequence,
-		// 	SourcePort:         msgIBC.Packet.SourcePort,
-		// 	SourceChannel:      msgIBC.Packet.SourceChannel,
-		// 	DestinationPort:    msgIBC.Packet.DestinationPort,
-		// 	DestinationChannel: msgIBC.Packet.DestinationChannel,
-		// 	Data:               string(msgIBC.Packet.Data),
-		// 	TimeoutHeight:      msgIBC.Packet.TimeoutHeight,
-		// 	TimeoutTimestamp:   msgIBC.Packet.TimeoutTimestamp,
-		// }
-		// msgRecvPacket = types.MsgRecvPacket{
-		// 	Packet:          packet,
-		// 	ProofCommitment: msgIBC.ProofCommitment,
-		// 	ProofHeight:     msgIBC.ProofHeight,
-		// 	Signer:          msgIBC.Signer,
-		// }
-
-		// msgString := fmt.Sprintf("%#v", msgRecvPacket)
-		// fmt.Printf("\n\n msgString %s \n\n", msgString)
-		// return db.SaveMessage(types.NewMessage(
-		// 	tx.TxHash,
-		// 	index,
-		// 	proto.MessageName(msg),
-		// 	msgString,
-		// 	addresses,
-		// 	tx.Height,
-		// ))
-		datas := string(msgIBC.Packet.Data)
-		messageString := fmt.Sprintf("%s,%s", string(bz), datas)
+		// messageStr := string(bz)
+		// trimMessage := messageStr[1:]
+		trimMessageStr := trimLastChar(string(bz))
+		dataStr := string(msgIBC.Packet.Data)
+		trimData := dataStr[1:]
+		messageString := fmt.Sprintf("%s,%s", trimMessageStr, trimData)
 		fmt.Printf("\n\n messageString %s \n\n", messageString)
 		return db.SaveMessage(types.NewMessage(
 			tx.TxHash,
@@ -80,4 +58,12 @@ func HandleMsg(
 		addresses,
 		tx.Height,
 	))
+}
+
+func trimLastChar(s string) string {
+	r, size := utf8.DecodeLastRuneInString(s)
+	if r == utf8.RuneError && (size == 0 || size == 1) {
+		size = 0
+	}
+	return s[:len(s)-size]
 }
