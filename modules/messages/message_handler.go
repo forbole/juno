@@ -60,6 +60,7 @@ func HandleMsg(
 		// ))
 		datas := string(msgIBC.Packet.Data)
 		messageString := fmt.Sprintf("%s,%s", string(bz), datas)
+		fmt.Printf("\n\n messageString %s \n\n", messageString)
 		return db.SaveMessage(types.NewMessage(
 			tx.TxHash,
 			index,
