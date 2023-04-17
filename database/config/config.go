@@ -69,6 +69,10 @@ func NewDatabaseConfig(
 func DefaultDatabaseConfig() Config {
 	return NewDatabaseConfig(
 		"postgresql://user:password@localhost:5432/database-name?sslmode=disable&search_path=public",
+		"false",
+		"",
+		"",
+		"",
 		1,
 		1,
 		100000,
