@@ -24,7 +24,19 @@ import (
 // from config. It returns a database connection handle or an error if the
 // connection fails.
 func Builder(ctx *database.Context) (database.Database, error) {
-	postgresDb, err := sqlx.Open("postgres", utils.GetEnvOr(env.DatabaseURI, ctx.Cfg.URL))
+	dbURI := utils.GetEnvOr(env.DatabaseURI, ctx.Cfg.URL)
+	dbEnableSSL := utils.GetEnvOr(env.DatabaseSSLModeEnable, ctx.Cfg.SSLModeEnable)
+
+	// Configure SSL certificates (optional)
+	if dbEnableSSL == "true" {
+		dbRootCert := utils.GetEnvOr(env.DatabaseSSLRootCert, ctx.Cfg.SSLRootCert)
+		dbCert := utils.GetEnvOr(env.DatabaseSSLCert, ctx.Cfg.SSLCert)
+		dbKey := utils.GetEnvOr(env.DatabaseSSLKey, ctx.Cfg.SSLKey)
+		dbURI += fmt.Sprintf(" sslmode=require sslrootcert=%s sslcert=%s sslkey=%s",
+			dbRootCert, dbCert, dbKey)
+	}
+
+	postgresDb, err := sqlx.Open("postgres", dbURI)
 	if err != nil {
 		return nil, err
 	}
