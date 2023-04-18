@@ -8,6 +8,10 @@ type Config struct {
 	MaxIdleConnections int    `yaml:"max_idle_connections"`
 	PartitionSize      int64  `yaml:"partition_size"`
 	PartitionBatchSize int64  `yaml:"partition_batch"`
+	SSLModeEnable      string `yaml:"ssl_mode_enable"`
+	SSLRootCert        string `yaml:"ssl_root_cert"`
+	SSLCert            string `yaml:"ssl_cert"`
+	SSLKey             string `yaml:"ssl_key"`
 }
 
 func (c *Config) getURL() *url.URL {
@@ -44,7 +48,7 @@ func (c *Config) GetSSLMode() string {
 }
 
 func NewDatabaseConfig(
-	url string,
+	url, sslModeEnable, sslRootCert, sslCert, sslKey string,
 	maxOpenConnections int, maxIdleConnections int,
 	partitionSize int64, batchSize int64,
 ) Config {
@@ -54,6 +58,10 @@ func NewDatabaseConfig(
 		MaxIdleConnections: maxIdleConnections,
 		PartitionSize:      partitionSize,
 		PartitionBatchSize: batchSize,
+		SSLModeEnable:      sslModeEnable,
+		SSLRootCert:        sslRootCert,
+		SSLCert:            sslCert,
+		SSLKey:             sslKey,
 	}
 }
 
@@ -61,6 +69,10 @@ func NewDatabaseConfig(
 func DefaultDatabaseConfig() Config {
 	return NewDatabaseConfig(
 		"postgresql://user:password@localhost:5432/database-name?sslmode=disable&search_path=public",
+		"false",
+		"",
+		"",
+		"",
 		1,
 		1,
 		100000,
