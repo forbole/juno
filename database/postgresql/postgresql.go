@@ -10,7 +10,7 @@ import (
 
 	"github.com/forbole/juno/v4/logging"
 
-	"github.com/cosmos/cosmos-sdk/simapp/params"
+	"cosmossdk.io/simapp/params"
 	"github.com/lib/pq"
 
 	"github.com/forbole/juno/v4/database"

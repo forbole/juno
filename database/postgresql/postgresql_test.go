@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cosmos/cosmos-sdk/simapp"
+	"cosmossdk.io/simapp"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/forbole/juno/v4/database"

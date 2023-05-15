@@ -73,7 +73,7 @@ func startParsing(ctx *parser.Context) error {
 	scheduler.StartAsync()
 
 	// Create a queue that will collect, aggregate, and export blocks and metadata
-	exportQueue := types.NewQueue(25)
+	exportQueue := types.NewQueue(1)
 
 	// Create workers
 	workers := make([]parser.Worker, cfg.Workers)

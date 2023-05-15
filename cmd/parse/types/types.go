@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/cosmos/cosmos-sdk/simapp"
+	"cosmossdk.io/simapp"
 
 	"github.com/forbole/juno/v4/logging"
 	"github.com/forbole/juno/v4/types/config"

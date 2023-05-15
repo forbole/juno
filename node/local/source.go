@@ -7,8 +7,8 @@ import (
 	"reflect"
 	"unsafe"
 
+	"cosmossdk.io/simapp/params"
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/simapp/params"
 
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
