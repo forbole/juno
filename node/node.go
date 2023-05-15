@@ -3,8 +3,8 @@ package node
 import (
 	"context"
 
-	constypes "github.com/tendermint/tendermint/consensus/types"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+	"github.com/tendermint/tendermint/rpc/coretypes"
+	tmctypes "github.com/tendermint/tendermint/rpc/coretypes"
 
 	"github.com/forbole/juno/v4/types"
 )
@@ -14,7 +14,7 @@ type Node interface {
 	Genesis() (*tmctypes.ResultGenesis, error)
 
 	// ConsensusState returns the consensus state of the chain
-	ConsensusState() (*constypes.RoundStateSimple, error)
+	ConsensusState() (*coretypes.ResultConsensusState, error)
 
 	// LatestHeight returns the latest block height on the active chain. An error
 	// is returned if the query fails.

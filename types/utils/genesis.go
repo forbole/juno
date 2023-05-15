@@ -3,19 +3,19 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"strings"
 
 	"github.com/forbole/juno/v4/node"
 
 	tmjson "github.com/tendermint/tendermint/libs/json"
-	tmos "github.com/tendermint/tendermint/libs/os"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
 // ReadGenesisFileGenesisDoc reads the genesis file located at the given path
 func ReadGenesisFileGenesisDoc(genesisPath string) (*tmtypes.GenesisDoc, error) {
 	var genesisDoc *tmtypes.GenesisDoc
-	bz, err := tmos.ReadFile(genesisPath)
+	bz, err := ioutil.ReadFile(genesisPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read genesis file: %s", err)
 	}

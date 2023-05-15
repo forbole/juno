@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"cosmossdk.io/simapp"
 	"github.com/stretchr/testify/suite"
 
+	simappparams "cosmossdk.io/simapp/params"
 	"github.com/forbole/juno/v4/database"
 	databaseconfig "github.com/forbole/juno/v4/database/config"
 	postgres "github.com/forbole/juno/v4/database/postgresql"
@@ -29,7 +29,7 @@ type DbTestSuite struct {
 
 func (suite *DbTestSuite) SetupTest() {
 	// Create the codec
-	codec := simapp.MakeTestEncodingConfig()
+	codec := simappparams.MakeTestEncodingConfig()
 
 	// Build the database
 	dbCfg := databaseconfig.NewDatabaseConfig(

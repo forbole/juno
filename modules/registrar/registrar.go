@@ -87,7 +87,7 @@ func NewDefaultRegistrar(parser messages.MessageAddressesParser) *DefaultRegistr
 func (r *DefaultRegistrar) BuildModules(ctx Context) modules.Modules {
 	return modules.Modules{
 		pruning.NewModule(ctx.JunoConfig, ctx.Database, ctx.Logger),
-		messages.NewModule(r.parser, ctx.EncodingConfig.Marshaler, ctx.Database),
+		messages.NewModule(r.parser, ctx.EncodingConfig.Codec, ctx.Database),
 		telemetry.NewModule(ctx.JunoConfig),
 	}
 }

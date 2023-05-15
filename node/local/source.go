@@ -14,10 +14,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/viper"
 	cfg "github.com/tendermint/tendermint/config"
+	tmstore "github.com/tendermint/tendermint/internal/store"
 	"github.com/tendermint/tendermint/libs/log"
 	tmnode "github.com/tendermint/tendermint/node"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	tmstore "github.com/tendermint/tendermint/store"
 	db "github.com/tendermint/tm-db"
 
 	"github.com/forbole/juno/v4/node"

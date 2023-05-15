@@ -16,7 +16,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/forbole/juno/v4/modules"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmctypes "github.com/tendermint/tendermint/rpc/coretypes"
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/forbole/juno/v4/node"
@@ -42,7 +42,7 @@ type Worker struct {
 func NewWorker(ctx *Context, queue types.HeightQueue, index int) Worker {
 	return Worker{
 		index:   index,
-		codec:   ctx.EncodingConfig.Marshaler,
+		codec:   ctx.EncodingConfig.Codec,
 		node:    ctx.Node,
 		queue:   queue,
 		db:      ctx.Database,

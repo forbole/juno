@@ -3,7 +3,7 @@ package pruning
 import (
 	"fmt"
 
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmctypes "github.com/tendermint/tendermint/rpc/coretypes"
 
 	"github.com/forbole/juno/v4/database"
 	"github.com/forbole/juno/v4/types"

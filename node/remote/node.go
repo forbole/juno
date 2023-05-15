@@ -8,28 +8,22 @@ import (
 	"strings"
 	"time"
 
+	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc"
 
-	constypes "github.com/tendermint/tendermint/consensus/types"
 	tmjson "github.com/tendermint/tendermint/libs/json"
-
-	"github.com/forbole/juno/v4/node"
 
 	"github.com/cosmos/cosmos-sdk/types/tx"
 
 	"github.com/forbole/juno/v4/types"
 
 	httpclient "github.com/tendermint/tendermint/rpc/client/http"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmctypes "github.com/tendermint/tendermint/rpc/coretypes"
 	jsonrpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
-)
-
-var (
-	_ node.Node = &Node{}
 )
 
 // Node implements a wrapper around both a Tendermint RPCConfig client and a
@@ -56,7 +50,7 @@ func NewNode(cfg *Details, codec codec.Codec) (*Node, error) {
 	}
 	httpTransport.MaxConnsPerHost = cfg.RPC.MaxConnections
 
-	rpcClient, err := httpclient.NewWithClient(cfg.RPC.Address, "/websocket", httpClient)
+	rpcClient, err := httpclient.NewWithClient(cfg.RPC.Address, httpClient)
 	if err != nil {
 		return nil, err
 	}
@@ -131,13 +125,13 @@ func (cp *Node) getGenesisChunksStartingFrom(id uint) ([]byte, error) {
 }
 
 // ConsensusState implements node.Node
-func (cp *Node) ConsensusState() (*constypes.RoundStateSimple, error) {
+func (cp *Node) ConsensusState() (*coretypes.ResultConsensusState, error) {
 	state, err := cp.client.ConsensusState(context.Background())
 	if err != nil {
 		return nil, err
 	}
 
-	var data constypes.RoundStateSimple
+	var data coretypes.ResultConsensusState
 	err = tmjson.Unmarshal(state.RoundState, &data)
 	if err != nil {
 		return nil, err
