@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	coretypes "github.com/cometbft/cometbft/rpc/core/types"
+	coretypes "github.com/tendermint/tendermint/rpc/coretypes"
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"

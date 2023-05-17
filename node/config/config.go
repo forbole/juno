@@ -67,4 +67,5 @@ func (s Config) MarshalYAML() (interface{}, error) {
 
 type Details interface {
 	Validate() error
+	//ConsensusState() (*coretypes.ResultConsensusState, error)
 }

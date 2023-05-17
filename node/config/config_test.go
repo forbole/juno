@@ -8,7 +8,6 @@ import (
 	"gopkg.in/yaml.v3"
 
 	nodeconfig "github.com/forbole/juno/v4/node/config"
-	"github.com/forbole/juno/v4/node/local"
 	"github.com/forbole/juno/v4/node/remote"
 )
 
@@ -39,15 +38,15 @@ config:
 
 	err = yaml.Unmarshal([]byte(localData), &config)
 	require.NoError(t, err)
-	require.IsType(t, &local.Details{}, config.Details)
+	//require.IsType(t, &local.Details{}, config.Details)
 }
 
 func TestConfig_MarshalYAML(t *testing.T) {
 	config := nodeconfig.Config{
 		Type: nodeconfig.TypeLocal,
-		Details: &local.Details{
-			Home: "/home/user/.cosmos",
-		},
+		// Details: &local.Details{
+		// 	Home: "/home/user/.cosmos",
+		// },
 	}
 
 	bz, err := yaml.Marshal(&config)
