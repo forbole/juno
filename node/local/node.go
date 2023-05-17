@@ -7,24 +7,21 @@ import (
 	"os"
 	"sort"
 
+	"github.com/cometbft/cometbft/evidence"
+	"github.com/cometbft/cometbft/proxy"
+	"github.com/cometbft/cometbft/state/indexer"
 	"github.com/cometbft/cometbft/state/txindex"
+	"github.com/cometbft/cometbft/state/txindex/kv"
+	"github.com/cometbft/cometbft/state/txindex/null"
+	"github.com/cometbft/cometbft/store"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/types/tx"
 	"github.com/spf13/viper"
+	"github.com/tendermint/tendermint/config"
 	cfg "github.com/tendermint/tendermint/config"
-	cs "github.com/tendermint/tendermint/internal/consensus"
-	"github.com/tendermint/tendermint/internal/evidence"
-	"github.com/tendermint/tendermint/internal/proxy"
-	sm "github.com/tendermint/tendermint/internal/state"
-	"github.com/tendermint/tendermint/internal/state/indexer"
-	blockidxkv "github.com/tendermint/tendermint/internal/state/indexer/block/kv"
-	blockidxnull "github.com/tendermint/tendermint/internal/state/indexer/block/null"
-	"github.com/tendermint/tendermint/internal/state/indexer/tx/kv"
-	"github.com/tendermint/tendermint/internal/state/indexer/tx/null"
-	"github.com/tendermint/tendermint/internal/store"
 	"github.com/tendermint/tendermint/libs/log"
 	tmmath "github.com/tendermint/tendermint/libs/math"
 	tmquery "github.com/tendermint/tendermint/libs/pubsub/query"
@@ -33,15 +30,14 @@ import (
 
 	"github.com/forbole/juno/v4/node"
 	"github.com/forbole/juno/v4/types"
+	dbm "github.com/tendermint/tm-db"
 
 	"path"
 	"time"
 
-	constypes "github.com/tendermint/tendermint/internal/consensus/types"
 	tmjson "github.com/tendermint/tendermint/libs/json"
 	tmnode "github.com/tendermint/tendermint/node"
 	tmctypes "github.com/tendermint/tendermint/rpc/coretypes"
-	dbm "github.com/tendermint/tm-db"
 )
 
 const (
@@ -174,15 +170,21 @@ func NewNode(config *Details, txConfig client.TxConfig, codec codec.Codec) (*Nod
 	}, nil
 }
 
-func initDBs(config *cfg.Config, dbProvider tmnode.DBProvider) (blockStore *store.BlockStore, stateDB dbm.DB, err error) {
+func initDBs(cfg *cfg.Config, dbProvider config.DBProvider) (blockStore *store.BlockStore, stateDB dbm.DB, err error) {
 	var blockStoreDB dbm.DB
-	blockStoreDB, err = dbProvider(&tmnode.DBContext{ID: "blockstore", Config: config})
+
+	dbContext := &config.DBContext{
+		ID:     "blockstore",
+		Config: cfg,
+	}
+
+	blockStoreDB, err = dbProvider(dbContext)
 	if err != nil {
 		return
 	}
 	blockStore = store.NewBlockStore(blockStoreDB)
 
-	stateDB, err = dbProvider(&tmnode.DBContext{ID: "state", Config: config})
+	stateDB, err = dbProvider(dbContext)
 	if err != nil {
 		return
 	}
@@ -200,8 +202,8 @@ func createAndStartEventBus(logger log.Logger) (*tmtypes.EventBus, error) {
 }
 
 func createAndStartIndexerService(
-	config *cfg.Config,
-	dbProvider tmnode.DBProvider,
+	cfg *cfg.Config,
+	dbProvider config.DBProvider,
 	eventBus *tmtypes.EventBus,
 	logger log.Logger,
 ) (*txindex.IndexerService, txindex.TxIndexer, indexer.BlockIndexer, error) {
@@ -211,9 +213,15 @@ func createAndStartIndexerService(
 		blockIndexer indexer.BlockIndexer
 	)
 
-	switch config.TxIndex.Indexer {
+	dbContext := &config.DBContext{
+		ID:     "tx_index",
+		Config: cfg,
+	}
+
+	switch config.DefaultTxIndexConfig().Indexer[0] {
 	case "kv":
-		store, err := dbProvider(&tmnode.DBContext{ID: "tx_index", Config: config})
+
+		store, err := dbProvider(dbContext)
 		if err != nil {
 			return nil, nil, nil, err
 		}
@@ -225,8 +233,9 @@ func createAndStartIndexerService(
 		blockIndexer = &blockidxnull.BlockerIndexer{}
 	}
 
+	logger.With("module", "txindex")
 	indexerService := txindex.NewIndexerService(txIndexer, blockIndexer, eventBus, false)
-	indexerService.SetLogger(logger.With("module", "txindex"))
+	indexerService.SetLogger(logger)
 
 	if err := indexerService.Start(); err != nil {
 		return nil, nil, nil, err

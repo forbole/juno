@@ -9,6 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/viper"
 	cfg "github.com/tendermint/tendermint/config"
+	"github.com/tendermint/tendermint/rpc/coretypes"
 	tmctypes "github.com/tendermint/tendermint/rpc/coretypes"
 )
 
@@ -34,7 +35,7 @@ type intoAny interface {
 	AsAny() *codectypes.Any
 }
 
-func makeTxResult(txConfig client.TxConfig, resTx *tmctypes.ResultTx, resBlock *tmctypes.ResultBlock) (*sdk.TxResponse, error) {
+func makeTxResult(txConfig client.TxConfig, resTx *coretypes.ResultTx, resBlock *tmctypes.ResultBlock) (*sdk.TxResponse, error) {
 	txb, err := txConfig.TxDecoder()(resTx.Tx)
 	if err != nil {
 		return nil, err
