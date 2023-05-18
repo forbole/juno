@@ -19,7 +19,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/types/tx"
 
-	"github.com/forbole/juno/v4/types"
+	"github.com/emrahm/juno/v5/types"
 
 	httpclient "github.com/tendermint/tendermint/rpc/client/http"
 	tmctypes "github.com/tendermint/tendermint/rpc/coretypes"

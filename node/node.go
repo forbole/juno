@@ -6,7 +6,7 @@ import (
 	"github.com/tendermint/tendermint/rpc/coretypes"
 	tmctypes "github.com/tendermint/tendermint/rpc/coretypes"
 
-	"github.com/forbole/juno/v4/types"
+	"github.com/emrahm/juno/v5/types"
 )
 
 type Node interface {

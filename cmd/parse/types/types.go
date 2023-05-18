@@ -1,12 +1,12 @@
 package types
 
 import (
-	"github.com/forbole/juno/v4/logging"
-	"github.com/forbole/juno/v4/types/config"
+	"github.com/emrahm/juno/v5/logging"
+	"github.com/emrahm/juno/v5/types/config"
 
-	"github.com/forbole/juno/v4/database"
-	"github.com/forbole/juno/v4/database/builder"
-	"github.com/forbole/juno/v4/modules/registrar"
+	"github.com/emrahm/juno/v5/database"
+	"github.com/emrahm/juno/v5/database/builder"
+	"github.com/emrahm/juno/v5/modules/registrar"
 
 	simappparams "cosmossdk.io/simapp/params"
 )

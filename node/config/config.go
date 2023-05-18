@@ -3,7 +3,7 @@ package config
 import (
 	"gopkg.in/yaml.v3"
 
-	"github.com/forbole/juno/v4/node/remote"
+	"github.com/emrahm/juno/v5/node/remote"
 )
 
 const (

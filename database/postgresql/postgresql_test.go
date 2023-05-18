@@ -11,10 +11,10 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	simappparams "cosmossdk.io/simapp/params"
-	"github.com/forbole/juno/v4/database"
-	databaseconfig "github.com/forbole/juno/v4/database/config"
-	postgres "github.com/forbole/juno/v4/database/postgresql"
-	"github.com/forbole/juno/v4/logging"
+	"github.com/emrahm/juno/v5/database"
+	databaseconfig "github.com/emrahm/juno/v5/database/config"
+	postgres "github.com/emrahm/juno/v5/database/postgresql"
+	"github.com/emrahm/juno/v5/logging"
 )
 
 func TestDatabaseTestSuite(t *testing.T) {
