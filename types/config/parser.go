@@ -2,7 +2,7 @@ package config
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"gopkg.in/yaml.v3"
 )
@@ -26,7 +26,7 @@ func Read(configPath string, parser Parser) (Config, error) {
 		return Config{}, fmt.Errorf("empty configuration path")
 	}
 
-	configData, err := ioutil.ReadFile(configPath)
+	configData, err := os.ReadFile(configPath)
 	if err != nil {
 		return Config{}, fmt.Errorf("failed to read config: %s", err)
 	}

@@ -14,8 +14,8 @@ import (
 
 	"github.com/forbole/juno/v4/types"
 
+	"github.com/cometbft/cometbft/libs/cli"
 	"github.com/spf13/cobra"
-	"github.com/tendermint/tendermint/libs/cli"
 )
 
 var (

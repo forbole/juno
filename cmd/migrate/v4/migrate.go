@@ -2,7 +2,7 @@ package v4
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	parsecmdtypes "github.com/forbole/juno/v4/cmd/parse/types"
 
@@ -32,7 +32,7 @@ func RunMigration(parseConfig *parsecmdtypes.Config) error {
 		return fmt.Errorf("error while serializing config: %s", err)
 	}
 
-	err = ioutil.WriteFile(config.GetConfigFilePath(), bz, 0600)
+	err = os.WriteFile(config.GetConfigFilePath(), bz, 0600)
 	if err != nil {
 		return fmt.Errorf("error while writing v4 config: %s", err)
 	}
