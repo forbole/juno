@@ -8,8 +8,8 @@ import (
 	channeltypes "github.com/cosmos/ibc-go/v3/modules/core/04-channel/types"
 	"github.com/gogo/protobuf/proto"
 
-	"github.com/forbole/juno/v4/database"
-	"github.com/forbole/juno/v4/types"
+	"github.com/forbole/juno/v5/database"
+	"github.com/forbole/juno/v5/types"
 )
 
 // HandleMsg represents a message handler that stores the given message inside the proper database table

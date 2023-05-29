@@ -1,14 +1,14 @@
 package v4
 
 import (
-	databaseconfig "github.com/forbole/juno/v4/database/config"
-	loggingconfig "github.com/forbole/juno/v4/logging/config"
-	"github.com/forbole/juno/v4/modules/pruning"
-	"github.com/forbole/juno/v4/modules/telemetry"
-	nodeconfig "github.com/forbole/juno/v4/node/config"
-	parserconfig "github.com/forbole/juno/v4/parser/config"
-	pricefeedconfig "github.com/forbole/juno/v4/pricefeed"
-	"github.com/forbole/juno/v4/types/config"
+	databaseconfig "github.com/forbole/juno/v5/database/config"
+	loggingconfig "github.com/forbole/juno/v5/logging/config"
+	"github.com/forbole/juno/v5/modules/pruning"
+	"github.com/forbole/juno/v5/modules/telemetry"
+	nodeconfig "github.com/forbole/juno/v5/node/config"
+	parserconfig "github.com/forbole/juno/v5/parser/config"
+	pricefeedconfig "github.com/forbole/juno/v5/pricefeed"
+	"github.com/forbole/juno/v5/types/config"
 )
 
 // Config defines all necessary juno configuration parameters.
