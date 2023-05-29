@@ -1,3 +1,7 @@
+## v5.0.0
+### Changes
+- Updated Cosmos SDK to `v0.47.2`
+
 ## v4.2.0
 ### Changes
 - ([\#93](https://github.com/forbole/juno/pull/93)) Decode IBC transfer data to JSON for `/ibc.core.channel.v1.MsgRecvPacket` message
@@ -10,7 +14,7 @@
 
 ## v4.0.0
 ### Changes
-- Updated cosmos/cosmos-sdk to `v0.45.8`
+- Updated Cosmos SDK to `v0.45.8`
 - ([\#74](https://github.com/forbole/juno/pull/74)) Added database block count to prometheus to improve alert monitoring
 - ([\#75](https://github.com/forbole/juno/pull/75)) Allow modules to handle MsgExec inner messages
 - ([\#76](https://github.com/forbole/juno/pull/76)) Return 0 as height for `GetLastBlockHeight()` method if there are no blocks saved in database
