@@ -21,7 +21,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/viper"
 
-	"github.com/forbole/juno/v4/node"
+	"github.com/forbole/juno/v5/node"
 )
 
 var (
