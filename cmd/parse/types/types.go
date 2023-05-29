@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/cosmos/cosmos-sdk/simapp"
+	"cosmossdk.io/simapp/params"
 
 	"github.com/forbole/juno/v4/logging"
 	"github.com/forbole/juno/v4/types/config"
@@ -63,7 +63,7 @@ func (cfg *Config) WithEncodingConfigBuilder(b EncodingConfigBuilder) *Config {
 // GetEncodingConfigBuilder returns the encoding config builder to be used
 func (cfg *Config) GetEncodingConfigBuilder() EncodingConfigBuilder {
 	if cfg.encodingConfigBuilder == nil {
-		return simapp.MakeTestEncodingConfig
+		return params.MakeTestEncodingConfig
 	}
 	return cfg.encodingConfigBuilder
 }

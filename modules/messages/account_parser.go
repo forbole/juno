@@ -3,14 +3,15 @@ package messages
 import (
 	"fmt"
 
+	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	"github.com/gogo/protobuf/proto"
 
 	crisistypes "github.com/cosmos/cosmos-sdk/x/crisis/types"
 	evidencetypes "github.com/cosmos/cosmos-sdk/x/evidence/types"
-	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	govv1beta1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1beta1"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
-	ibctransfertypes "github.com/cosmos/ibc-go/v3/modules/apps/transfer/types"
-	channeltypes "github.com/cosmos/ibc-go/v3/modules/core/04-channel/types"
+	ibctransfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
+	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -51,7 +52,8 @@ var CosmosMessageAddressesParser = JoinMessageParsers(
 	CrisisMessagesParser,
 	DistributionMessagesParser,
 	EvidenceMessagesParser,
-	GovMessagesParser,
+	GovV1Beta1MessagesParser,
+	GovV1MessageParser,
 	IBCTransferMessagesParser,
 	SlashingMessagesParser,
 	StakingMessagesParser,
@@ -137,15 +139,15 @@ func EvidenceMessagesParser(_ codec.Codec, cosmosMsg sdk.Msg) ([]string, error) 
 	return nil, MessageNotSupported(cosmosMsg)
 }
 
-// GovMessagesParser returns the list of all the accounts involved in the given
-// message if it's related to the x/gov module
-func GovMessagesParser(cdc codec.Codec, cosmosMsg sdk.Msg) ([]string, error) {
+// GovV1Beta1MessagesParser returns the list of all the accounts involved in the given
+// message if it's related to the x/gov v1beta1 module
+func GovV1Beta1MessagesParser(cdc codec.Codec, cosmosMsg sdk.Msg) ([]string, error) {
 	switch msg := cosmosMsg.(type) {
 
-	case *govtypes.MsgSubmitProposal:
+	case *govv1beta1.MsgSubmitProposal:
 		addresses := []string{msg.Proposer}
 
-		var content govtypes.Content
+		var content govv1beta1.Content
 		err := cdc.UnpackAny(msg.Content, &content)
 		if err != nil {
 			return nil, err
@@ -159,10 +161,30 @@ func GovMessagesParser(cdc codec.Codec, cosmosMsg sdk.Msg) ([]string, error) {
 
 		return addresses, nil
 
-	case *govtypes.MsgDeposit:
+	case *govv1beta1.MsgDeposit:
 		return []string{msg.Depositor}, nil
 
-	case *govtypes.MsgVote:
+	case *govv1beta1.MsgVote:
+		return []string{msg.Voter}, nil
+
+	}
+
+	return nil, MessageNotSupported(cosmosMsg)
+}
+
+// GovV1MessageParser returns the list of all the accounts involved in the given
+// message if it's related to the x/gov v1 module
+func GovV1MessageParser(cdc codec.Codec, cosmosMsg sdk.Msg) ([]string, error) {
+	switch msg := cosmosMsg.(type) {
+
+	case *govv1.MsgSubmitProposal:
+		addresses := []string{msg.Proposer}
+		return addresses, nil
+
+	case *govv1.MsgDeposit:
+		return []string{msg.Depositor}, nil
+
+	case *govv1.MsgVote:
 		return []string{msg.Voter}, nil
 
 	}
