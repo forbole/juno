@@ -1,4 +1,4 @@
-## Unreleased
+## v4.2.0
 ### Changes
 - ([\#93](https://github.com/forbole/juno/pull/93)) Decode IBC transfer data to JSON for `/ibc.core.channel.v1.MsgRecvPacket` message
 - ([\#94](https://github.com/forbole/juno/pull/94)) Added TSL support when connecting to database
