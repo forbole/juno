@@ -155,6 +155,7 @@ func GovV1Beta1MessagesParser(cdc codec.Codec, cosmosMsg sdk.Msg) ([]string, err
 
 		// Get addresses from contents
 		switch content := content.(type) {
+		//nolint:staticcheck // Let's keep this for the time being
 		case *distrtypes.CommunityPoolSpendProposal:
 			addresses = append(addresses, content.Recipient)
 		}

@@ -44,7 +44,7 @@ func FindEventsByType(events []abci.Event, eventType string) []abci.Event {
 
 func FindAttributeByKey(event abci.Event, attrKey string) (abci.EventAttribute, error) {
 	for _, attr := range event.Attributes {
-		if string(attr.Key) == attrKey {
+		if attr.Key == attrKey {
 			return attr, nil
 		}
 	}
