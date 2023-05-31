@@ -33,7 +33,7 @@ func (suite *DbTestSuite) SetupTest() {
 
 	// Build the database config
 	dbCfg := databaseconfig.DefaultDatabaseConfig().
-		WithUrl("postgres://bdjuno:password@localhost:6433/bdjuno?sslmode=disable&search_path=public")
+		WithURL("postgres://bdjuno:password@localhost:6433/bdjuno?sslmode=disable&search_path=public")
 
 	// Build the database
 	db, err := postgres.Builder(database.NewContext(dbCfg, &codec, logging.DefaultLogger()))
