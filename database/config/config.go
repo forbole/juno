@@ -32,7 +32,7 @@ func NewDatabaseConfig(
 	}
 }
 
-func (c Config) WithUrl(url string) Config {
+func (c Config) WithURL(url string) Config {
 	c.URL = url
 	return c
 }
