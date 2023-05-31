@@ -31,18 +31,11 @@ func (suite *DbTestSuite) SetupTest() {
 	// Create the codec
 	codec := params.MakeTestEncodingConfig()
 
+	// Build the database config
+	dbCfg := databaseconfig.DefaultDatabaseConfig().
+		WithUrl("postgres://bdjuno:password@localhost:6433/bdjuno?sslmode=disable&search_path=public")
+
 	// Build the database
-	dbCfg := databaseconfig.NewDatabaseConfig(
-		"postgres://bdjuno:password@localhost:6433/bdjuno?sslmode=disable&search_path=public",
-		"false",
-		"",
-		"",
-		"",
-		-1,
-		-1,
-		100000,
-		100,
-	)
 	db, err := postgres.Builder(database.NewContext(dbCfg, &codec, logging.DefaultLogger()))
 	suite.Require().NoError(err)
 
