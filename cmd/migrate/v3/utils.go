@@ -2,7 +2,6 @@ package v3
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 
@@ -20,7 +19,7 @@ func GetConfig() (Config, error) {
 		return Config{}, fmt.Errorf("config file does not exist")
 	}
 
-	bz, err := ioutil.ReadFile(file)
+	bz, err := os.ReadFile(file)
 	if err != nil {
 		return Config{}, fmt.Errorf("error while reading config files: %s", err)
 	}
