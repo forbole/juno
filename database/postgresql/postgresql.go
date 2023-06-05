@@ -46,8 +46,8 @@ func Builder(ctx *database.Context) (database.Database, error) {
 	postgresDb.SetMaxIdleConns(ctx.Cfg.MaxIdleConnections)
 
 	return &Database{
-		cdc:   ctx.EncodingConfig.Codec,
-		amino: ctx.EncodingConfig.Amino,
+		Cdc:   ctx.EncodingConfig.Codec,
+		Amino: ctx.EncodingConfig.Amino,
 
 		SQL:    postgresDb,
 		Logger: ctx.Logger,
@@ -60,8 +60,8 @@ var _ database.Database = &Database{}
 // Database defines a wrapper around a SQL database and implements functionality
 // for data aggregation and exporting.
 type Database struct {
-	cdc   codec.Codec
-	amino *codec.LegacyAmino
+	Cdc   codec.Codec
+	Amino *codec.LegacyAmino
 
 	SQL    *sqlx.DB
 	Logger logging.Logger
@@ -194,7 +194,7 @@ ON CONFLICT (hash, partition_id) DO UPDATE
 
 	var msgs = make([]string, len(tx.Body.Messages))
 	for index, msg := range tx.Body.Messages {
-		bz, err := db.cdc.MarshalJSON(msg)
+		bz, err := db.Cdc.MarshalJSON(msg)
 		if err != nil {
 			return err
 		}
@@ -202,14 +202,14 @@ ON CONFLICT (hash, partition_id) DO UPDATE
 	}
 	msgsBz := fmt.Sprintf("[%s]", strings.Join(msgs, ","))
 
-	feeBz, err := db.cdc.MarshalJSON(tx.AuthInfo.Fee)
+	feeBz, err := db.Cdc.MarshalJSON(tx.AuthInfo.Fee)
 	if err != nil {
 		return fmt.Errorf("failed to JSON encode tx fee: %s", err)
 	}
 
 	var sigInfos = make([]string, len(tx.AuthInfo.SignerInfos))
 	for index, info := range tx.AuthInfo.SignerInfos {
-		bz, err := db.cdc.MarshalJSON(info)
+		bz, err := db.Cdc.MarshalJSON(info)
 		if err != nil {
 			return err
 		}
@@ -217,7 +217,7 @@ ON CONFLICT (hash, partition_id) DO UPDATE
 	}
 	sigInfoBz := fmt.Sprintf("[%s]", strings.Join(sigInfos, ","))
 
-	logsBz, err := db.amino.MarshalJSON(tx.Logs)
+	logsBz, err := db.Amino.MarshalJSON(tx.Logs)
 	if err != nil {
 		return err
 	}
