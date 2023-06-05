@@ -2,6 +2,9 @@
 ### Changes
 - Updated Cosmos SDK to `v0.47.2`
 
+### Database
+- ([\#96](https://github.com/forbole/juno/pull/96)) Exported Codec and LegacyAmino codec inside Database wrapper
+
 ## v4.2.0
 ### Changes
 - ([\#93](https://github.com/forbole/juno/pull/93)) Decode IBC transfer data to JSON for `/ibc.core.channel.v1.MsgRecvPacket` message
