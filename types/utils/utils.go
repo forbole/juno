@@ -3,11 +3,11 @@ package utils
 import (
 	"fmt"
 
+	abci "github.com/cometbft/cometbft/abci/types"
+	tmcrypto "github.com/cometbft/cometbft/crypto"
+	"github.com/cometbft/cometbft/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/bech32"
-	abci "github.com/tendermint/tendermint/abci/types"
-	tmcrypto "github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/types"
 )
 
 // ConvertValidatorAddressToBech32String converts the given validator address to its Bech32 string representation

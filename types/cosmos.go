@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmctypes "github.com/cometbft/cometbft/rpc/core/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/tx"

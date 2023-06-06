@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"time"
 
+	cfg "github.com/cometbft/cometbft/config"
 	"github.com/cosmos/cosmos-sdk/client"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/viper"
-	cfg "github.com/tendermint/tendermint/config"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 

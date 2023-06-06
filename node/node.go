@@ -3,8 +3,8 @@ package node
 import (
 	"context"
 
-	constypes "github.com/tendermint/tendermint/consensus/types"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+	constypes "github.com/cometbft/cometbft/consensus/types"
+	tmctypes "github.com/cometbft/cometbft/rpc/core/types"
 
 	"github.com/forbole/juno/v4/types"
 )

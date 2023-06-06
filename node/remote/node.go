@@ -8,14 +8,14 @@ import (
 	"strings"
 	"time"
 
-	tmtypes "github.com/tendermint/tendermint/types"
+	tmtypes "github.com/cometbft/cometbft/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"google.golang.org/grpc"
 
-	constypes "github.com/tendermint/tendermint/consensus/types"
-	tmjson "github.com/tendermint/tendermint/libs/json"
+	constypes "github.com/cometbft/cometbft/consensus/types"
+	tmjson "github.com/cometbft/cometbft/libs/json"
 
 	"github.com/forbole/juno/v4/node"
 
@@ -23,9 +23,9 @@ import (
 
 	"github.com/forbole/juno/v4/types"
 
-	httpclient "github.com/tendermint/tendermint/rpc/client/http"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
-	jsonrpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
+	httpclient "github.com/cometbft/cometbft/rpc/client/http"
+	tmctypes "github.com/cometbft/cometbft/rpc/core/types"
+	jsonrpcclient "github.com/cometbft/cometbft/rpc/jsonrpc/client"
 )
 
 var (

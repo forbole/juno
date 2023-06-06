@@ -16,9 +16,9 @@ import (
 
 	"github.com/forbole/juno/v4/modules"
 
+	tmctypes "github.com/cometbft/cometbft/rpc/core/types"
+	tmtypes "github.com/cometbft/cometbft/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
-	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/forbole/juno/v4/node"
 	"github.com/forbole/juno/v4/types"
