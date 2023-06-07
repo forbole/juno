@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
-	"github.com/gogo/protobuf/proto"
+	"github.com/cosmos/gogoproto/proto"
 
 	crisistypes "github.com/cosmos/cosmos-sdk/x/crisis/types"
 	evidencetypes "github.com/cosmos/cosmos-sdk/x/evidence/types"

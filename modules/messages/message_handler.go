@@ -5,8 +5,8 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/gogoproto/proto"
 	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
-	"github.com/gogo/protobuf/proto"
 
 	"github.com/forbole/juno/v5/database"
 	"github.com/forbole/juno/v5/types"
