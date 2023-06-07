@@ -1,3 +1,11 @@
+## v5.1.0
+### Changes
+- Bumped Go version to `1.20`
+- Fixed a bug that caused messages type urls to be empty in the database
+- Implemented a better default `EncodingConfigBuilder`
+- Added the ability to set `DatabaseConfig` field values using setter methods
+- ([\#96](https://github.com/forbole/juno/pull/96)) Export `Codec` and `LegacyAmino` from the `Database` implementation
+
 ## v5.0.0
 ### Changes
 - Updated Cosmos SDK to `v0.47.2`
