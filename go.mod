@@ -1,6 +1,6 @@
 module github.com/forbole/juno/v5
 
-go 1.19
+go 1.20
 
 require (
 	cosmossdk.io/simapp v0.0.0-20230224204036-a6adb0821462
