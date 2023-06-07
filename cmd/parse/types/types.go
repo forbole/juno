@@ -2,6 +2,8 @@ package types
 
 import (
 	"github.com/cosmos/cosmos-sdk/simapp"
+	simappparams "github.com/cosmos/cosmos-sdk/simapp/params"
+	"github.com/cosmos/cosmos-sdk/std"
 
 	"github.com/forbole/juno/v4/logging"
 	"github.com/forbole/juno/v4/types/config"
@@ -63,7 +65,14 @@ func (cfg *Config) WithEncodingConfigBuilder(b EncodingConfigBuilder) *Config {
 // GetEncodingConfigBuilder returns the encoding config builder to be used
 func (cfg *Config) GetEncodingConfigBuilder() EncodingConfigBuilder {
 	if cfg.encodingConfigBuilder == nil {
-		return simapp.MakeTestEncodingConfig
+		return func() simappparams.EncodingConfig {
+			encodingConfig := simappparams.MakeTestEncodingConfig()
+			std.RegisterLegacyAminoCodec(encodingConfig.Amino)
+			std.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+			simapp.ModuleBasics.RegisterLegacyAminoCodec(encodingConfig.Amino)
+			simapp.ModuleBasics.RegisterInterfaces(encodingConfig.InterfaceRegistry)
+			return encodingConfig
+		}
 	}
 	return cfg.encodingConfigBuilder
 }
