@@ -86,7 +86,7 @@ test-unit: start-docker-test
 ###############################################################################
 ###                                Linting                                  ###
 ###############################################################################
-golangci_lint_cmd=github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+golangci_lint_cmd=github.com/golangci/golangci-lint/cmd/golangci-lint
 
 lint:
 	@echo "--> Running linter"
