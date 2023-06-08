@@ -43,6 +43,9 @@ issues:
     - text: "don't use an underscore in package name"
       linters:
         - golint
+    - text: "is not allowed from list 'Main'"
+      linters:
+        - depguard
     - text: "ST1003:"
       linters:
         - stylecheck
