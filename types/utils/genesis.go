@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/forbole/juno/v4/node"
+	"github.com/forbole/juno/v5/node"
 
-	tmjson "github.com/tendermint/tendermint/libs/json"
-	tmos "github.com/tendermint/tendermint/libs/os"
-	tmtypes "github.com/tendermint/tendermint/types"
+	tmjson "github.com/cometbft/cometbft/libs/json"
+	tmos "github.com/cometbft/cometbft/libs/os"
+	tmtypes "github.com/cometbft/cometbft/types"
 )
 
 // ReadGenesisFileGenesisDoc reads the genesis file located at the given path

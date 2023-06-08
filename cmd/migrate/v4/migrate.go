@@ -2,15 +2,15 @@ package v4
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 
-	parsecmdtypes "github.com/forbole/juno/v4/cmd/parse/types"
+	parsecmdtypes "github.com/forbole/juno/v5/cmd/parse/types"
 
 	"gopkg.in/yaml.v3"
 
-	v3 "github.com/forbole/juno/v4/cmd/migrate/v3"
-	databaseconfig "github.com/forbole/juno/v4/database/config"
-	"github.com/forbole/juno/v4/types/config"
+	v3 "github.com/forbole/juno/v5/cmd/migrate/v3"
+	databaseconfig "github.com/forbole/juno/v5/database/config"
+	"github.com/forbole/juno/v5/types/config"
 )
 
 // RunMigration runs the migrations from v3 to v4
@@ -32,7 +32,7 @@ func RunMigration(parseConfig *parsecmdtypes.Config) error {
 		return fmt.Errorf("error while serializing config: %s", err)
 	}
 
-	err = ioutil.WriteFile(config.GetConfigFilePath(), bz, 0600)
+	err = os.WriteFile(config.GetConfigFilePath(), bz, 0600)
 	if err != nil {
 		return fmt.Errorf("error while writing v4 config: %s", err)
 	}

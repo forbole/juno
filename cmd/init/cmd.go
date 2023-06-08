@@ -2,10 +2,9 @@ package init
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 
-	"github.com/forbole/juno/v4/types/config"
+	"github.com/forbole/juno/v5/types/config"
 
 	"github.com/spf13/cobra"
 )
@@ -62,5 +61,5 @@ func writeConfig(cfg WritableConfig, path string) error {
 		return err
 	}
 
-	return ioutil.WriteFile(path, bz, 0600)
+	return os.WriteFile(path, bz, 0600)
 }

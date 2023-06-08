@@ -6,25 +6,37 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/jmoiron/sqlx"
 
-	"github.com/forbole/juno/v4/logging"
+	"github.com/forbole/juno/v5/logging"
 
-	"github.com/cosmos/cosmos-sdk/simapp/params"
 	"github.com/lib/pq"
 
-	"github.com/forbole/juno/v4/database"
-	"github.com/forbole/juno/v4/types"
-	"github.com/forbole/juno/v4/types/config"
-	"github.com/forbole/juno/v4/types/env"
-	"github.com/forbole/juno/v4/types/utils"
+	"github.com/forbole/juno/v5/database"
+	"github.com/forbole/juno/v5/types"
+	"github.com/forbole/juno/v5/types/config"
+	"github.com/forbole/juno/v5/types/env"
+	"github.com/forbole/juno/v5/types/utils"
 )
 
 // Builder creates a database connection with the given database connection info
 // from config. It returns a database connection handle or an error if the
 // connection fails.
 func Builder(ctx *database.Context) (database.Database, error) {
-	postgresDb, err := sqlx.Open("postgres", utils.GetEnvOr(env.DatabaseURI, ctx.Cfg.URL))
+	dbURI := utils.GetEnvOr(env.DatabaseURI, ctx.Cfg.URL)
+	dbEnableSSL := utils.GetEnvOr(env.DatabaseSSLModeEnable, ctx.Cfg.SSLModeEnable)
+
+	// Configure SSL certificates (optional)
+	if dbEnableSSL == "true" {
+		dbRootCert := utils.GetEnvOr(env.DatabaseSSLRootCert, ctx.Cfg.SSLRootCert)
+		dbCert := utils.GetEnvOr(env.DatabaseSSLCert, ctx.Cfg.SSLCert)
+		dbKey := utils.GetEnvOr(env.DatabaseSSLKey, ctx.Cfg.SSLKey)
+		dbURI += fmt.Sprintf(" sslmode=require sslrootcert=%s sslcert=%s sslkey=%s",
+			dbRootCert, dbCert, dbKey)
+	}
+
+	postgresDb, err := sqlx.Open("postgres", dbURI)
 	if err != nil {
 		return nil, err
 	}
@@ -34,9 +46,11 @@ func Builder(ctx *database.Context) (database.Database, error) {
 	postgresDb.SetMaxIdleConns(ctx.Cfg.MaxIdleConnections)
 
 	return &Database{
-		SQL:            postgresDb,
-		EncodingConfig: ctx.EncodingConfig,
-		Logger:         ctx.Logger,
+		Cdc:   ctx.EncodingConfig.Codec,
+		Amino: ctx.EncodingConfig.Amino,
+
+		SQL:    postgresDb,
+		Logger: ctx.Logger,
 	}, nil
 }
 
@@ -46,9 +60,11 @@ var _ database.Database = &Database{}
 // Database defines a wrapper around a SQL database and implements functionality
 // for data aggregation and exporting.
 type Database struct {
-	SQL            *sqlx.DB
-	EncodingConfig *params.EncodingConfig
-	Logger         logging.Logger
+	Cdc   codec.Codec
+	Amino *codec.LegacyAmino
+
+	SQL    *sqlx.DB
+	Logger logging.Logger
 }
 
 // createPartitionIfNotExists creates a new partition having the given partition id if not existing
@@ -178,7 +194,7 @@ ON CONFLICT (hash, partition_id) DO UPDATE
 
 	var msgs = make([]string, len(tx.Body.Messages))
 	for index, msg := range tx.Body.Messages {
-		bz, err := db.EncodingConfig.Marshaler.MarshalJSON(msg)
+		bz, err := db.Cdc.MarshalJSON(msg)
 		if err != nil {
 			return err
 		}
@@ -186,14 +202,14 @@ ON CONFLICT (hash, partition_id) DO UPDATE
 	}
 	msgsBz := fmt.Sprintf("[%s]", strings.Join(msgs, ","))
 
-	feeBz, err := db.EncodingConfig.Marshaler.MarshalJSON(tx.AuthInfo.Fee)
+	feeBz, err := db.Cdc.MarshalJSON(tx.AuthInfo.Fee)
 	if err != nil {
 		return fmt.Errorf("failed to JSON encode tx fee: %s", err)
 	}
 
 	var sigInfos = make([]string, len(tx.AuthInfo.SignerInfos))
 	for index, info := range tx.AuthInfo.SignerInfos {
-		bz, err := db.EncodingConfig.Marshaler.MarshalJSON(info)
+		bz, err := db.Cdc.MarshalJSON(info)
 		if err != nil {
 			return err
 		}
@@ -201,7 +217,7 @@ ON CONFLICT (hash, partition_id) DO UPDATE
 	}
 	sigInfoBz := fmt.Sprintf("[%s]", strings.Join(sigInfos, ","))
 
-	logsBz, err := db.EncodingConfig.Amino.MarshalJSON(tx.Logs)
+	logsBz, err := db.Amino.MarshalJSON(tx.Logs)
 	if err != nil {
 		return err
 	}

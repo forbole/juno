@@ -5,43 +5,42 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
+	"path"
 	"sort"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	cfg "github.com/cometbft/cometbft/config"
+	cs "github.com/cometbft/cometbft/consensus"
+	"github.com/cometbft/cometbft/evidence"
+	"github.com/cometbft/cometbft/libs/log"
+	tmmath "github.com/cometbft/cometbft/libs/math"
+	tmquery "github.com/cometbft/cometbft/libs/pubsub/query"
+	"github.com/cometbft/cometbft/privval"
+	"github.com/cometbft/cometbft/proxy"
+	sm "github.com/cometbft/cometbft/state"
+	"github.com/cometbft/cometbft/state/indexer"
+	blockidxkv "github.com/cometbft/cometbft/state/indexer/block/kv"
+	blockidxnull "github.com/cometbft/cometbft/state/indexer/block/null"
+	"github.com/cometbft/cometbft/state/txindex"
+	"github.com/cometbft/cometbft/state/txindex/kv"
+	"github.com/cometbft/cometbft/state/txindex/null"
+	"github.com/cometbft/cometbft/store"
+	tmtypes "github.com/cometbft/cometbft/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/types/tx"
 	"github.com/spf13/viper"
-	cfg "github.com/tendermint/tendermint/config"
-	cs "github.com/tendermint/tendermint/consensus"
-	"github.com/tendermint/tendermint/evidence"
-	"github.com/tendermint/tendermint/libs/log"
-	tmmath "github.com/tendermint/tendermint/libs/math"
-	tmquery "github.com/tendermint/tendermint/libs/pubsub/query"
-	"github.com/tendermint/tendermint/privval"
-	"github.com/tendermint/tendermint/proxy"
-	sm "github.com/tendermint/tendermint/state"
-	"github.com/tendermint/tendermint/state/indexer"
-	blockidxkv "github.com/tendermint/tendermint/state/indexer/block/kv"
-	blockidxnull "github.com/tendermint/tendermint/state/indexer/block/null"
-	"github.com/tendermint/tendermint/state/txindex"
-	"github.com/tendermint/tendermint/state/txindex/kv"
-	"github.com/tendermint/tendermint/state/txindex/null"
-	"github.com/tendermint/tendermint/store"
-	tmtypes "github.com/tendermint/tendermint/types"
 
-	"github.com/forbole/juno/v4/node"
-	"github.com/forbole/juno/v4/types"
+	"github.com/forbole/juno/v5/node"
+	"github.com/forbole/juno/v5/types"
 
-	"path"
-	"time"
-
-	constypes "github.com/tendermint/tendermint/consensus/types"
-	tmjson "github.com/tendermint/tendermint/libs/json"
-	tmnode "github.com/tendermint/tendermint/node"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
-	dbm "github.com/tendermint/tm-db"
+	dbm "github.com/cometbft/cometbft-db"
+	constypes "github.com/cometbft/cometbft/consensus/types"
+	tmjson "github.com/cometbft/cometbft/libs/json"
+	tmnode "github.com/cometbft/cometbft/node"
+	tmctypes "github.com/cometbft/cometbft/rpc/core/types"
 )
 
 const (
@@ -122,9 +121,9 @@ func NewNode(config *Details, txConfig client.TxConfig, codec codec.Codec) (*Nod
 		return nil, err
 	}
 
-	proxyApp := proxy.NewAppConns(clientCreator)
+	csMetrics, _, _, smMetrics, proxyMetrics := metricsProvider(genDoc.ChainID)
 
-	csMetrics, _, _, smMetrics := metricsProvider(genDoc.ChainID)
+	proxyApp := proxy.NewAppConns(clientCreator, proxyMetrics)
 
 	evidenceDB, err := dbProvider(&tmnode.DBContext{ID: "evidence", Config: tmCfg})
 	if err != nil {

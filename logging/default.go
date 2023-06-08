@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/cosmos/gogoproto/proto"
 
+	tmctypes "github.com/cometbft/cometbft/rpc/core/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 
-	"github.com/forbole/juno/v4/modules"
-	"github.com/forbole/juno/v4/types"
+	"github.com/forbole/juno/v5/modules"
+	"github.com/forbole/juno/v5/types"
 )
 
 var (
