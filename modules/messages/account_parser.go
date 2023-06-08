@@ -301,8 +301,15 @@ func AuthzMessageParser(c codec.Codec, cosmosMsg sdk.Msg) ([]string, error) {
 				}
 				addresses = append(addresses, msg.Grantee)
 				return addresses, nil
-			case strings.Contains(index.TypeUrl, "gov"):
-				addresses, err := GovMessagesParser(c, executedMsg)
+			case strings.Contains(index.TypeUrl, "gov.v1beta1"):
+				addresses, err := GovV1Beta1MessagesParser(c, executedMsg)
+				if err != nil {
+					return nil, MessageNotSupported(executedMsg)
+				}
+				addresses = append(addresses, msg.Grantee)
+				return addresses, nil
+			case strings.Contains(index.TypeUrl, "gov.v1."):
+				addresses, err := GovV1MessageParser(c, executedMsg)
 				if err != nil {
 					return nil, MessageNotSupported(executedMsg)
 				}
