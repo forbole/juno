@@ -1,3 +1,7 @@
+## Unreleased
+### Changes
+- ([\#97](https://github.com/forbole/juno/pull/97)) Add `x/authz` message parser
+
 ## v5.1.0
 ### Changes
 - Bumped Go version to `1.20`
