@@ -2,6 +2,7 @@ package messages
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/gogo/protobuf/proto"
 
@@ -12,6 +13,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authztypes "github.com/cosmos/cosmos-sdk/x/authz"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -52,6 +54,7 @@ var CosmosMessageAddressesParser = JoinMessageParsers(
 	GovMessagesParser,
 	SlashingMessagesParser,
 	StakingMessagesParser,
+	AuthzMessageParser,
 	DefaultMessagesParser,
 )
 
@@ -201,6 +204,99 @@ func StakingMessagesParser(_ codec.Codec, cosmosMsg sdk.Msg) ([]string, error) {
 	case *stakingtypes.MsgUndelegate:
 		return []string{msg.DelegatorAddress, msg.ValidatorAddress}, nil
 
+	}
+
+	return nil, MessageNotSupported(cosmosMsg)
+}
+
+// AuthzMessageParser returns the list of all the accounts involved in the given
+// message if it's related to the x/authz module
+func AuthzMessageParser(c codec.Codec, cosmosMsg sdk.Msg) ([]string, error) {
+	switch msg := cosmosMsg.(type) {
+	case *authztypes.MsgGrant:
+		return []string{msg.Grantee, msg.Granter}, nil
+	case *authztypes.MsgRevoke:
+		return []string{msg.Grantee, msg.Granter}, nil
+	case *authztypes.MsgExec:
+		for _, index := range msg.Msgs {
+			var executedMsg sdk.Msg
+			if err := c.UnpackAny(index, &executedMsg); err != nil {
+				return nil, fmt.Errorf("error while unpacking message from authz: %s", err)
+			}
+
+			switch {
+			case strings.Contains(index.TypeUrl, "bank"):
+				addresses, err := BankMessagesParser(c, executedMsg)
+				if err != nil {
+					return nil, MessageNotSupported(executedMsg)
+				}
+				addresses = append(addresses, msg.Grantee)
+				return addresses, nil
+			case strings.Contains(index.TypeUrl, "crisis"):
+				addresses, err := CrisisMessagesParser(c, executedMsg)
+				if err != nil {
+					return nil, MessageNotSupported(executedMsg)
+				}
+				addresses = append(addresses, msg.Grantee)
+				return addresses, nil
+			case strings.Contains(index.TypeUrl, "distribution"):
+				addresses, err := DistributionMessagesParser(c, executedMsg)
+				if err != nil {
+					return nil, MessageNotSupported(executedMsg)
+				}
+				addresses = append(addresses, msg.Grantee)
+				return addresses, nil
+			case strings.Contains(index.TypeUrl, "evidence"):
+				addresses, err := EvidenceMessagesParser(c, executedMsg)
+				if err != nil {
+					return nil, MessageNotSupported(executedMsg)
+				}
+				addresses = append(addresses, msg.Grantee)
+				return addresses, nil
+			case strings.Contains(index.TypeUrl, "gov.v1beta1"):
+				addresses, err := GovV1Beta1MessagesParser(c, executedMsg)
+				if err != nil {
+					return nil, MessageNotSupported(executedMsg)
+				}
+				addresses = append(addresses, msg.Grantee)
+				return addresses, nil
+			case strings.Contains(index.TypeUrl, "gov.v1."):
+				addresses, err := GovV1MessageParser(c, executedMsg)
+				if err != nil {
+					return nil, MessageNotSupported(executedMsg)
+				}
+				addresses = append(addresses, msg.Grantee)
+				return addresses, nil
+			case strings.Contains(index.TypeUrl, "ibc"):
+				addresses, err := IBCTransferMessagesParser(c, executedMsg)
+				if err != nil {
+					return nil, MessageNotSupported(executedMsg)
+				}
+				addresses = append(addresses, msg.Grantee)
+				return addresses, nil
+			case strings.Contains(index.TypeUrl, "slashing"):
+				addresses, err := SlashingMessagesParser(c, executedMsg)
+				if err != nil {
+					return nil, MessageNotSupported(executedMsg)
+				}
+				addresses = append(addresses, msg.Grantee)
+				return addresses, nil
+			case strings.Contains(index.TypeUrl, "staking"):
+				addresses, err := StakingMessagesParser(c, executedMsg)
+				if err != nil {
+					return nil, MessageNotSupported(executedMsg)
+				}
+				addresses = append(addresses, msg.Grantee)
+				return addresses, nil
+			default:
+				addresses, err := DefaultMessagesParser(c, executedMsg)
+				if err != nil {
+					return nil, MessageNotSupported(executedMsg)
+				}
+				addresses = append(addresses, msg.Grantee)
+				return addresses, nil
+			}
+		}
 	}
 
 	return nil, MessageNotSupported(cosmosMsg)
