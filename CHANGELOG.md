@@ -1,3 +1,8 @@
+## Unreleased
+### Changes
+- ([\#97](https://github.com/forbole/juno/pull/97)) Add `x/authz` message parser
+
+
 ## v4.1.0
 ### Changes
 - ([\#74](https://github.com/forbole/juno/pull/74)) Applied `GetMissingHeights()` in `enqueueMissingBlocks()` & in `parse blocks missing` cmd
