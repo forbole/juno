@@ -63,8 +63,8 @@ type Database struct {
 	Logger         logging.Logger
 }
 
-// createPartitionIfNotExists creates a new partition having the given partition id if not existing
-func (db *Database) createPartitionIfNotExists(table string, partitionID int64) error {
+// CreatePartitionIfNotExists creates a new partition having the given partition id if not existing
+func (db *Database) CreatePartitionIfNotExists(table string, partitionID int64) error {
 	partitionTable := fmt.Sprintf("%s_%d", table, partitionID)
 
 	stmt := fmt.Sprintf(
@@ -155,7 +155,7 @@ func (db *Database) SaveTx(tx *types.Tx) error {
 	partitionSize := config.Cfg.Database.PartitionSize
 	if partitionSize > 0 {
 		partitionID = tx.Height / partitionSize
-		err := db.createPartitionIfNotExists("transaction", partitionID)
+		err := db.CreatePartitionIfNotExists("transaction", partitionID)
 		if err != nil {
 			return err
 		}
@@ -286,7 +286,7 @@ func (db *Database) SaveMessage(msg *types.Message) error {
 	partitionSize := config.Cfg.Database.PartitionSize
 	if partitionSize > 0 {
 		partitionID = msg.Height / partitionSize
-		err := db.createPartitionIfNotExists("message", partitionID)
+		err := db.CreatePartitionIfNotExists("message", partitionID)
 		if err != nil {
 			return err
 		}
