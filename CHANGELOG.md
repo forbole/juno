@@ -1,5 +1,6 @@
-## Unreleased
+## v5.2.0
 ### Changes
+- Exposed `Database#CreatePartitionIfNotExists` method 
 - ([\#97](https://github.com/forbole/juno/pull/97)) Add `x/authz` message parser
 
 ## v5.1.0
