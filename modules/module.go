@@ -4,11 +4,8 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/cosmos/cosmos-sdk/x/authz"
-
 	tmctypes "github.com/cometbft/cometbft/rpc/core/types"
 	tmtypes "github.com/cometbft/cometbft/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/go-co-op/gocron"
 
 	"github.com/forbole/juno/v5/types"
@@ -80,7 +77,7 @@ type BlockModule interface {
 	// For each transaction present inside the block, HandleTx will be called as well.
 	// NOTE. The returned error will be logged using the BlockError method. All other modules' handlers
 	// will still be called.
-	HandleBlock(block *tmctypes.ResultBlock, results *tmctypes.ResultBlockResults, txs []*types.Tx, vals *tmctypes.ResultValidators) error
+	HandleBlock(block *tmctypes.ResultBlock, results *tmctypes.ResultBlockResults, txs []*types.Transaction, vals *tmctypes.ResultValidators) error
 }
 
 type TransactionModule interface {
@@ -88,7 +85,7 @@ type TransactionModule interface {
 	// For each message present inside the transaction, HandleMsg will be called as well.
 	// NOTE. The returned error will be logged using the TxError method. All other modules' handlers
 	// will still be called.
-	HandleTx(tx *types.Tx) error
+	HandleTx(tx *types.Transaction) error
 }
 
 type MessageModule interface {
@@ -97,7 +94,7 @@ type MessageModule interface {
 	// are passed as well.
 	// NOTE. The returned error will be logged using the MsgError method. All other modules' handlers
 	// will still be called.
-	HandleMsg(index int, msg sdk.Msg, tx *types.Tx) error
+	HandleMsg(tx *types.Transaction, index int, msg types.Message) error
 }
 
 type AuthzMessageModule interface {
@@ -106,5 +103,5 @@ type AuthzMessageModule interface {
 	// are passed as well.
 	// NOTE. The returned error will be logged using the MsgError method. All other modules' handlers
 	// will still be called.
-	HandleMsgExec(index int, msgExec *authz.MsgExec, authzMsgIndex int, executedMsg sdk.Msg, tx *types.Tx) error
+	HandleMsgExec(tx *types.Transaction, index int, msgExec *types.MessageExec, authzMsgIndex int, executedMsg types.Message) error
 }

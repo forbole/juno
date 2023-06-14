@@ -1,8 +1,16 @@
+-------------------------------------------------------------------------------------------------------------------
+--- Validators
+-------------------------------------------------------------------------------------------------------------------
+
 CREATE TABLE validator
 (
     consensus_address TEXT NOT NULL PRIMARY KEY, /* Validator consensus address */
     consensus_pubkey  TEXT NOT NULL UNIQUE /* Validator consensus public key */
 );
+
+-------------------------------------------------------------------------------------------------------------------
+--- Blocks
+-------------------------------------------------------------------------------------------------------------------
 
 CREATE TABLE block
 (
@@ -29,53 +37,110 @@ CREATE TABLE pre_commit
 CREATE INDEX pre_commit_validator_address_index ON pre_commit (validator_address);
 CREATE INDEX pre_commit_height_index ON pre_commit (height);
 
+-------------------------------------------------------------------------------------------------------------------
+--- Transactions
+-------------------------------------------------------------------------------------------------------------------
+
+CREATE TYPE COIN AS
+(
+    denom  TEXT,
+    amount TEXT
+);
+
 CREATE TABLE transaction
 (
-    hash         TEXT    NOT NULL,
-    height       BIGINT  NOT NULL REFERENCES block (height),
-    success      BOOLEAN NOT NULL,
+    id           BIGSERIAL NOT NULL,
 
-    /* Body */
-    messages     JSONB   NOT NULL DEFAULT '[]'::JSONB,
+    hash         TEXT      NOT NULL,
+    height       BIGINT    NOT NULL REFERENCES block (height),
+    success      BOOLEAN   NOT NULL,
     memo         TEXT,
-    signatures   TEXT[]  NOT NULL,
 
-    /* AuthInfo */
-    signer_infos JSONB   NOT NULL DEFAULT '[]'::JSONB,
-    fee          JSONB   NOT NULL DEFAULT '{}'::JSONB,
+    /* Tx signing */
+    signatures   TEXT[]    NOT NULL,
 
     /* Tx response */
-    gas_wanted   BIGINT           DEFAULT 0,
-    gas_used     BIGINT           DEFAULT 0,
+    gas_wanted   BIGINT             DEFAULT 0,
+    gas_used     BIGINT             DEFAULT 0,
     raw_log      TEXT,
     logs         JSONB,
 
     /* PSQL partition */
-    partition_id BIGINT  NOT NULL DEFAULT 0,
+    partition_id BIGINT    NOT NULL DEFAULT 0,
 
-    CONSTRAINT unique_tx UNIQUE (hash, partition_id)
+    PRIMARY KEY (hash, partition_id)
 ) PARTITION BY LIST (partition_id);
 CREATE INDEX transaction_hash_index ON transaction (hash);
 CREATE INDEX transaction_height_index ON transaction (height);
 CREATE INDEX transaction_partition_id_index ON transaction (partition_id);
 
+CREATE TABLE transaction_fee
+(
+    id                       SERIAL NOT NULL PRIMARY KEY,
+
+    transaction_hash         TEXT   NOT NULL,
+    transaction_partition_id BIGINT NOT NULL,
+
+    amount                   COIN[] NOT NULL DEFAULT '{}',
+    gas_limit                TEXT   NOT NULL DEFAULT '',
+    payer                    TEXT   NOT NULL DEFAULT '',
+    granter                  TEXT   NOT NULL DEFAULT '',
+
+    FOREIGN KEY (transaction_hash, transaction_partition_id) REFERENCES transaction (hash, partition_id)
+);
+
+CREATE TABLE transaction_signer_info
+(
+    id                       SERIAL NOT NULL PRIMARY KEY,
+
+    transaction_hash         TEXT   NOT NULL,
+    transaction_partition_id BIGINT NOT NULL,
+
+    public_key               JSONB  NOT NULL,
+    address                  TEXT   NOT NULL,
+    mode_info                JSONB  NOT NULL,
+    sequence                 TEXT   NOT NULL,
+
+    FOREIGN KEY (transaction_hash, transaction_partition_id) REFERENCES transaction (hash, partition_id)
+);
+
+CREATE TABLE transaction_tip
+(
+    id                       SERIAL NOT NULL PRIMARY KEY,
+
+    transaction_hash         TEXT   NOT NULL,
+    transaction_partition_id BIGINT NOT NULL,
+
+    tip                      JSONB  NOT NULL DEFAULT '{}',
+
+    FOREIGN KEY (transaction_hash, transaction_partition_id) REFERENCES transaction (hash, partition_id)
+
+);
+
+-------------------------------------------------------------------------------------------------------------------
+--- Messages
+-------------------------------------------------------------------------------------------------------------------
+
 CREATE TABLE message
 (
+    id                          SERIAL NOT NULL,
+
     transaction_hash            TEXT   NOT NULL,
+    transaction_partition_id    BIGINT NOT NULL,
+
     index                       BIGINT NOT NULL,
     type                        TEXT   NOT NULL,
     value                       JSONB  NOT NULL,
-    involved_accounts_addresses TEXT[] NOT NULL,
+    involved_accounts_addresses JSONB  NOT NULL DEFAULT '[]',
 
     /* PSQL partition */
     partition_id                BIGINT NOT NULL DEFAULT 0,
-    height                      BIGINT NOT NULL,
-    FOREIGN KEY (transaction_hash, partition_id) REFERENCES transaction (hash, partition_id),
-    CONSTRAINT unique_message_per_tx UNIQUE (transaction_hash, index, partition_id)
+
+    FOREIGN KEY (transaction_hash, transaction_partition_id) REFERENCES transaction (hash, partition_id),
+    CONSTRAINT unique_transaction_message UNIQUE (transaction_hash, transaction_partition_id, index, partition_id)
 ) PARTITION BY LIST (partition_id);
-CREATE INDEX message_transaction_hash_index ON message (transaction_hash);
 CREATE INDEX message_type_index ON message (type);
-CREATE INDEX message_involved_accounts_index ON message USING GIN(involved_accounts_addresses);
+CREATE INDEX message_involved_accounts_index ON message USING GIN (involved_accounts_addresses);
 
 /**
  * This function is used to find all the utils that involve any of the given addresses and have
@@ -88,13 +153,12 @@ CREATE FUNCTION messages_by_address(
     "offset" BIGINT = 0)
     RETURNS SETOF message AS
 $$
-SELECT * FROM message
+SELECT message.*
+FROM message
+         JOIN transaction ON message.transaction_hash = transaction.hash AND
+                             message.transaction_partition_id = transaction.partition_id
 WHERE (cardinality(types) = 0 OR type = ANY (types))
-  AND addresses && involved_accounts_addresses
-ORDER BY height DESC LIMIT "limit" OFFSET "offset"
+  AND involved_accounts_addresses ?| addresses
+ORDER BY transaction.height DESC
+LIMIT "limit" OFFSET "offset"
 $$ LANGUAGE sql STABLE;
-
-CREATE TABLE pruning
-(
-    last_pruned_height BIGINT NOT NULL
-)

@@ -11,7 +11,7 @@ import (
 
 // HandleBlock implements modules.BlockModule
 func (m *Module) HandleBlock(
-	block *tmctypes.ResultBlock, _ *tmctypes.ResultBlockResults, _ []*types.Tx, _ *tmctypes.ResultValidators,
+	block *tmctypes.ResultBlock, _ *tmctypes.ResultBlockResults, _ []*types.Transaction, _ *tmctypes.ResultValidators,
 ) error {
 	if block.Block.Height%m.cfg.Interval != 0 {
 		// Not an interval height, so just skip

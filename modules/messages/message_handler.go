@@ -14,7 +14,7 @@ import (
 
 // HandleMsg represents a message handler that stores the given message inside the proper database table
 func HandleMsg(
-	index int, msg sdk.Msg, tx *types.Tx,
+	index int, msg sdk.Msg, tx *types.Transaction,
 	parseAddresses MessageAddressesParser, cdc codec.Codec, db database.Database,
 ) error {
 

@@ -38,7 +38,7 @@ func newMissingCmd(parseConfig *parsecmdtypes.Config) *cobra.Command {
 			}
 
 			for _, k := range parseCtx.Database.GetMissingHeights(startHeight, dbLastHeight) {
-				err = worker.Process(k)
+				err = worker.ProcessBlockAtHeight(k)
 				if err != nil {
 					return fmt.Errorf("error while re-fetching block %d: %s", k, err)
 				}

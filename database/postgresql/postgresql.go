@@ -153,7 +153,7 @@ func (db *Database) GetTotalBlocks() int64 {
 }
 
 // SaveTx implements database.Database
-func (db *Database) SaveTx(tx *types.Tx) error {
+func (db *Database) SaveTx(tx *types.Transaction) error {
 	var partitionID int64
 
 	partitionSize := config.Cfg.Database.PartitionSize
@@ -169,66 +169,51 @@ func (db *Database) SaveTx(tx *types.Tx) error {
 }
 
 // saveTxInsidePartition stores the given transaction inside the partition having the given id
-func (db *Database) saveTxInsidePartition(tx *types.Tx, partitionID int64) error {
-	sqlStatement := `
-INSERT INTO transaction 
-(hash, height, success, messages, memo, signatures, signer_infos, fee, gas_wanted, gas_used, raw_log, logs, partition_id) 
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
-ON CONFLICT (hash, partition_id) DO UPDATE 
-	SET height = excluded.height, 
-		success = excluded.success, 
-		messages = excluded.messages,
-		memo = excluded.memo, 
-		signatures = excluded.signatures, 
-		signer_infos = excluded.signer_infos,
-		fee = excluded.fee, 
-		gas_wanted = excluded.gas_wanted, 
-		gas_used = excluded.gas_used,
-		raw_log = excluded.raw_log, 
-		logs = excluded.logs`
-
+func (db *Database) saveTxInsidePartition(tx *types.Transaction, partitionID int64) error {
+	// Serialize the signatures
 	var sigs = make([]string, len(tx.Signatures))
 	for index, sig := range tx.Signatures {
 		sigs[index] = base64.StdEncoding.EncodeToString(sig)
 	}
 
-	var msgs = make([]string, len(tx.Body.Messages))
-	for index, msg := range tx.Body.Messages {
-		bz, err := db.Cdc.MarshalJSON(msg)
-		if err != nil {
-			return err
-		}
-		msgs[index] = string(bz)
-	}
-	msgsBz := fmt.Sprintf("[%s]", strings.Join(msgs, ","))
-
-	feeBz, err := db.Cdc.MarshalJSON(tx.AuthInfo.Fee)
-	if err != nil {
-		return fmt.Errorf("failed to JSON encode tx fee: %s", err)
-	}
-
-	var sigInfos = make([]string, len(tx.AuthInfo.SignerInfos))
-	for index, info := range tx.AuthInfo.SignerInfos {
-		bz, err := db.Cdc.MarshalJSON(info)
-		if err != nil {
-			return err
-		}
-		sigInfos[index] = string(bz)
-	}
-	sigInfoBz := fmt.Sprintf("[%s]", strings.Join(sigInfos, ","))
-
+	// Serialize the logs
 	logsBz, err := db.Amino.MarshalJSON(tx.Logs)
 	if err != nil {
 		return err
 	}
 
-	_, err = db.SQL.Exec(sqlStatement,
-		tx.TxHash, tx.Height, tx.Successful(),
-		msgsBz, tx.Body.Memo, pq.Array(sigs),
-		sigInfoBz, string(feeBz),
-		tx.GasWanted, tx.GasUsed, tx.RawLog, string(logsBz),
+	// Store the transaction
+	var transactionId int64
+	sqlStatement := `
+INSERT INTO transaction 
+(hash, height, success, memo, signatures, gas_wanted, gas_used, raw_log, logs, partition_id) 
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
+ON CONFLICT (hash, partition_id) DO UPDATE 
+	SET height = excluded.height, 
+		success = excluded.success, 
+		memo = excluded.memo, 
+		signatures = excluded.signatures,  
+		gas_wanted = excluded.gas_wanted, 
+		gas_used = excluded.gas_used,
+		raw_log = excluded.raw_log, 
+		logs = excluded.logs
+RETURNING id`
+	err = db.SQL.QueryRow(sqlStatement,
+		tx.TxHash,
+		tx.Height,
+		tx.Successful(),
+		tx.Body.Memo,
+		pq.Array(sigs),
+		tx.GasWanted,
+		tx.GasUsed,
+		tx.RawLog,
+		string(logsBz),
 		partitionID,
-	)
+	).Scan(&transactionId)
+	if err != nil {
+		return err
+	}
+
 	return err
 }
 

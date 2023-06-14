@@ -71,7 +71,7 @@ will be replaced with the data downloaded from the node.
 				Msg("getting blocks and transactions")
 			for k := startHeight; k <= endHeight; k++ {
 				if force {
-					err = worker.Process(k)
+					err = worker.ProcessBlockAtHeight(k)
 				} else {
 					err = worker.ProcessIfNotExists(k)
 				}

@@ -58,7 +58,7 @@ You can specify a custom height range by using the %s and %s flags.
 				Msg("getting transactions...")
 			for k := startHeight; k <= endHeight; k++ {
 				log.Info().Int64("height", k).Msg("processing transactions...")
-				err = worker.ProcessTransactions(k)
+				err = worker.ProcessTransactionsAtHeight(k)
 				if err != nil {
 					return fmt.Errorf("error while re-fetching transactions of height %d: %s", k, err)
 				}
