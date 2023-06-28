@@ -8,16 +8,16 @@ import (
 	"unsafe"
 
 	"cosmossdk.io/simapp/params"
-	storetypes "cosmossdk.io/store/types"
 	db "github.com/cometbft/cometbft-db"
 	"github.com/cosmos/cosmos-sdk/codec"
+	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 
-	"cosmossdk.io/store"
 	cfg "github.com/cometbft/cometbft/config"
 	"github.com/cometbft/cometbft/libs/log"
 	tmnode "github.com/cometbft/cometbft/node"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	tmstore "github.com/cometbft/cometbft/store"
+	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/viper"
 
