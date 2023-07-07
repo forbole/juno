@@ -1,6 +1,7 @@
 package messages
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -14,6 +15,7 @@ import (
 	ibctransfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
 	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
 
+	autopilottypes "github.com/Stride-Labs/stride/v11/x/autopilot/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authztypes "github.com/cosmos/cosmos-sdk/x/authz"
@@ -209,6 +211,15 @@ func IBCTransferMessagesParser(_ codec.Codec, cosmosMsg sdk.Msg) ([]string, erro
 		if err := ibctransfertypes.ModuleCdc.UnmarshalJSON(msg.Packet.Data, &data); err != nil {
 			// The packet data is not a FungibleTokenPacketData, so nothing to update
 			return nil, nil
+		}
+
+		if strings.Contains(data.Receiver, "LiquidStake") {
+			var raw autopilottypes.RawPacketMetadata
+			if err := json.Unmarshal([]byte(data.Receiver), &raw); err != nil {
+				return nil, MessageNotSupported(cosmosMsg)
+			}
+			return []string{raw.Autopilot.Receiver, msg.Signer}, nil
+
 		}
 
 		// We are receiving some IBC tokens, so we need to update the receiver balance
