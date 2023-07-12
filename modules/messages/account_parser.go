@@ -20,7 +20,7 @@ func MessageNotSupported(msg sdk.Msg) error {
 
 // MessageAddressesParser represents a function that extracts all the
 // involved addresses from a provided message (both accounts and validators)
-type MessageAddressesParser = func(tx *types.Tx) ([]string, error)
+type MessageAddressesParser = func(tx *types.Tx, chainPrefix string) ([]string, error)
 
 // CosmosMessageAddressesParser represents a MessageAddressesParser that parses a
 // Chain message and returns all the involved addresses (both accounts and validators)

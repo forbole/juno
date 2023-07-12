@@ -10,6 +10,7 @@ import (
 
 	"github.com/forbole/juno/v5/database"
 	"github.com/forbole/juno/v5/types"
+	"github.com/forbole/juno/v5/types/config"
 )
 
 // HandleMsg represents a message handler that stores the given message inside the proper database table
@@ -19,7 +20,7 @@ func HandleMsg(
 ) error {
 
 	// Get the involved addresses
-	addresses, err := parseAddresses(tx)
+	addresses, err := parseAddresses(tx, config.Cfg.Chain.Bech32Prefix)
 	if err != nil {
 		return err
 	}
