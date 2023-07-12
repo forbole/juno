@@ -28,8 +28,8 @@ var CosmosMessageAddressesParser = DefaultMessagesParser
 
 // DefaultMessagesParser represents the default messages parser that simply returns the list
 // of all the signers of a message
-func DefaultMessagesParser(tx *types.Tx) ([]string, error) {
-	allAddressess := parseAddressesFromEvents(tx)
+func DefaultMessagesParser(tx *types.Tx, chainPrefix string) ([]string, error) {
+	allAddressess := parseAddressesFromEvents(tx, chainPrefix)
 	return allAddressess, nil
 }
 
@@ -46,14 +46,14 @@ func removeDuplicates(s []string) []string {
 	return result
 }
 
-func parseAddressesFromEvents(tx *types.Tx) []string {
+func parseAddressesFromEvents(tx *types.Tx, chainPrefix string) []string {
 	var allAddressess []string
 	for _, cc := range tx.Events {
 		for _, dd := range cc.Attributes {
 			if strings.Contains(dd.Value, "/") {
 				continue
 			}
-			if strings.Contains(dd.Value, "cosmos") {
+			if strings.Contains(dd.Value, chainPrefix) {
 				allAddressess = append(allAddressess, dd.Value)
 			}
 		}
