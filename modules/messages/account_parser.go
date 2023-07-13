@@ -48,13 +48,15 @@ func removeDuplicates(s []string) []string {
 
 func parseAddressesFromEvents(tx *types.Tx, chainPrefix string) []string {
 	var allAddressess []string
-	for _, cc := range tx.Events {
-		for _, dd := range cc.Attributes {
-			if strings.Contains(dd.Value, "/") {
+	fmt.Printf("\n tx %v \n ", tx)
+
+	for _, event := range tx.Events {
+		for _, attribute := range event.Attributes {
+			if strings.Contains(attribute.Value, "/") {
 				continue
 			}
-			if strings.Contains(dd.Value, chainPrefix) {
-				allAddressess = append(allAddressess, dd.Value)
+			if strings.Contains(attribute.Value, chainPrefix) {
+				allAddressess = append(allAddressess, attribute.Value)
 			}
 		}
 
