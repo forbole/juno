@@ -9,7 +9,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	// authztypes "github.com/cosmos/cosmos-sdk/x/authz"
-	"github.com/cosmos/cosmos-sdk/codec"
 
 	"github.com/forbole/juno/v5/types"
 )
@@ -51,13 +50,9 @@ func parseAddressesFromEvents(tx *types.Tx, chainPrefix string) []string {
 	var allAddressess []string
 	fmt.Printf("\n tx %v \n ", tx.Body.Messages)
 	for _, msg := range tx.Body.Messages {
-		var sdkMsg sdk.Msg
-		err := codec.Codec.UnpackAny(nil, msg, &sdkMsg)
-		if err != nil {
-			return []string{}
-		}
 		fmt.Printf("\n msg %v \n", msg)
-		fmt.Printf("\n sdk msg %v \n", sdkMsg)
+		fmt.Printf("\n msg value %s \n", string(msg.Value))
+
 	}
 
 	for _, event := range tx.Events {
