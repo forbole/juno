@@ -35,7 +35,7 @@ func HandleMsg(
 	if msgIBC, ok := msg.(*channeltypes.MsgRecvPacket); ok {
 		trimMessageString := TrimLastChar(string(bz))
 		trimDataString := string(msgIBC.Packet.Data)[1:]
-		return db.SaveMessage(types.NewMessage(
+		err := db.SaveMessage(types.NewMessage(
 			tx.TxHash,
 			index,
 			proto.MessageName(msg),
@@ -43,6 +43,12 @@ func HandleMsg(
 			addresses,
 			tx.Height,
 		))
+		if err != nil {
+			return err
+		}
+
+		return db.SaveIBCMessageRelationship(types.NewIBCMessageRelationship(tx.TxHash, index, trimDataString, fmt.Sprint(msgIBC.Packet.Sequence), msgIBC.Packet.SourcePort, msgIBC.Packet.SourceChannel,
+			msgIBC.Packet.DestinationPort, msgIBC.Packet.DestinationChannel, tx.Height))
 	}
 
 	return db.SaveMessage(types.NewMessage(

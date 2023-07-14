@@ -314,6 +314,41 @@ ON CONFLICT (transaction_hash, index, partition_id) DO UPDATE
 	return err
 }
 
+func (db *Database) SaveIBCMessageRelationship(msg *types.IBCMessageRelationship) error {
+	var partitionID int64
+	partitionSize := config.Cfg.Database.PartitionSize
+	if partitionSize > 0 {
+		partitionID = msg.Height / partitionSize
+		err := db.CreatePartitionIfNotExists("message_ibc_relationship", partitionID)
+		if err != nil {
+			return err
+		}
+	}
+
+	return db.saveIBCMessageRelationshipInsidePartition(msg, partitionID)
+}
+
+// saveIBCMessageRelationshipInsidePartition stores the given ibc message relationship
+// inside the partition having the provided partition id
+func (db *Database) saveIBCMessageRelationshipInsidePartition(msg *types.IBCMessageRelationship, partitionID int64) error {
+	stmt := `
+INSERT INTO message(transaction_hash, index, packet_data, sequence, source_port, source_channel,
+	destination_port, destination_channel, height, partition_id) 
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
+ON CONFLICT (transaction_hash, index, partition_id) DO UPDATE 
+	SET packet_data = excluded.packet_data,
+		sequence = excluded.sequence,
+		source_port = excluded.source_port,
+		source_channel = excluded.source_channel,
+		destination_port = excluded.destination_port,
+		destination_channel = excluded.destination_channel,
+		height = excluded.height`
+
+	_, err := db.SQL.Exec(stmt, msg.TxHash, msg.Index, msg.PacketData, msg.Sequence, msg.SourcePort,
+		msg.SourceChannel, msg.DestinationPort, msg.DestinationChannel, msg.Height, partitionID)
+	return err
+}
+
 // Close implements database.Database
 func (db *Database) Close() {
 	err := db.SQL.Close()

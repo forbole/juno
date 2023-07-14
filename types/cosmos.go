@@ -153,3 +153,32 @@ func NewMessage(txHash string, index int, msgType string, value string, addresse
 		Height:    height,
 	}
 }
+
+// IBCMessageRelationship represents the relationship data of a single ibc message
+type IBCMessageRelationship struct {
+	TxHash             string
+	Index              int
+	PacketData         string
+	Sequence           string
+	SourcePort         string
+	SourceChannel      string
+	DestinationPort    string
+	DestinationChannel string
+	Height             int64
+}
+
+// NewIBCMessageRelationship allows to build a new IBCMessageRelationship instance
+func NewIBCMessageRelationship(txHash string, index int, packetData, sequence, sourcePort,
+	sourceChannel, destinationPort, destinationChannel string, height int64) *IBCMessageRelationship {
+	return &IBCMessageRelationship{
+		TxHash:             txHash,
+		Index:              index,
+		PacketData:         packetData,
+		Sequence:           sequence,
+		SourcePort:         sourcePort,
+		SourceChannel:      sourceChannel,
+		DestinationPort:    destinationPort,
+		DestinationChannel: destinationChannel,
+		Height:             height,
+	}
+}
