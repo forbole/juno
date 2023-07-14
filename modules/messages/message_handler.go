@@ -47,13 +47,12 @@ func HandleMsg(
 			return err
 		}
 
-		return db.SaveIBCMessageRelationship(types.NewIBCMessageRelationship(tx.TxHash, index, trimDataString, fmt.Sprint(msgIBC.Packet.Sequence), msgIBC.Packet.SourcePort, msgIBC.Packet.SourceChannel,
+		return db.SaveIBCMessageRelationship(types.NewIBCMessageRelationship(tx.TxHash, string(msgIBC.Packet.Data), fmt.Sprint(msgIBC.Packet.Sequence), msgIBC.Packet.SourcePort, msgIBC.Packet.SourceChannel,
 			msgIBC.Packet.DestinationPort, msgIBC.Packet.DestinationChannel, tx.Height))
 	}
 
 	if msgIBC, ok := msg.(*channeltypes.MsgAcknowledgement); ok {
-		trimDataString := string(msgIBC.Packet.Data)[1:]
-		return db.SaveIBCMessageRelationship(types.NewIBCMessageRelationship(tx.TxHash, index, trimDataString, fmt.Sprint(msgIBC.Packet.Sequence), msgIBC.Packet.SourcePort, msgIBC.Packet.SourceChannel,
+		return db.SaveIBCMessageRelationship(types.NewIBCMessageRelationship(tx.TxHash, string(msgIBC.Packet.Data), fmt.Sprint(msgIBC.Packet.Sequence), msgIBC.Packet.SourcePort, msgIBC.Packet.SourceChannel,
 			msgIBC.Packet.DestinationPort, msgIBC.Packet.DestinationChannel, tx.Height))
 	}
 

@@ -81,7 +81,6 @@ CREATE INDEX message_involved_accounts_index ON message USING GIN(involved_accou
 CREATE TABLE message_ibc_relationship
 (
     transaction_hash    TEXT   NOT NULL,
-    index               BIGINT NOT NULL,
     packet_data         TEXT   NOT NULL,
     sequence            TEXT   NOT NULL,
     source_port         TEXT   NOT NULL,
