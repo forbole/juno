@@ -48,12 +48,6 @@ func removeDuplicates(s []string) []string {
 
 func parseAddressesFromEvents(tx *types.Tx, chainPrefix string) []string {
 	var allAddressess []string
-	fmt.Printf("\n tx %v \n ", tx.Body.Messages)
-	for _, msg := range tx.Body.Messages {
-		fmt.Printf("\n msg %v \n", msg)
-		fmt.Printf("\n msg value %s \n", string(msg.Value))
-
-	}
 
 	for _, event := range tx.Events {
 		for _, attribute := range event.Attributes {
