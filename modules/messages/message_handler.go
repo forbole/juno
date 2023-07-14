@@ -51,6 +51,12 @@ func HandleMsg(
 			msgIBC.Packet.DestinationPort, msgIBC.Packet.DestinationChannel, tx.Height))
 	}
 
+	if msgIBC, ok := msg.(*channeltypes.MsgAcknowledgement); ok {
+		trimDataString := string(msgIBC.Packet.Data)[1:]
+		return db.SaveIBCMessageRelationship(types.NewIBCMessageRelationship(tx.TxHash, index, trimDataString, fmt.Sprint(msgIBC.Packet.Sequence), msgIBC.Packet.SourcePort, msgIBC.Packet.SourceChannel,
+			msgIBC.Packet.DestinationPort, msgIBC.Packet.DestinationChannel, tx.Height))
+	}
+
 	return db.SaveMessage(types.NewMessage(
 		tx.TxHash,
 		index,
