@@ -332,10 +332,10 @@ func (db *Database) SaveIBCMessageRelationship(msg *types.IBCMessageRelationship
 // inside the partition having the provided partition id
 func (db *Database) saveIBCMessageRelationshipInsidePartition(msg *types.IBCMessageRelationship, partitionID int64) error {
 	stmt := `
-INSERT INTO message_ibc_relationship(transaction_hash, packet_data, sequence, source_port, source_channel,
+INSERT INTO message_ibc_relationship(transaction_hash, index, packet_data, sequence, source_port, source_channel,
 	destination_port, destination_channel, height, partition_id) 
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
-ON CONFLICT (transaction_hash, partition_id) DO UPDATE 
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
+ON CONFLICT (transaction_hash, index, partition_id) DO UPDATE 
 	SET packet_data = excluded.packet_data,
 		sequence = excluded.sequence,
 		source_port = excluded.source_port,
@@ -344,7 +344,7 @@ ON CONFLICT (transaction_hash, partition_id) DO UPDATE
 		destination_channel = excluded.destination_channel,
 		height = excluded.height`
 
-	_, err := db.SQL.Exec(stmt, msg.TxHash, msg.PacketData, msg.Sequence, msg.SourcePort,
+	_, err := db.SQL.Exec(stmt, msg.TxHash, msg.Index, msg.PacketData, msg.Sequence, msg.SourcePort,
 		msg.SourceChannel, msg.DestinationPort, msg.DestinationChannel, msg.Height, partitionID)
 	return err
 }

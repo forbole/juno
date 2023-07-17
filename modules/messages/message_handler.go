@@ -6,8 +6,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/gogoproto/proto"
-	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
 
+	// clienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
+	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
+	// "github.com/cosmos/ibc-go/v7/modules/core/exported"
 	"github.com/forbole/juno/v5/database"
 	"github.com/forbole/juno/v5/types"
 	"github.com/forbole/juno/v5/types/config"
@@ -47,14 +49,30 @@ func HandleMsg(
 			return err
 		}
 
-		return db.SaveIBCMessageRelationship(types.NewIBCMessageRelationship(tx.TxHash, string(msgIBC.Packet.Data), fmt.Sprint(msgIBC.Packet.Sequence), msgIBC.Packet.SourcePort, msgIBC.Packet.SourceChannel,
+		return db.SaveIBCMessageRelationship(types.NewIBCMessageRelationship(tx.TxHash, index, string(msgIBC.Packet.Data), fmt.Sprint(msgIBC.Packet.Sequence), msgIBC.Packet.SourcePort, msgIBC.Packet.SourceChannel,
 			msgIBC.Packet.DestinationPort, msgIBC.Packet.DestinationChannel, tx.Height))
 	}
 
 	if msgIBC, ok := msg.(*channeltypes.MsgAcknowledgement); ok {
-		return db.SaveIBCMessageRelationship(types.NewIBCMessageRelationship(tx.TxHash, string(msgIBC.Packet.Data), fmt.Sprint(msgIBC.Packet.Sequence), msgIBC.Packet.SourcePort, msgIBC.Packet.SourceChannel,
+		return db.SaveIBCMessageRelationship(types.NewIBCMessageRelationship(tx.TxHash, index, string(msgIBC.Packet.Data), fmt.Sprint(msgIBC.Packet.Sequence), msgIBC.Packet.SourcePort, msgIBC.Packet.SourceChannel,
 			msgIBC.Packet.DestinationPort, msgIBC.Packet.DestinationChannel, tx.Height))
 	}
+
+	// if msgIBC, ok := msg.(*clienttypes.MsgCreateClient); ok {
+	// 	var clientState exported.ClientState
+	// 	if err := cdc.UnmarshalJSON([]byte(msgIBC.ClientState.Value), clientState); err != nil {
+	// 		return err
+	// 	}
+	// 	return db.SaveIBCClientMessageRelationship(types.NewIBCClientMessageRelationship(tx.TxHash, clientState., tx.Height))
+	// }
+
+	// if msgIBC, ok := msg.(*clienttypes.MsgUpdateClient); ok {
+	// 	return db.SaveIBCClientMessageRelationship(types.NewIBCClientMessageRelationship(tx.TxHash, msgIBC.Signer, tx.Height))
+	// }
+
+	// if msgIBC, ok := msg.(*clienttypes.MsgUpgradeClient); ok {
+	// 	return db.SaveIBCClientMessageRelationship(types.NewIBCClientMessageRelationship(tx.TxHash, msgIBC.Signer, tx.Height))
+	// }
 
 	return db.SaveMessage(types.NewMessage(
 		tx.TxHash,

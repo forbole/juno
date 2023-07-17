@@ -81,6 +81,7 @@ CREATE INDEX message_involved_accounts_index ON message USING GIN(involved_accou
 CREATE TABLE message_ibc_relationship
 (
     transaction_hash    TEXT   NOT NULL,
+    index               BIGINT NOT NULL,
     packet_data         TEXT   NOT NULL,
     sequence            TEXT   NOT NULL,
     source_port         TEXT   NOT NULL,
@@ -89,7 +90,7 @@ CREATE TABLE message_ibc_relationship
     destination_channel TEXT   NOT NULL,
     partition_id        BIGINT NOT NULL DEFAULT 0,
     height              BIGINT NOT NULL,
-    FOREIGN KEY (transaction_hash, partition_id) REFERENCES transaction (hash, partition_id),
+    FOREIGN KEY (transaction_hash, index, partition_id) REFERENCES message (transaction_hash, index, partition_id),
     CONSTRAINT unique_message_ibc_relationship_per_tx UNIQUE (transaction_hash, index, partition_id)
 )PARTITION BY LIST(partition_id);
 CREATE INDEX message_ibc_relationship_transaction_hash_index ON message (transaction_hash);
