@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	cosmossdk.io/simapp v0.0.0-20230602123434-616841b9704d
-	github.com/Stride-Labs/stride/v11 v11.0.0
+	github.com/Stride-Labs/stride/v12 v12.0.0
 	github.com/cometbft/cometbft v0.38.0-rc2
 	github.com/cometbft/cometbft-db v0.8.0
 	github.com/cosmos/cosmos-sdk v0.47.3
@@ -109,6 +109,7 @@ require (
 	github.com/go-kit/kit v0.12.0 // indirect
 	github.com/go-kit/log v0.2.1 // indirect
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
+	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-toolsmith/astcast v1.1.0 // indirect
 	github.com/go-toolsmith/astcopy v1.1.0 // indirect
 	github.com/go-toolsmith/astequal v1.1.0 // indirect
@@ -307,8 +308,10 @@ require (
 
 replace (
 	cosmossdk.io/api => cosmossdk.io/api v0.3.1
-	github.com/cometbft/cometbft => github.com/cometbft/cometbft v0.37.1
-	github.com/cosmos/cosmos-sdk/runtime => github.com/cosmos/cosmos-sdk/runtime v0.47.2
-	github.com/cosmos/cosmos-sdk/types/errors => github.com/cosmos/cosmos-sdk/types/errors v0.47.2
+	github.com/99designs/keyring => github.com/cosmos/keyring v1.2.0
+	github.com/btcsuite/btcd => github.com/btcsuite/btcd v0.22.2 //indirect
+	github.com/cometbft/cometbft => github.com/cometbft/cometbft v0.37.2
 	github.com/cosmos/iavl => github.com/cosmos/iavl v0.20.0
+	github.com/spf13/cast => github.com/Stride-Labs/cast v0.0.3
+	github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
 )

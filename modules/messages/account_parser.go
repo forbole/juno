@@ -15,7 +15,7 @@ import (
 	ibctransfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
 	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
 
-	autopilottypes "github.com/Stride-Labs/stride/v11/x/autopilot/types"
+	autopilottypes "github.com/Stride-Labs/stride/v12/x/autopilot/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authztypes "github.com/cosmos/cosmos-sdk/x/authz"
