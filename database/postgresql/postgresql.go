@@ -314,25 +314,25 @@ ON CONFLICT (transaction_hash, index, partition_id) DO UPDATE
 	return err
 }
 
-func (db *Database) SaveIBCMessageRelationship(msg *types.IBCMessageRelationship) error {
+func (db *Database) SaveIBCMsgAcknowledgementRelationship(msg *types.IBCMsgAcknowledgementRelationship) error {
 	var partitionID int64
 	partitionSize := config.Cfg.Database.PartitionSize
 	if partitionSize > 0 {
 		partitionID = msg.Height / partitionSize
-		err := db.CreatePartitionIfNotExists("message_ibc_relationship", partitionID)
+		err := db.CreatePartitionIfNotExists("message_acknowledgement_ibc_relationship", partitionID)
 		if err != nil {
 			return err
 		}
 	}
 
-	return db.saveIBCMessageRelationshipInsidePartition(msg, partitionID)
+	return db.saveIBCMsgAcknowledgementRelationshipInsidePartition(msg, partitionID)
 }
 
-// saveIBCMessageRelationshipInsidePartition stores the given ibc message relationship
+// saveIBCMsgAcknowledgementRelationshipInsidePartition stores the given ibc acknowledgement message relationship
 // inside the partition having the provided partition id
-func (db *Database) saveIBCMessageRelationshipInsidePartition(msg *types.IBCMessageRelationship, partitionID int64) error {
+func (db *Database) saveIBCMsgAcknowledgementRelationshipInsidePartition(msg *types.IBCMsgAcknowledgementRelationship, partitionID int64) error {
 	stmt := `
-INSERT INTO message_ibc_relationship(transaction_hash, index, type, packet_data, sequence, source_port, source_channel,
+INSERT INTO message_acknowledgement_ibc_relationship(transaction_hash, index, type, packet_data, sequence, source_port, source_channel,
 	destination_port, destination_channel, height, partition_id) 
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
 ON CONFLICT (transaction_hash, index, type, partition_id) DO UPDATE 
@@ -346,6 +346,38 @@ ON CONFLICT (transaction_hash, index, type, partition_id) DO UPDATE
 
 	_, err := db.SQL.Exec(stmt, msg.TxHash, msg.Index, msg.Type, msg.PacketData, msg.Sequence, msg.SourcePort,
 		msg.SourceChannel, msg.DestinationPort, msg.DestinationChannel, msg.Height, partitionID)
+	return err
+}
+
+func (db *Database) SaveIBCMsgTransferRelationship(msg *types.IBCMsgTransferRelationship) error {
+	var partitionID int64
+	partitionSize := config.Cfg.Database.PartitionSize
+	if partitionSize > 0 {
+		partitionID = msg.Height / partitionSize
+		err := db.CreatePartitionIfNotExists("message_transfer_ibc_relationship", partitionID)
+		if err != nil {
+			return err
+		}
+	}
+
+	return db.saveIBCMsgTransferRelationshipInsidePartition(msg, partitionID)
+}
+
+// saveIBCMsgTransferRelationshipInsidePartition stores the given ibc transfer message relationship
+// inside the partition having the provided partition id
+func (db *Database) saveIBCMsgTransferRelationshipInsidePartition(msg *types.IBCMsgTransferRelationship, partitionID int64) error {
+	stmt := `
+INSERT INTO message_transfer_ibc_relationship(transaction_hash, index, source_port, source_channel,
+	sender, receiver, height, partition_id) 
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+ON CONFLICT (transaction_hash, index, partition_id) DO UPDATE 
+	SET source_port = excluded.source_port,
+		source_channel = excluded.source_channel,
+		sender = excluded.sender,
+		receiver = excluded.receiver,
+		height = excluded.height`
+
+	_, err := db.SQL.Exec(stmt, msg.TxHash, msg.Index, msg.SourcePort, msg.SourceChannel, msg.Sender, msg.Receiver, msg.Height, partitionID)
 	return err
 }
 

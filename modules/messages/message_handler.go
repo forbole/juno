@@ -8,7 +8,9 @@ import (
 	"github.com/cosmos/gogoproto/proto"
 
 	// clienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
+	transfertypes "github.com/cosmos/ibc-go/v7/modules/apps/transfer/types"
 	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
+
 	// "github.com/cosmos/ibc-go/v7/modules/core/exported"
 	"github.com/forbole/juno/v5/database"
 	"github.com/forbole/juno/v5/types"
@@ -33,6 +35,11 @@ func HandleMsg(
 		return err
 	}
 
+	if msgIBC, ok := msg.(*transfertypes.MsgTransfer); ok {
+		return db.SaveIBCMsgTransferRelationship(types.NewIBCMsgTransferRelationship(tx.TxHash, index, msgIBC.SourcePort, msgIBC.SourceChannel,
+			msgIBC.Sender, msgIBC.Receiver, tx.Height))
+	}
+
 	// Handle MsgRecvPacket data object
 	if msgIBC, ok := msg.(*channeltypes.MsgRecvPacket); ok {
 		trimMessageString := TrimLastChar(string(bz))
@@ -49,12 +56,12 @@ func HandleMsg(
 			return err
 		}
 
-		return db.SaveIBCMessageRelationship(types.NewIBCMessageRelationship(tx.TxHash, index, proto.MessageName(msg), string(msgIBC.Packet.Data), fmt.Sprint(msgIBC.Packet.Sequence), msgIBC.Packet.SourcePort, msgIBC.Packet.SourceChannel,
-			msgIBC.Packet.DestinationPort, msgIBC.Packet.DestinationChannel, tx.Height))
+		// return db.SaveIBCMessageRelationship(types.NewIBCMessageRelationship(tx.TxHash, index, proto.MessageName(msg), string(msgIBC.Packet.Data), fmt.Sprint(msgIBC.Packet.Sequence), msgIBC.Packet.SourcePort, msgIBC.Packet.SourceChannel,
+		// 	msgIBC.Packet.DestinationPort, msgIBC.Packet.DestinationChannel, tx.Height))
 	}
 
 	if msgIBC, ok := msg.(*channeltypes.MsgAcknowledgement); ok {
-		return db.SaveIBCMessageRelationship(types.NewIBCMessageRelationship(tx.TxHash, index, proto.MessageName(msg), string(msgIBC.Packet.Data), fmt.Sprint(msgIBC.Packet.Sequence), msgIBC.Packet.SourcePort, msgIBC.Packet.SourceChannel,
+		return db.SaveIBCMsgAcknowledgementRelationship(types.NewIBCMsgAcknowledgementRelationship(tx.TxHash, index, proto.MessageName(msg), string(msgIBC.Packet.Data), fmt.Sprint(msgIBC.Packet.Sequence), msgIBC.Packet.SourcePort, msgIBC.Packet.SourceChannel,
 			msgIBC.Packet.DestinationPort, msgIBC.Packet.DestinationChannel, tx.Height))
 	}
 

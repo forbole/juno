@@ -52,9 +52,13 @@ type Database interface {
 	// An error is returned if the operation fails.
 	SaveMessage(msg *types.Message) error
 
-	// SaveMessage stores a single ibc message relationship.
+	// SaveIBCMsgAcknowledgementRelationship stores a single ibc acknowledgement message relationship.
 	// An error is returned if the operation fails.
-	SaveIBCMessageRelationship(msg *types.IBCMessageRelationship) error
+	SaveIBCMsgAcknowledgementRelationship(msg *types.IBCMsgAcknowledgementRelationship) error
+
+	// SaveIBCMsgTransferRelationship stores a single ibc transfter message relationship.
+	// An error is returned if the operation fails.
+	SaveIBCMsgTransferRelationship(msg *types.IBCMsgTransferRelationship) error
 
 	// Close closes the connection to the database
 	Close()

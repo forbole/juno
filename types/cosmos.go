@@ -154,8 +154,8 @@ func NewMessage(txHash string, index int, msgType string, value string, addresse
 	}
 }
 
-// IBCMessageRelationship represents the relationship data of a single ibc message
-type IBCMessageRelationship struct {
+// IBCAckMessageRelationship represents the relationship data of a single ibc message
+type IBCMsgAcknowledgementRelationship struct {
 	TxHash             string
 	Index              int
 	Type               string
@@ -168,10 +168,10 @@ type IBCMessageRelationship struct {
 	Height             int64
 }
 
-// NewIBCMessageRelationship allows to build a new IBCMessageRelationship instance
-func NewIBCMessageRelationship(txHash string, index int, msgType, packetData, sequence, sourcePort,
-	sourceChannel, destinationPort, destinationChannel string, height int64) *IBCMessageRelationship {
-	return &IBCMessageRelationship{
+// NwqIBCMsgAcknowledgementRelationship allows to build a new IBCMsgAcknowledgementRelationship instance
+func NewIBCMsgAcknowledgementRelationship(txHash string, index int, msgType, packetData, sequence, sourcePort,
+	sourceChannel, destinationPort, destinationChannel string, height int64) *IBCMsgAcknowledgementRelationship {
+	return &IBCMsgAcknowledgementRelationship{
 		TxHash:             txHash,
 		Index:              index,
 		Type:               msgType,
@@ -182,5 +182,30 @@ func NewIBCMessageRelationship(txHash string, index int, msgType, packetData, se
 		DestinationPort:    destinationPort,
 		DestinationChannel: destinationChannel,
 		Height:             height,
+	}
+}
+
+// IBCTransferMessageRelationship represents the relationship data of a single ibc message
+type IBCMsgTransferRelationship struct {
+	TxHash        string
+	Index         int
+	SourcePort    string
+	SourceChannel string
+	Sender        string
+	Receiver      string
+	Height        int64
+}
+
+// NewIBCMsgTransferRelationship allows to build a new IBCTransferRelationship instance
+func NewIBCMsgTransferRelationship(txHash string, index int, sourcePort,
+	sourceChannel, sender, receiver string, height int64) *IBCMsgTransferRelationship {
+	return &IBCMsgTransferRelationship{
+		TxHash:        txHash,
+		Index:         index,
+		SourcePort:    sourcePort,
+		SourceChannel: sourceChannel,
+		Sender:        sender,
+		Receiver:      receiver,
+		Height:        height,
 	}
 }
