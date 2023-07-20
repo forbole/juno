@@ -97,7 +97,6 @@ CREATE TABLE message_acknowledgement_ibc_relationship
 (
     transaction_hash    TEXT   NOT NULL,
     index               BIGINT NOT NULL,
-    type                TEXT   NOT NULL,
     packet_data         TEXT   NOT NULL,
     sequence            TEXT   NOT NULL,
     source_port         TEXT   NOT NULL,
@@ -109,7 +108,7 @@ CREATE TABLE message_acknowledgement_ibc_relationship
     partition_id        BIGINT NOT NULL DEFAULT 0,
     height              BIGINT NOT NULL,
     FOREIGN KEY (transaction_hash, partition_id) REFERENCES transaction (hash, partition_id),
-    CONSTRAINT unique_message_acknowledgement_ibc_relationship_per_tx UNIQUE (transaction_hash, index, type, partition_id)
+    CONSTRAINT unique_message_acknowledgement_ibc_relationship_per_tx UNIQUE (transaction_hash, index, partition_id)
 )PARTITION BY LIST(partition_id);
 CREATE INDEX message_acknowledgement_ibc_relationship_transaction_hash_index ON message_acknowledgement_ibc_relationship (transaction_hash);
 
@@ -118,7 +117,6 @@ CREATE TABLE message_recv_packet_ibc_relationship
 (
     transaction_hash    TEXT   NOT NULL,
     index               BIGINT NOT NULL,
-    type                TEXT   NOT NULL,
     packet_data         TEXT   NOT NULL,
     sequence            TEXT   NOT NULL,
     source_port         TEXT   NOT NULL,
@@ -130,7 +128,7 @@ CREATE TABLE message_recv_packet_ibc_relationship
     partition_id        BIGINT NOT NULL DEFAULT 0,
     height              BIGINT NOT NULL,
     FOREIGN KEY (transaction_hash, partition_id) REFERENCES transaction (hash, partition_id),
-    CONSTRAINT unique_message_recv_packet_ibc_relationship_per_tx UNIQUE (transaction_hash, index, type, partition_id)
+    CONSTRAINT unique_message_recv_packet_ibc_relationship_per_tx UNIQUE (transaction_hash, index, partition_id)
 )PARTITION BY LIST(partition_id);
 CREATE INDEX message_recv_packet_ibc_relationship_transaction_hash_index ON message_recv_packet_ibc_relationship (transaction_hash);
 

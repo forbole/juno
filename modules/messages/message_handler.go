@@ -62,7 +62,7 @@ func HandleMsg(
 			return nil
 		}
 
-		return db.SaveIBCMsgRecvPacketRelationship(types.NewIBCMsgRecvPacketRelationship(tx.TxHash, index, proto.MessageName(msg), string(msgIBC.Packet.Data), fmt.Sprint(msgIBC.Packet.Sequence), msgIBC.Packet.SourcePort, msgIBC.Packet.SourceChannel,
+		return db.SaveIBCMsgRecvPacketRelationship(types.NewIBCMsgRecvPacketRelationship(tx.TxHash, index, string(msgIBC.Packet.Data), fmt.Sprint(msgIBC.Packet.Sequence), msgIBC.Packet.SourcePort, msgIBC.Packet.SourceChannel,
 			msgIBC.Packet.DestinationPort, msgIBC.Packet.DestinationChannel, data.Sender, data.Receiver, tx.Height))
 	}
 
@@ -73,7 +73,7 @@ func HandleMsg(
 			return nil
 		}
 
-		return db.SaveIBCMsgAcknowledgementRelationship(types.NewIBCMsgAcknowledgementRelationship(tx.TxHash, index, proto.MessageName(msg), string(msgIBC.Packet.Data), fmt.Sprint(msgIBC.Packet.Sequence), msgIBC.Packet.SourcePort, msgIBC.Packet.SourceChannel,
+		return db.SaveIBCMsgAcknowledgementRelationship(types.NewIBCMsgAcknowledgementRelationship(tx.TxHash, index, string(msgIBC.Packet.Data), fmt.Sprint(msgIBC.Packet.Sequence), msgIBC.Packet.SourcePort, msgIBC.Packet.SourceChannel,
 			msgIBC.Packet.DestinationPort, msgIBC.Packet.DestinationChannel, data.Sender, data.Receiver, tx.Height))
 	}
 

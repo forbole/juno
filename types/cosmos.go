@@ -158,7 +158,6 @@ func NewMessage(txHash string, index int, msgType string, value string, addresse
 type IBCMsgAcknowledgementRelationship struct {
 	TxHash             string
 	Index              int
-	Type               string
 	PacketData         string
 	Sequence           string
 	SourcePort         string
@@ -171,12 +170,11 @@ type IBCMsgAcknowledgementRelationship struct {
 }
 
 // NwqIBCMsgAcknowledgementRelationship allows to build a new IBCMsgAcknowledgementRelationship instance
-func NewIBCMsgAcknowledgementRelationship(txHash string, index int, msgType, packetData, sequence, sourcePort,
+func NewIBCMsgAcknowledgementRelationship(txHash string, index int, packetData, sequence, sourcePort,
 	sourceChannel, destinationPort, destinationChannel, sender, receiver string, height int64) *IBCMsgAcknowledgementRelationship {
 	return &IBCMsgAcknowledgementRelationship{
 		TxHash:             txHash,
 		Index:              index,
-		Type:               msgType,
 		PacketData:         packetData,
 		Sequence:           sequence,
 		SourcePort:         sourcePort,
@@ -218,7 +216,6 @@ func NewIBCMsgTransferRelationship(txHash string, index int, sourcePort,
 type IBCMsgRecvPacketRelationship struct {
 	TxHash             string
 	Index              int
-	Type               string
 	PacketData         string
 	Sequence           string
 	SourcePort         string
@@ -231,12 +228,11 @@ type IBCMsgRecvPacketRelationship struct {
 }
 
 // NewIBCMsgRecvPacketRelationship allows to build a new IBCMsgRecvPacketRelationship instance
-func NewIBCMsgRecvPacketRelationship(txHash string, index int, msgType, packetData, sequence, sourcePort,
+func NewIBCMsgRecvPacketRelationship(txHash string, index int, packetData, sequence, sourcePort,
 	sourceChannel, destinationPort, destinationChannel, sender, receiver string, height int64) *IBCMsgRecvPacketRelationship {
 	return &IBCMsgRecvPacketRelationship{
 		TxHash:             txHash,
 		Index:              index,
-		Type:               msgType,
 		PacketData:         packetData,
 		Sequence:           sequence,
 		SourcePort:         sourcePort,
