@@ -60,6 +60,10 @@ type Database interface {
 	// An error is returned if the operation fails.
 	SaveIBCMsgTransferRelationship(msg *types.IBCMsgTransferRelationship) error
 
+	// SaveIBCMsgRecvPacketRelationship stores a single ibc recv packet message relationship.
+	// An error is returned if the operation fails.
+	SaveIBCMsgRecvPacketRelationship(msg *types.IBCMsgRecvPacketRelationship) error
+
 	// Close closes the connection to the database
 	Close()
 }

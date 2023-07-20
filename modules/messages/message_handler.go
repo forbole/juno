@@ -56,8 +56,8 @@ func HandleMsg(
 			return err
 		}
 
-		// return db.SaveIBCMessageRelationship(types.NewIBCMessageRelationship(tx.TxHash, index, proto.MessageName(msg), string(msgIBC.Packet.Data), fmt.Sprint(msgIBC.Packet.Sequence), msgIBC.Packet.SourcePort, msgIBC.Packet.SourceChannel,
-		// 	msgIBC.Packet.DestinationPort, msgIBC.Packet.DestinationChannel, tx.Height))
+		return db.SaveIBCMsgRecvPacketRelationship(types.NewIBCMsgRecvPacketRelationship(tx.TxHash, index, proto.MessageName(msg), string(msgIBC.Packet.Data), fmt.Sprint(msgIBC.Packet.Sequence), msgIBC.Packet.SourcePort, msgIBC.Packet.SourceChannel,
+			msgIBC.Packet.DestinationPort, msgIBC.Packet.DestinationChannel, tx.Height))
 	}
 
 	if msgIBC, ok := msg.(*channeltypes.MsgAcknowledgement); ok {

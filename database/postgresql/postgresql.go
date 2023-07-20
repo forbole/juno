@@ -389,6 +389,41 @@ func (db *Database) Close() {
 	}
 }
 
+func (db *Database) SaveIBCMsgRecvPacketRelationship(msg *types.IBCMsgRecvPacketRelationship) error {
+	var partitionID int64
+	partitionSize := config.Cfg.Database.PartitionSize
+	if partitionSize > 0 {
+		partitionID = msg.Height / partitionSize
+		err := db.CreatePartitionIfNotExists("message_recv_packet_ibc_relationship", partitionID)
+		if err != nil {
+			return err
+		}
+	}
+
+	return db.saveIBCMsgRecvPacketRelationshipInsidePartition(msg, partitionID)
+}
+
+// saveIBCMsgRecvPacketRelationshipInsidePartition stores the given ibc recv packet message relationship
+// inside the partition having the provided partition id
+func (db *Database) saveIBCMsgRecvPacketRelationshipInsidePartition(msg *types.IBCMsgRecvPacketRelationship, partitionID int64) error {
+	stmt := `
+INSERT INTO message_recv_packet_ibc_relationship(transaction_hash, index, type, packet_data, sequence, source_port, source_channel,
+	destination_port, destination_channel, height, partition_id) 
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
+ON CONFLICT (transaction_hash, index, type, partition_id) DO UPDATE 
+	SET packet_data = excluded.packet_data,
+		sequence = excluded.sequence,
+		source_port = excluded.source_port,
+		source_channel = excluded.source_channel,
+		destination_port = excluded.destination_port,
+		destination_channel = excluded.destination_channel,
+		height = excluded.height`
+
+	_, err := db.SQL.Exec(stmt, msg.TxHash, msg.Index, msg.Type, msg.PacketData, msg.Sequence, msg.SourcePort,
+		msg.SourceChannel, msg.DestinationPort, msg.DestinationChannel, msg.Height, partitionID)
+	return err
+}
+
 // -------------------------------------------------------------------------------------------------------------------
 
 // GetLastPruned implements database.PruningDb
