@@ -333,8 +333,8 @@ func (db *Database) SaveIBCMsgAcknowledgementRelationship(msg *types.IBCMsgAckno
 func (db *Database) saveIBCMsgAcknowledgementRelationshipInsidePartition(msg *types.IBCMsgAcknowledgementRelationship, partitionID int64) error {
 	stmt := `
 INSERT INTO message_acknowledgement_ibc_relationship(transaction_hash, index, type, packet_data, sequence, source_port, source_channel,
-	destination_port, destination_channel, height, partition_id) 
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
+	destination_port, destination_channel, sender, receiver, height, partition_id) 
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
 ON CONFLICT (transaction_hash, index, type, partition_id) DO UPDATE 
 	SET packet_data = excluded.packet_data,
 		sequence = excluded.sequence,
@@ -342,10 +342,12 @@ ON CONFLICT (transaction_hash, index, type, partition_id) DO UPDATE
 		source_channel = excluded.source_channel,
 		destination_port = excluded.destination_port,
 		destination_channel = excluded.destination_channel,
+		sender = excluded.sender,
+		receiver = excluded.receiver,
 		height = excluded.height`
 
 	_, err := db.SQL.Exec(stmt, msg.TxHash, msg.Index, msg.Type, msg.PacketData, msg.Sequence, msg.SourcePort,
-		msg.SourceChannel, msg.DestinationPort, msg.DestinationChannel, msg.Height, partitionID)
+		msg.SourceChannel, msg.DestinationPort, msg.DestinationChannel, msg.Sender, msg.Receiver, msg.Height, partitionID)
 	return err
 }
 
@@ -408,8 +410,8 @@ func (db *Database) SaveIBCMsgRecvPacketRelationship(msg *types.IBCMsgRecvPacket
 func (db *Database) saveIBCMsgRecvPacketRelationshipInsidePartition(msg *types.IBCMsgRecvPacketRelationship, partitionID int64) error {
 	stmt := `
 INSERT INTO message_recv_packet_ibc_relationship(transaction_hash, index, type, packet_data, sequence, source_port, source_channel,
-	destination_port, destination_channel, height, partition_id) 
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
+	destination_port, destination_channel, sender, receiver, height, partition_id) 
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
 ON CONFLICT (transaction_hash, index, type, partition_id) DO UPDATE 
 	SET packet_data = excluded.packet_data,
 		sequence = excluded.sequence,
@@ -417,10 +419,12 @@ ON CONFLICT (transaction_hash, index, type, partition_id) DO UPDATE
 		source_channel = excluded.source_channel,
 		destination_port = excluded.destination_port,
 		destination_channel = excluded.destination_channel,
+		sender = excluded.sender,
+		receiver = excluded.receiver,
 		height = excluded.height`
 
 	_, err := db.SQL.Exec(stmt, msg.TxHash, msg.Index, msg.Type, msg.PacketData, msg.Sequence, msg.SourcePort,
-		msg.SourceChannel, msg.DestinationPort, msg.DestinationChannel, msg.Height, partitionID)
+		msg.SourceChannel, msg.DestinationPort, msg.DestinationChannel, msg.Sender, msg.Receiver, msg.Height, partitionID)
 	return err
 }
 

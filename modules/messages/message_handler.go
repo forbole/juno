@@ -56,13 +56,25 @@ func HandleMsg(
 			return err
 		}
 
+		var data transfertypes.FungibleTokenPacketData
+		if err := transfertypes.ModuleCdc.UnmarshalJSON(msgIBC.Packet.Data, &data); err != nil {
+			// The packet data is not a FungibleTokenPacketData, so nothing to update
+			return nil
+		}
+
 		return db.SaveIBCMsgRecvPacketRelationship(types.NewIBCMsgRecvPacketRelationship(tx.TxHash, index, proto.MessageName(msg), string(msgIBC.Packet.Data), fmt.Sprint(msgIBC.Packet.Sequence), msgIBC.Packet.SourcePort, msgIBC.Packet.SourceChannel,
-			msgIBC.Packet.DestinationPort, msgIBC.Packet.DestinationChannel, tx.Height))
+			msgIBC.Packet.DestinationPort, msgIBC.Packet.DestinationChannel, data.Sender, data.Receiver, tx.Height))
 	}
 
 	if msgIBC, ok := msg.(*channeltypes.MsgAcknowledgement); ok {
+		var data transfertypes.FungibleTokenPacketData
+		if err := transfertypes.ModuleCdc.UnmarshalJSON(msgIBC.Packet.Data, &data); err != nil {
+			// The packet data is not a FungibleTokenPacketData, so nothing to update
+			return nil
+		}
+
 		return db.SaveIBCMsgAcknowledgementRelationship(types.NewIBCMsgAcknowledgementRelationship(tx.TxHash, index, proto.MessageName(msg), string(msgIBC.Packet.Data), fmt.Sprint(msgIBC.Packet.Sequence), msgIBC.Packet.SourcePort, msgIBC.Packet.SourceChannel,
-			msgIBC.Packet.DestinationPort, msgIBC.Packet.DestinationChannel, tx.Height))
+			msgIBC.Packet.DestinationPort, msgIBC.Packet.DestinationChannel, data.Sender, data.Receiver, tx.Height))
 	}
 
 	// if msgIBC, ok := msg.(*clienttypes.MsgCreateClient); ok {

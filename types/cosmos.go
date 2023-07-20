@@ -165,12 +165,14 @@ type IBCMsgAcknowledgementRelationship struct {
 	SourceChannel      string
 	DestinationPort    string
 	DestinationChannel string
+	Sender             string
+	Receiver           string
 	Height             int64
 }
 
 // NwqIBCMsgAcknowledgementRelationship allows to build a new IBCMsgAcknowledgementRelationship instance
 func NewIBCMsgAcknowledgementRelationship(txHash string, index int, msgType, packetData, sequence, sourcePort,
-	sourceChannel, destinationPort, destinationChannel string, height int64) *IBCMsgAcknowledgementRelationship {
+	sourceChannel, destinationPort, destinationChannel, sender, receiver string, height int64) *IBCMsgAcknowledgementRelationship {
 	return &IBCMsgAcknowledgementRelationship{
 		TxHash:             txHash,
 		Index:              index,
@@ -181,6 +183,8 @@ func NewIBCMsgAcknowledgementRelationship(txHash string, index int, msgType, pac
 		SourceChannel:      sourceChannel,
 		DestinationPort:    destinationPort,
 		DestinationChannel: destinationChannel,
+		Sender:             sender,
+		Receiver:           receiver,
 		Height:             height,
 	}
 }
@@ -221,12 +225,14 @@ type IBCMsgRecvPacketRelationship struct {
 	SourceChannel      string
 	DestinationPort    string
 	DestinationChannel string
+	Sender             string
+	Receiver           string
 	Height             int64
 }
 
 // NewIBCMsgRecvPacketRelationship allows to build a new IBCMsgRecvPacketRelationship instance
 func NewIBCMsgRecvPacketRelationship(txHash string, index int, msgType, packetData, sequence, sourcePort,
-	sourceChannel, destinationPort, destinationChannel string, height int64) *IBCMsgRecvPacketRelationship {
+	sourceChannel, destinationPort, destinationChannel, sender, receiver string, height int64) *IBCMsgRecvPacketRelationship {
 	return &IBCMsgRecvPacketRelationship{
 		TxHash:             txHash,
 		Index:              index,
@@ -237,6 +243,8 @@ func NewIBCMsgRecvPacketRelationship(txHash string, index int, msgType, packetDa
 		SourceChannel:      sourceChannel,
 		DestinationPort:    destinationPort,
 		DestinationChannel: destinationChannel,
+		Sender:             sender,
+		Receiver:           receiver,
 		Height:             height,
 	}
 }
