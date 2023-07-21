@@ -7,8 +7,7 @@ import (
 	"github.com/cosmos/gogoproto/proto"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	// authztypes "github.com/cosmos/cosmos-sdk/x/authz"
+	"github.com/forbole/juno/v5/types/config"
 
 	"github.com/forbole/juno/v5/types"
 )
@@ -20,7 +19,7 @@ func MessageNotSupported(msg sdk.Msg) error {
 
 // MessageAddressesParser represents a function that extracts all the
 // involved addresses from a provided message (both accounts and validators)
-type MessageAddressesParser = func(tx *types.Tx, chainPrefix string) ([]string, error)
+type MessageAddressesParser = func(tx *types.Tx) ([]string, error)
 
 // CosmosMessageAddressesParser represents a MessageAddressesParser that parses a
 // Chain message and returns all the involved addresses (both accounts and validators)
@@ -28,8 +27,8 @@ var CosmosMessageAddressesParser = DefaultMessagesParser
 
 // DefaultMessagesParser represents the default messages parser that simply returns the list
 // of all the signers of a message
-func DefaultMessagesParser(tx *types.Tx, chainPrefix string) ([]string, error) {
-	allAddressess := parseAddressesFromEvents(tx, chainPrefix)
+func DefaultMessagesParser(tx *types.Tx) ([]string, error) {
+	allAddressess := parseAddressesFromEvents(tx)
 	return allAddressess, nil
 }
 
@@ -46,8 +45,9 @@ func removeDuplicates(s []string) []string {
 	return result
 }
 
-func parseAddressesFromEvents(tx *types.Tx, chainPrefix string) []string {
+func parseAddressesFromEvents(tx *types.Tx) []string {
 	var allAddressess []string
+	chainPrefix := config.Cfg.Chain.Bech32Prefix
 
 	for _, event := range tx.Events {
 		for _, attribute := range event.Attributes {
