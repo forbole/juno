@@ -36,8 +36,29 @@ func HandleMsg(
 	}
 
 	if msgIBC, ok := msg.(*transfertypes.MsgTransfer); ok {
-		return db.SaveIBCMsgTransferRelationship(types.NewIBCMsgTransferRelationship(tx.TxHash, index, msgIBC.SourcePort, msgIBC.SourceChannel,
-			msgIBC.Sender, msgIBC.Receiver, tx.Height))
+		var packetData, packetSequence, destinationPort, destinationChannel string
+
+		for _, event := range tx.Events {
+			if event.Type == channeltypes.EventTypeSendPacket {
+				for _, attribute := range event.Attributes {
+					if attribute.Key == channeltypes.AttributeKeyData {
+						packetData = attribute.Value
+					}
+					if attribute.Key == channeltypes.AttributeKeySequence {
+						packetSequence = attribute.Value
+					}
+					if attribute.Key == channeltypes.AttributeKeyDstPort {
+						destinationPort = attribute.Value
+					}
+					if attribute.Value == channeltypes.AttributeKeyDstChannel {
+						destinationChannel = attribute.Value
+					}
+				}
+
+			}
+		}
+		return db.SaveIBCMsgTransferRelationship(types.NewIBCMsgTransferRelationship(tx.TxHash, index, packetData, packetSequence, msgIBC.SourcePort, msgIBC.SourceChannel,
+			destinationPort, destinationChannel, msgIBC.Sender, msgIBC.Receiver, tx.Height))
 	}
 
 	// Handle MsgRecvPacket data object
