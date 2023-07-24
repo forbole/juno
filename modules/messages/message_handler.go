@@ -19,7 +19,7 @@ func HandleMsg(
 ) error {
 
 	// Get the involved addresses
-	addresses, err := parseAddresses(cdc, msg)
+	addresses, err := parseAddresses(tx)
 	if err != nil {
 		return err
 	}
