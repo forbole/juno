@@ -1,4 +1,9 @@
 ## Unreleased
+
+### Changes
+- ([\#100](https://github.com/forbole/juno/pull/100)) improve account relationship mapping
+
+## v5.2.0
 ### Changes
 - ([\#97](https://github.com/forbole/juno/pull/97)) Add `x/authz` message parser
 
