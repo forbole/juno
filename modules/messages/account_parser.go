@@ -2,12 +2,10 @@ package messages
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/cosmos/gogoproto/proto"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/forbole/juno/v5/types/config"
 
 	"github.com/forbole/juno/v5/types"
 )
@@ -47,22 +45,28 @@ func removeDuplicates(s []string) []string {
 
 func parseAddressesFromEvents(tx *types.Tx) []string {
 	var allAddressess []string
-	chainPrefix := config.Cfg.Chain.Bech32Prefix
 
 	for _, event := range tx.Events {
 		for _, attribute := range event.Attributes {
-			if strings.Contains(attribute.Value, "/") {
+			// check if event value string is validator address
+			valAddresss, _ := sdk.ValAddressFromBech32(attribute.Value)
+			if valAddresss != nil {
+				allAddressess = append(allAddressess, valAddresss.String())
+			}
+
+			// check if event value string is sdk address
+			sdkAddress, err := sdk.AccAddressFromBech32(attribute.Value)
+			if err != nil {
+				// skip if string is not sdk address
 				continue
 			}
-			if strings.Contains(attribute.Value, chainPrefix) {
-				allAddressess = append(allAddressess, attribute.Value)
-			}
+
+			allAddressess = append(allAddressess, sdkAddress.String())
 		}
 
 	}
 	allInvolvedAddresses := removeDuplicates(allAddressess)
-
-	fmt.Printf("\n all involved addresses %v \n", allInvolvedAddresses)
+	fmt.Printf("\n height: %d, all involved addresses %v \n", tx.Height, allInvolvedAddresses)
 
 	return allInvolvedAddresses
 }
