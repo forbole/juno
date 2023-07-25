@@ -92,7 +92,7 @@ CREATE TABLE message_transfer_ibc_relationship
     partition_id        BIGINT NOT NULL DEFAULT 0,
     height              BIGINT NOT NULL,
     FOREIGN KEY (transaction_hash, partition_id) REFERENCES transaction (hash, partition_id),
-    CONSTRAINT unique_message_acknowledgement_ibc_relationship_per_tx UNIQUE (transaction_hash, index, partition_id)
+    CONSTRAINT unique_message_transfer_ibc_relationship_per_tx UNIQUE (transaction_hash, index, partition_id)
 )PARTITION BY LIST(partition_id);
 CREATE INDEX message_transfer_ibc_relationship_transaction_hash_index ON message_transfer_ibc_relationship (transaction_hash);
 
