@@ -189,26 +189,34 @@ func NewIBCMsgAcknowledgementRelationship(txHash string, index int, packetData, 
 
 // IBCMsgTransferRelationship represents the relationship data of a single ibc message
 type IBCMsgTransferRelationship struct {
-	TxHash        string
-	Index         int
-	SourcePort    string
-	SourceChannel string
-	Sender        string
-	Receiver      string
-	Height        int64
+	TxHash             string
+	Index              int
+	PacketData         string
+	Sequence           string
+	SourcePort         string
+	SourceChannel      string
+	DestinationPort    string
+	DestinationChannel string
+	Sender             string
+	Receiver           string
+	Height             int64
 }
 
 // NewIBCMsgTransferRelationship allows to build a new IBCTransferRelationship instance
-func NewIBCMsgTransferRelationship(txHash string, index int, sourcePort,
-	sourceChannel, sender, receiver string, height int64) *IBCMsgTransferRelationship {
+func NewIBCMsgTransferRelationship(txHash string, index int, packetData, sequence, sourcePort,
+	sourceChannel, destinationPort, destinationChannel, sender, receiver string, height int64) *IBCMsgTransferRelationship {
 	return &IBCMsgTransferRelationship{
-		TxHash:        txHash,
-		Index:         index,
-		SourcePort:    sourcePort,
-		SourceChannel: sourceChannel,
-		Sender:        sender,
-		Receiver:      receiver,
-		Height:        height,
+		TxHash:             txHash,
+		Index:              index,
+		PacketData:         packetData,
+		Sequence:           sequence,
+		SourcePort:         sourcePort,
+		SourceChannel:      sourceChannel,
+		DestinationPort:    destinationPort,
+		DestinationChannel: destinationChannel,
+		Sender:             sender,
+		Receiver:           receiver,
+		Height:             height,
 	}
 }
 

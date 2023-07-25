@@ -50,6 +50,7 @@ type Database struct {
 	EncodingConfig *params.EncodingConfig
 	Logger         logging.Logger
 }
+
 // CreatePartitionIfNotExists creates a new partition having the given partition id if not existing
 func (db *Database) CreatePartitionIfNotExists(table string, partitionID int64) error {
 	partitionTable := fmt.Sprintf("%s_%d", table, partitionID)
@@ -352,17 +353,22 @@ func (db *Database) SaveIBCMsgTransferRelationship(msg *types.IBCMsgTransferRela
 // inside the partition having the provided partition id
 func (db *Database) saveIBCMsgTransferRelationshipInsidePartition(msg *types.IBCMsgTransferRelationship, partitionID int64) error {
 	stmt := `
-INSERT INTO message_transfer_ibc_relationship(transaction_hash, index, source_port, source_channel,
-	sender, receiver, height, partition_id) 
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+INSERT INTO message_transfer_ibc_relationship(transaction_hash, index, packet_data, sequence, source_port, source_channel,
+	destination_port, destination_channel, sender, receiver, height, partition_id) 
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
 ON CONFLICT (transaction_hash, index, partition_id) DO UPDATE 
-	SET source_port = excluded.source_port,
+	SET packet_data = excluded.packet_data,
+		sequence = excluded.sequence,
+		source_port = excluded.source_port,
 		source_channel = excluded.source_channel,
+		destination_port = excluded.destination_port,
+		destination_channel = excluded.destination_channel,
 		sender = excluded.sender,
 		receiver = excluded.receiver,
 		height = excluded.height`
 
-	_, err := db.SQL.Exec(stmt, msg.TxHash, msg.Index, msg.SourcePort, msg.SourceChannel, msg.Sender, msg.Receiver, msg.Height, partitionID)
+	_, err := db.SQL.Exec(stmt, msg.TxHash, msg.Index, msg.PacketData, msg.Sequence, msg.SourcePort,
+		msg.SourceChannel, msg.DestinationPort, msg.DestinationChannel, msg.Sender, msg.Receiver, msg.Height, partitionID)
 	return err
 }
 

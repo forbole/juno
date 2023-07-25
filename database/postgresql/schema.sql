@@ -81,8 +81,12 @@ CREATE TABLE message_transfer_ibc_relationship
 (
     transaction_hash    TEXT   NOT NULL,
     index               BIGINT NOT NULL,
+    packet_data         TEXT   NOT NULL,
+    sequence            TEXT   NOT NULL,
     source_port         TEXT   NOT NULL,
     source_channel      TEXT   NOT NULL,
+    destination_port    TEXT   NOT NULL,
+    destination_channel TEXT   NOT NULL,
     sender              TEXT   NOT NULL,
     receiver            TEXT   NOT NULL,
     partition_id        BIGINT NOT NULL DEFAULT 0,

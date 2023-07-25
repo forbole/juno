@@ -14,7 +14,6 @@ import (
 	// "github.com/cosmos/ibc-go/v7/modules/core/exported"
 	"github.com/forbole/juno/v4/database"
 	"github.com/forbole/juno/v4/types"
-	"github.com/forbole/juno/v4/types/config"
 )
 
 // HandleMsg represents a message handler that stores the given message inside the proper database table
@@ -24,7 +23,7 @@ func HandleMsg(
 ) error {
 
 	// Get the involved addresses
-	addresses, err := parseAddresses(tx, config.Cfg.Chain.Bech32Prefix)
+	addresses, err := parseAddresses(tx)
 	if err != nil {
 		return err
 	}
@@ -36,8 +35,29 @@ func HandleMsg(
 	}
 
 	if msgIBC, ok := msg.(*transfertypes.MsgTransfer); ok {
-		return db.SaveIBCMsgTransferRelationship(types.NewIBCMsgTransferRelationship(tx.TxHash, index, msgIBC.SourcePort, msgIBC.SourceChannel,
-			msgIBC.Sender, msgIBC.Receiver, tx.Height))
+		var packetData, packetSequence, destinationPort, destinationChannel string
+
+		for _, event := range tx.Events {
+			if event.Type == channeltypes.EventTypeSendPacket {
+				for _, attribute := range event.Attributes {
+					if string(attribute.Key) == channeltypes.AttributeKeyData {
+						packetData = string(attribute.Value)
+					}
+					if string(attribute.Key) == channeltypes.AttributeKeySequence {
+						packetSequence = string(attribute.Value)
+					}
+					if string(attribute.Key) == channeltypes.AttributeKeyDstPort {
+						destinationPort = string(attribute.Value)
+					}
+					if string(attribute.Value) == channeltypes.AttributeKeyDstChannel {
+						destinationChannel = string(attribute.Value)
+					}
+				}
+
+			}
+		}
+		return db.SaveIBCMsgTransferRelationship(types.NewIBCMsgTransferRelationship(tx.TxHash, index, packetData, packetSequence, msgIBC.SourcePort, msgIBC.SourceChannel,
+			destinationPort, destinationChannel, msgIBC.Sender, msgIBC.Receiver, tx.Height))
 	}
 
 	// Handle MsgRecvPacket data object

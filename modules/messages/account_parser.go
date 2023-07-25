@@ -2,7 +2,6 @@ package messages
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/gogo/protobuf/proto"
 
@@ -20,7 +19,7 @@ func MessageNotSupported(msg sdk.Msg) error {
 
 // MessageAddressesParser represents a function that extracts all the
 // involved addresses from a provided message (both accounts and validators)
-type MessageAddressesParser = func(tx *types.Tx, chainPrefix string) ([]string, error)
+type MessageAddressesParser = func(tx *types.Tx) ([]string, error)
 
 // CosmosMessageAddressesParser represents a MessageAddressesParser that parses a
 // Chain message and returns all the involved addresses (both accounts and validators)
@@ -28,8 +27,8 @@ var CosmosMessageAddressesParser = DefaultMessagesParser
 
 // DefaultMessagesParser represents the default messages parser that simply returns the list
 // of all the signers of a message
-func DefaultMessagesParser(tx *types.Tx, chainPrefix string) ([]string, error) {
-	allAddressess := parseAddressesFromEvents(tx, chainPrefix)
+func DefaultMessagesParser(tx *types.Tx) ([]string, error) {
+	allAddressess := parseAddressesFromEvents(tx)
 	return allAddressess, nil
 }
 
@@ -46,23 +45,30 @@ func removeDuplicates(s []string) []string {
 	return result
 }
 
-func parseAddressesFromEvents(tx *types.Tx, chainPrefix string) []string {
+func parseAddressesFromEvents(tx *types.Tx) []string {
 	var allAddressess []string
 
 	for _, event := range tx.Events {
 		for _, attribute := range event.Attributes {
-			if strings.Contains(string(attribute.Value), "/") {
+			// check if event value string is validator address
+			valAddresss, _ := sdk.ValAddressFromBech32(string(attribute.GetValue()))
+			if valAddresss != nil {
+				allAddressess = append(allAddressess, valAddresss.String())
+			}
+
+			// check if event value string is sdk address
+			sdkAddress, err := sdk.AccAddressFromBech32(string(attribute.GetValue()))
+			if err != nil {
+				// skip if string is not sdk address
 				continue
 			}
-			if strings.Contains(string(attribute.Value), chainPrefix) {
-				allAddressess = append(allAddressess, string(attribute.Value))
-			}
+
+			allAddressess = append(allAddressess, sdkAddress.String())
 		}
 
 	}
 	allInvolvedAddresses := removeDuplicates(allAddressess)
-
-	fmt.Printf("\n all involved addresses %v \n", allInvolvedAddresses)
+	fmt.Printf("\n height: %d, all involved addresses %v \n", tx.Height, allInvolvedAddresses)
 
 	return allInvolvedAddresses
 }
