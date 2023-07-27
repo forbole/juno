@@ -6,4 +6,5 @@ const (
 	DatabaseSSLRootCert   = "JUNO_DATABASE_SSL_ROOT_CERT"
 	DatabaseSSLCert       = "JUNO_DATABASE_SSL_CERT"
 	DatabaseSSLKey        = "JUNO_DATABASE_SSL_KEY"
+	ProviderDatabaseURI   = "JUNO_PROVIDER_DATABASE_URL"
 )

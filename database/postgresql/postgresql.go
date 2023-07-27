@@ -41,16 +41,27 @@ func Builder(ctx *database.Context) (database.Database, error) {
 		return nil, err
 	}
 
+	providerDBURI := utils.GetEnvOr(env.ProviderDatabaseURI, ctx.Cfg.ProviderURL)
+
+	providerPostgresDb, err := sqlx.Open("postgres", providerDBURI)
+	if err != nil {
+		return nil, err
+	}
+
 	// Set max open connections
 	postgresDb.SetMaxOpenConns(ctx.Cfg.MaxOpenConnections)
 	postgresDb.SetMaxIdleConns(ctx.Cfg.MaxIdleConnections)
+
+	providerPostgresDb.SetMaxIdleConns(ctx.Cfg.MaxIdleConnections)
+	providerPostgresDb.SetMaxIdleConns(ctx.Cfg.MaxIdleConnections)
 
 	return &Database{
 		Cdc:   ctx.EncodingConfig.Codec,
 		Amino: ctx.EncodingConfig.Amino,
 
-		SQL:    postgresDb,
-		Logger: ctx.Logger,
+		SQL:         postgresDb,
+		ProviderSQL: providerPostgresDb,
+		Logger:      ctx.Logger,
 	}, nil
 }
 
@@ -63,8 +74,9 @@ type Database struct {
 	Cdc   codec.Codec
 	Amino *codec.LegacyAmino
 
-	SQL    *sqlx.DB
-	Logger logging.Logger
+	SQL         *sqlx.DB
+	ProviderSQL *sqlx.DB
+	Logger      logging.Logger
 }
 
 // CreatePartitionIfNotExists creates a new partition having the given partition id if not existing
@@ -140,6 +152,15 @@ VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING`
 	)
 	return err
 }
+
+// SaveBlock implements database.Database
+// func (db *Database) GetProvidersValidator(consensusAddress string) error {
+// 	sqlStatement := `
+// 	SELECT self_delegate_address FROM validator_info where consensus_address = '%s'`
+
+// 	_, err := db.ProviderSQL.Exec(sqlStatement, consensusAddress)
+// 	return err
+// }
 
 // GetTotalBlocks implements database.Database
 func (db *Database) GetTotalBlocks() int64 {
