@@ -6,19 +6,21 @@ import (
 
 // Details represents a node details for a remote node
 type Details struct {
-	RPC  *RPCConfig  `yaml:"rpc"`
-	GRPC *GRPCConfig `yaml:"grpc"`
+	RPC          *RPCConfig  `yaml:"rpc"`
+	GRPC         *GRPCConfig `yaml:"grpc"`
+	ProviderGRPC *GRPCConfig `yaml:"provider_grpc"`
 }
 
-func NewDetails(rpc *RPCConfig, grpc *GRPCConfig) *Details {
+func NewDetails(rpc *RPCConfig, grpc, providerGrpc *GRPCConfig) *Details {
 	return &Details{
-		RPC:  rpc,
-		GRPC: grpc,
+		RPC:          rpc,
+		GRPC:         grpc,
+		ProviderGRPC: providerGrpc,
 	}
 }
 
 func DefaultDetails() *Details {
-	return NewDetails(DefaultRPCConfig(), DefaultGrpcConfig())
+	return NewDetails(DefaultRPCConfig(), DefaultGrpcConfig(), DefaultProviderGrpcConfig())
 }
 
 // Validate implements node.Details
@@ -75,5 +77,10 @@ func NewGrpcConfig(address string, insecure bool) *GRPCConfig {
 
 // DefaultGrpcConfig returns the default instance of a GrpcConfig
 func DefaultGrpcConfig() *GRPCConfig {
+	return NewGrpcConfig("localhost:9090", true)
+}
+
+// DefaultProviderGrpcConfig returns the default instance of a ProviderGrpcConfig
+func DefaultProviderGrpcConfig() *GRPCConfig {
 	return NewGrpcConfig("localhost:9090", true)
 }
