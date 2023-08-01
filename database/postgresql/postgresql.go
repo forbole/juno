@@ -319,7 +319,7 @@ func (db *Database) saveIBCMsgAcknowledgementRelationshipInsidePartition(msg *ty
 INSERT INTO message_acknowledgement_ibc_relationship(transaction_hash, index, packet_data, sequence, source_port, source_channel,
 	destination_port, destination_channel, sender, receiver, height, partition_id) 
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
-ON CONFLICT (transaction_hash, index, sequence, partition_id) DO UPDATE 
+ON CONFLICT (transaction_hash, index, partition_id) DO UPDATE 
 	SET packet_data = excluded.packet_data,
 		source_port = excluded.source_port,
 		source_channel = excluded.source_channel,
