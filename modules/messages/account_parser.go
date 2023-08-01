@@ -6,7 +6,6 @@ import (
 	"github.com/cosmos/gogoproto/proto"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	"github.com/forbole/juno/v5/types"
 )
 
@@ -48,16 +47,16 @@ func parseAddressesFromEvents(tx *types.Tx) []string {
 
 	for _, event := range tx.Events {
 		for _, attribute := range event.Attributes {
-			// check if event value string is validator address
+			// check if event value is validator address
 			valAddresss, _ := sdk.ValAddressFromBech32(attribute.Value)
 			if valAddresss != nil {
 				allAddressess = append(allAddressess, valAddresss.String())
 			}
 
-			// check if event value string is sdk address
+			// check if event value is sdk address
 			sdkAddress, err := sdk.AccAddressFromBech32(attribute.Value)
 			if err != nil {
-				// skip if string is not sdk address
+				// skip if value is not sdk address
 				continue
 			}
 
@@ -66,7 +65,6 @@ func parseAddressesFromEvents(tx *types.Tx) []string {
 
 	}
 	allInvolvedAddresses := removeDuplicates(allAddressess)
-	fmt.Printf("\n height: %d, all involved addresses %v \n", tx.Height, allInvolvedAddresses)
 
 	return allInvolvedAddresses
 }
