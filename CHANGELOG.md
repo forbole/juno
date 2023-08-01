@@ -1,7 +1,27 @@
-## Unreleased
+## v5.2.0
 ### Changes
+- Exposed `Database#CreatePartitionIfNotExists` method 
 - ([\#97](https://github.com/forbole/juno/pull/97)) Add `x/authz` message parser
 
+## v5.1.0
+### Changes
+- Bumped Go version to `1.20`
+- Fixed a bug that caused messages type urls to be empty in the database
+- Implemented a better default `EncodingConfigBuilder`
+- Added the ability to set `DatabaseConfig` field values using setter methods
+- ([\#96](https://github.com/forbole/juno/pull/96)) Export `Codec` and `LegacyAmino` from the `Database` implementation
+
+## v5.0.0
+### Changes
+- Updated Cosmos SDK to `v0.47.2`
+
+### Database
+- ([\#96](https://github.com/forbole/juno/pull/96)) Exported Codec and LegacyAmino codec inside Database wrapper
+
+## v4.2.0
+### Changes
+- ([\#93](https://github.com/forbole/juno/pull/93)) Decode IBC transfer data to JSON for `/ibc.core.channel.v1.MsgRecvPacket` message
+- ([\#94](https://github.com/forbole/juno/pull/94)) Added TSL support when connecting to database
 
 ## v4.1.0
 ### Changes
@@ -10,7 +30,7 @@
 
 ## v4.0.0
 ### Changes
-- Updated cosmos/cosmos-sdk to `v0.45.8`
+- Updated Cosmos SDK to `v0.45.8`
 - ([\#74](https://github.com/forbole/juno/pull/74)) Added database block count to prometheus to improve alert monitoring
 - ([\#75](https://github.com/forbole/juno/pull/75)) Allow modules to handle MsgExec inner messages
 - ([\#76](https://github.com/forbole/juno/pull/76)) Return 0 as height for `GetLastBlockHeight()` method if there are no blocks saved in database
