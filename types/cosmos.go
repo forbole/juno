@@ -252,3 +252,38 @@ func NewIBCMsgRecvPacketRelationship(txHash string, index int, packetData, seque
 		Height:             height,
 	}
 }
+
+// IBCMsgRelationship represents the relationship data of a single ibc message
+type IBCMsgRelationship struct {
+	TxHash             string
+	Index              int
+	Type               string
+	PacketData         string
+	Sequence           string
+	SourcePort         string
+	SourceChannel      string
+	DestinationPort    string
+	DestinationChannel string
+	Sender             string
+	Receiver           string
+	Height             int64
+}
+
+// NewIBCMsgRelationship allows to build a new IBCMsgRelationship instance
+func NewIBCMsgRelationship(txHash string, index int, msgType, packetData, sequence, sourcePort,
+	sourceChannel, destinationPort, destinationChannel, sender, receiver string, height int64) *IBCMsgRelationship {
+	return &IBCMsgRelationship{
+		TxHash:             txHash,
+		Index:              index,
+		Type:               msgType,
+		PacketData:         packetData,
+		Sequence:           sequence,
+		SourcePort:         sourcePort,
+		SourceChannel:      sourceChannel,
+		DestinationPort:    destinationPort,
+		DestinationChannel: destinationChannel,
+		Sender:             sender,
+		Receiver:           receiver,
+		Height:             height,
+	}
+}
