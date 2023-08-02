@@ -49,7 +49,7 @@ func HandleMsg(
 					if attribute.Key == channeltypes.AttributeKeyDstPort {
 						destinationPort = attribute.Value
 					}
-					if attribute.Value == channeltypes.AttributeKeyDstChannel {
+					if attribute.Key == channeltypes.AttributeKeyDstChannel {
 						destinationChannel = attribute.Value
 					}
 				}
