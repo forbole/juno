@@ -7,11 +7,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/gogo/protobuf/proto"
 
-	// clienttypes "github.com/cosmos/ibc-go/v7/modules/core/02-client/types"
 	transfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
 	channeltypes "github.com/cosmos/ibc-go/v4/modules/core/04-channel/types"
 
-	// "github.com/cosmos/ibc-go/v7/modules/core/exported"
 	"github.com/forbole/juno/v4/database"
 	"github.com/forbole/juno/v4/types"
 )
@@ -49,7 +47,7 @@ func HandleMsg(
 					if string(attribute.Key) == channeltypes.AttributeKeyDstPort {
 						destinationPort = string(attribute.Value)
 					}
-					if string(attribute.Value) == channeltypes.AttributeKeyDstChannel {
+					if string(attribute.Key) == channeltypes.AttributeKeyDstChannel {
 						destinationChannel = string(attribute.Value)
 					}
 				}
