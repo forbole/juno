@@ -119,16 +119,16 @@ func parsePacketData(packetData []byte, tx *types.Tx) (string, string, error) {
 		for _, event := range tx.Events {
 			if event.Type == "message" {
 				for _, attribute := range event.Attributes {
-					if attribute.Key == "sender" {
+					if string(attribute.Key) == "sender" {
 						// check if event value is sdk address
-						sender, err = sdk.AccAddressFromBech32(attribute.Value)
+						sender, err = sdk.AccAddressFromBech32(string(attribute.Value))
 						if err != nil {
 							// skip if value is not sdk address
 							continue
 						}
-					} else if attribute.Key == "receiver" {
+					} else if string(attribute.Key) == "receiver" {
 						// check if event value is sdk address
-						receiver, err = sdk.AccAddressFromBech32(attribute.Value)
+						receiver, err = sdk.AccAddressFromBech32(string(attribute.Value))
 						if err != nil {
 							// skip if value is not sdk address
 							continue
