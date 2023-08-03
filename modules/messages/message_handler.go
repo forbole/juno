@@ -78,27 +78,27 @@ func HandleMsg(
 		}
 
 		// parse sender and receiver address for ibc relationship
-		var data transfertypes.FungibleTokenPacketData
-		if err := transfertypes.ModuleCdc.UnmarshalJSON(msgIBC.Packet.Data, &data); err != nil {
+		sender, receiver, err := parsePacketData(msgIBC.Packet.Data, tx)
+		if err != nil {
 			fmt.Printf("error while unmarshalling sender and receiver address for MsgRecvPacket ibc relationship, tx: %s, error: %s ", tx.TxHash, err)
 		}
 
 		return db.SaveIBCMsgRelationship(types.NewIBCMsgRelationship(tx.TxHash, index, proto.MessageName(msg),
 			string(msgIBC.Packet.Data), fmt.Sprint(msgIBC.Packet.Sequence), msgIBC.Packet.SourcePort, msgIBC.Packet.SourceChannel,
-			msgIBC.Packet.DestinationPort, msgIBC.Packet.DestinationChannel, data.Sender, data.Receiver, tx.Height))
+			msgIBC.Packet.DestinationPort, msgIBC.Packet.DestinationChannel, sender, receiver, tx.Height))
 	}
 
 	// Handle ibc MsgAcknowledgement data object
 	if msgIBC, ok := msg.(*channeltypes.MsgAcknowledgement); ok {
 		// parse sender and receiver address for ibc relationship
-		var data transfertypes.FungibleTokenPacketData
-		if err := transfertypes.ModuleCdc.UnmarshalJSON(msgIBC.Packet.Data, &data); err != nil {
+		sender, receiver, err := parsePacketData(msgIBC.Packet.Data, tx)
+		if err != nil {
 			fmt.Printf("error while unmarshalling sender and receiver address for MsgAcknowledgement ibc relationship, tx: %s, error: %s ", tx.TxHash, err)
 		}
 
 		db.SaveIBCMsgRelationship(types.NewIBCMsgRelationship(tx.TxHash, index, proto.MessageName(msg),
 			string(msgIBC.Packet.Data), fmt.Sprint(msgIBC.Packet.Sequence), msgIBC.Packet.SourcePort, msgIBC.Packet.SourceChannel,
-			msgIBC.Packet.DestinationPort, msgIBC.Packet.DestinationChannel, data.Sender, data.Receiver, tx.Height))
+			msgIBC.Packet.DestinationPort, msgIBC.Packet.DestinationChannel, sender, receiver, tx.Height))
 	}
 
 	return db.SaveMessage(types.NewMessage(
@@ -109,4 +109,37 @@ func HandleMsg(
 		addresses,
 		tx.Height,
 	))
+}
+
+func parsePacketData(packetData []byte, tx *types.Tx) (string, string, error) {
+	// parse sender and receiver address for ibc relationship
+	var data transfertypes.FungibleTokenPacketData
+	if err := transfertypes.ModuleCdc.UnmarshalJSON(packetData, &data); err != nil {
+		var sender, receiver sdk.AccAddress
+		for _, event := range tx.Events {
+			if event.Type == "message" {
+				for _, attribute := range event.Attributes {
+					if attribute.Key == "sender" {
+						// check if event value is sdk address
+						sender, err = sdk.AccAddressFromBech32(attribute.Value)
+						if err != nil {
+							// skip if value is not sdk address
+							continue
+						}
+					} else if attribute.Key == "receiver" {
+						// check if event value is sdk address
+						receiver, err = sdk.AccAddressFromBech32(attribute.Value)
+						if err != nil {
+							// skip if value is not sdk address
+							continue
+						}
+					}
+
+				}
+			}
+
+		}
+		return sender.String(), receiver.String(), err
+	}
+	return data.Sender, data.Receiver, nil
 }
