@@ -78,7 +78,7 @@ func HandleMsg(
 		// parse sender and receiver address for ibc relationship
 		var data transfertypes.FungibleTokenPacketData
 		if err := transfertypes.ModuleCdc.UnmarshalJSON(msgIBC.Packet.Data, &data); err != nil {
-			return fmt.Errorf("error while unmarshalling sender and receiver address for MsgRecvPacket ibc relationship, error: %s ", err)
+			fmt.Printf("error while unmarshalling sender and receiver address for MsgRecvPacket ibc relationship, tx: %s, error: %s ", tx.TxHash, err)
 		}
 
 		return db.SaveIBCMsgRelationship(types.NewIBCMsgRelationship(tx.TxHash, index, proto.MessageName(msg),
@@ -91,7 +91,7 @@ func HandleMsg(
 		// parse sender and receiver address for ibc relationship
 		var data transfertypes.FungibleTokenPacketData
 		if err := transfertypes.ModuleCdc.UnmarshalJSON(msgIBC.Packet.Data, &data); err != nil {
-			fmt.Printf("error while unmarshalling sender and receiver address for MsgAcknowledgement ibc relationship, error: %s ", err)
+			fmt.Printf("error while unmarshalling sender and receiver address for MsgAcknowledgement ibc relationship, tx: %s, error: %s ", tx.TxHash, err)
 		}
 
 		db.SaveIBCMsgRelationship(types.NewIBCMsgRelationship(tx.TxHash, index, proto.MessageName(msg),
