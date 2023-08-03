@@ -32,6 +32,7 @@ func HandleMsg(
 		return err
 	}
 
+	// Handle ibc MsgTransfer
 	if msgIBC, ok := msg.(*transfertypes.MsgTransfer); ok {
 		var packetData, packetSequence, destinationPort, destinationChannel string
 
@@ -54,12 +55,14 @@ func HandleMsg(
 
 			}
 		}
-		return db.SaveIBCMsgRelationship(types.NewIBCMsgRelationship(tx.TxHash, index, proto.MessageName(msg), packetData, packetSequence, msgIBC.SourcePort, msgIBC.SourceChannel,
-			destinationPort, destinationChannel, msgIBC.Sender, msgIBC.Receiver, tx.Height))
+		db.SaveIBCMsgRelationship(types.NewIBCMsgRelationship(tx.TxHash, index, proto.MessageName(msg),
+			packetData, packetSequence, msgIBC.SourcePort, msgIBC.SourceChannel, destinationPort,
+			destinationChannel, msgIBC.Sender, msgIBC.Receiver, tx.Height))
 	}
 
-	// Handle MsgRecvPacket data object
+	// Handle ibc MsgRecvPacket data object
 	if msgIBC, ok := msg.(*channeltypes.MsgRecvPacket); ok {
+		// parse MsgRecvPacket Data and store in message table
 		trimMessageString := TrimLastChar(string(bz))
 		trimDataString := string(msgIBC.Packet.Data)[1:]
 		err := db.SaveMessage(types.NewMessage(
@@ -74,42 +77,29 @@ func HandleMsg(
 			return err
 		}
 
+		// parse sender and receiver address for ibc relationship
 		var data transfertypes.FungibleTokenPacketData
 		if err := transfertypes.ModuleCdc.UnmarshalJSON(msgIBC.Packet.Data, &data); err != nil {
-			// The packet data is not a FungibleTokenPacketData, so nothing to update
-			return nil
+			return fmt.Errorf("error while unmarshalling sender and receiver address for MsgRecvPacket ibc relationship, error: %s ", err)
 		}
 
-		return db.SaveIBCMsgRelationship(types.NewIBCMsgRelationship(tx.TxHash, index, proto.MessageName(msg), string(msgIBC.Packet.Data), fmt.Sprint(msgIBC.Packet.Sequence), msgIBC.Packet.SourcePort, msgIBC.Packet.SourceChannel,
+		return db.SaveIBCMsgRelationship(types.NewIBCMsgRelationship(tx.TxHash, index, proto.MessageName(msg),
+			string(msgIBC.Packet.Data), fmt.Sprint(msgIBC.Packet.Sequence), msgIBC.Packet.SourcePort, msgIBC.Packet.SourceChannel,
 			msgIBC.Packet.DestinationPort, msgIBC.Packet.DestinationChannel, data.Sender, data.Receiver, tx.Height))
 	}
 
+	// Handle ibc MsgAcknowledgement data object
 	if msgIBC, ok := msg.(*channeltypes.MsgAcknowledgement); ok {
+		// parse sender and receiver address for ibc relationship
 		var data transfertypes.FungibleTokenPacketData
 		if err := transfertypes.ModuleCdc.UnmarshalJSON(msgIBC.Packet.Data, &data); err != nil {
-			// The packet data is not a FungibleTokenPacketData, so nothing to update
-			return nil
+			fmt.Printf("error while unmarshalling sender and receiver address for MsgAcknowledgement ibc relationship, error: %s ", err)
 		}
 
-		return db.SaveIBCMsgRelationship(types.NewIBCMsgRelationship(tx.TxHash, index, proto.MessageName(msg), string(msgIBC.Packet.Data), fmt.Sprint(msgIBC.Packet.Sequence), msgIBC.Packet.SourcePort, msgIBC.Packet.SourceChannel,
+		db.SaveIBCMsgRelationship(types.NewIBCMsgRelationship(tx.TxHash, index, proto.MessageName(msg),
+			string(msgIBC.Packet.Data), fmt.Sprint(msgIBC.Packet.Sequence), msgIBC.Packet.SourcePort, msgIBC.Packet.SourceChannel,
 			msgIBC.Packet.DestinationPort, msgIBC.Packet.DestinationChannel, data.Sender, data.Receiver, tx.Height))
 	}
-
-	// if msgIBC, ok := msg.(*clienttypes.MsgCreateClient); ok {
-	// 	var clientState exported.ClientState
-	// 	if err := cdc.UnmarshalJSON([]byte(msgIBC.ClientState.Value), clientState); err != nil {
-	// 		return err
-	// 	}
-	// 	return db.SaveIBCClientMessageRelationship(types.NewIBCClientMessageRelationship(tx.TxHash, clientState., tx.Height))
-	// }
-
-	// if msgIBC, ok := msg.(*clienttypes.MsgUpdateClient); ok {
-	// 	return db.SaveIBCClientMessageRelationship(types.NewIBCClientMessageRelationship(tx.TxHash, msgIBC.Signer, tx.Height))
-	// }
-
-	// if msgIBC, ok := msg.(*clienttypes.MsgUpgradeClient); ok {
-	// 	return db.SaveIBCClientMessageRelationship(types.NewIBCClientMessageRelationship(tx.TxHash, msgIBC.Signer, tx.Height))
-	// }
 
 	return db.SaveMessage(types.NewMessage(
 		tx.TxHash,
