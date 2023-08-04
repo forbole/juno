@@ -32,7 +32,7 @@ func HandleMsg(
 		return err
 	}
 
-	// Handle ibc MsgTransfer
+	// Handle IBC MsgTransfer data from events
 	if msgIBC, ok := msg.(*transfertypes.MsgTransfer); ok {
 		var packetData, packetSequence, destinationPort, destinationChannel string
 
@@ -55,14 +55,16 @@ func HandleMsg(
 
 			}
 		}
+
+		// Save IBC message relationship inside message_ibc_relationship table
 		db.SaveIBCMsgRelationship(types.NewIBCMsgRelationship(tx.TxHash, index, proto.MessageName(msg),
 			packetData, packetSequence, msgIBC.SourcePort, msgIBC.SourceChannel, destinationPort,
 			destinationChannel, msgIBC.Sender, msgIBC.Receiver, tx.Height))
 	}
 
-	// Handle ibc MsgRecvPacket data object
+	// Handle IBC MsgRecvPacket data object
 	if msgIBC, ok := msg.(*channeltypes.MsgRecvPacket); ok {
-		// parse MsgRecvPacket Data and store in message table
+		// Parse MsgRecvPacket Data and store in message table
 		trimMessageString := TrimLastChar(string(bz))
 		trimDataString := string(msgIBC.Packet.Data)[1:]
 		err := db.SaveMessage(types.NewMessage(
@@ -77,30 +79,33 @@ func HandleMsg(
 			return err
 		}
 
-		// parse sender and receiver address for ibc relationship
+		// Parse sender and receiver address for IBC relationship
 		sender, receiver, err := parsePacketData(msgIBC.Packet.Data, tx)
 		if err != nil {
 			fmt.Printf("error while unmarshalling sender and receiver address for MsgRecvPacket ibc relationship, tx: %s, error: %s ", tx.TxHash, err)
 		}
 
+		// Save IBC message relationship inside message_ibc_relationship table
 		return db.SaveIBCMsgRelationship(types.NewIBCMsgRelationship(tx.TxHash, index, proto.MessageName(msg),
 			string(msgIBC.Packet.Data), fmt.Sprint(msgIBC.Packet.Sequence), msgIBC.Packet.SourcePort, msgIBC.Packet.SourceChannel,
 			msgIBC.Packet.DestinationPort, msgIBC.Packet.DestinationChannel, sender, receiver, tx.Height))
 	}
 
-	// Handle ibc MsgAcknowledgement data object
+	// Handle IBC MsgAcknowledgement data object
 	if msgIBC, ok := msg.(*channeltypes.MsgAcknowledgement); ok {
-		// parse sender and receiver address for ibc relationship
+		// Parse sender and receiver address for IBC relationship
 		sender, receiver, err := parsePacketData(msgIBC.Packet.Data, tx)
 		if err != nil {
 			fmt.Printf("error while unmarshalling sender and receiver address for MsgAcknowledgement ibc relationship, tx: %s, error: %s ", tx.TxHash, err)
 		}
 
+		// Save IBC message relationship inside message_ibc_relationship table
 		db.SaveIBCMsgRelationship(types.NewIBCMsgRelationship(tx.TxHash, index, proto.MessageName(msg),
 			string(msgIBC.Packet.Data), fmt.Sprint(msgIBC.Packet.Sequence), msgIBC.Packet.SourcePort, msgIBC.Packet.SourceChannel,
 			msgIBC.Packet.DestinationPort, msgIBC.Packet.DestinationChannel, sender, receiver, tx.Height))
 	}
 
+	// Save new message inside message table
 	return db.SaveMessage(types.NewMessage(
 		tx.TxHash,
 		index,
@@ -112,9 +117,11 @@ func HandleMsg(
 }
 
 func parsePacketData(packetData []byte, tx *types.Tx) (string, string, error) {
-	// parse sender and receiver address for ibc relationship
+	// Parse sender and receiver address for ibc relationship
 	var data transfertypes.FungibleTokenPacketData
 	if err := transfertypes.ModuleCdc.UnmarshalJSON(packetData, &data); err != nil {
+		// If packetData is not a FungibleTokenPacketData type, parse sender
+		// and receiver addresses from events
 		var sender, receiver sdk.AccAddress
 		for _, event := range tx.Events {
 			if event.Type == sdk.EventTypeMessage {
@@ -126,7 +133,7 @@ func parsePacketData(packetData []byte, tx *types.Tx) (string, string, error) {
 							// skip if value is not sdk address
 							continue
 						}
-					} else if attribute.Key == banktypes.AttributeKeyRecipient {
+					} else if attribute.Key == banktypes.AttributeKeyReceiver {
 						// check if event value is sdk address
 						receiver, err = sdk.AccAddressFromBech32(attribute.Value)
 						if err != nil {
@@ -134,10 +141,8 @@ func parsePacketData(packetData []byte, tx *types.Tx) (string, string, error) {
 							continue
 						}
 					}
-
 				}
 			}
-
 		}
 		return sender.String(), receiver.String(), err
 	}
