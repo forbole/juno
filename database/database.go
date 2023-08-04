@@ -52,18 +52,6 @@ type Database interface {
 	// An error is returned if the operation fails.
 	SaveMessage(msg *types.Message) error
 
-	// SaveIBCMsgAcknowledgementRelationship stores a single ibc acknowledgement message relationship.
-	// An error is returned if the operation fails.
-	SaveIBCMsgAcknowledgementRelationship(msg *types.IBCMsgAcknowledgementRelationship) error
-
-	// SaveIBCMsgTransferRelationship stores a single ibc transfter message relationship.
-	// An error is returned if the operation fails.
-	SaveIBCMsgTransferRelationship(msg *types.IBCMsgTransferRelationship) error
-
-	// SaveIBCMsgRecvPacketRelationship stores a single ibc recv packet message relationship.
-	// An error is returned if the operation fails.
-	SaveIBCMsgRecvPacketRelationship(msg *types.IBCMsgRecvPacketRelationship) error
-
 	// SaveIBCMsgRelationship stores ibc  message relationship.
 	// An error is returned if the operation fails.
 	SaveIBCMsgRelationship(msg *types.IBCMsgRelationship) error
