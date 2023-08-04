@@ -5,6 +5,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/gogo/protobuf/proto"
 
 	transfertypes "github.com/cosmos/ibc-go/v4/modules/apps/transfer/types"
@@ -117,16 +118,16 @@ func parsePacketData(packetData []byte, tx *types.Tx) (string, string, error) {
 	if err := transfertypes.ModuleCdc.UnmarshalJSON(packetData, &data); err != nil {
 		var sender, receiver sdk.AccAddress
 		for _, event := range tx.Events {
-			if event.Type == "message" {
+			if event.Type == sdk.EventTypeMessage {
 				for _, attribute := range event.Attributes {
-					if string(attribute.Key) == "sender" {
+					if string(attribute.Key) == banktypes.AttributeKeySender {
 						// check if event value is sdk address
 						sender, err = sdk.AccAddressFromBech32(string(attribute.Value))
 						if err != nil {
 							// skip if value is not sdk address
 							continue
 						}
-					} else if string(attribute.Key) == "receiver" {
+					} else if string(attribute.Key) == banktypes.AttributeKeyRecipient {
 						// check if event value is sdk address
 						receiver, err = sdk.AccAddressFromBech32(string(attribute.Value))
 						if err != nil {
