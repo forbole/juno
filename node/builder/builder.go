@@ -3,15 +3,14 @@ package builder
 import (
 	"fmt"
 
-	"cosmossdk.io/simapp/params"
-
 	"github.com/forbole/juno/v5/node"
 	nodeconfig "github.com/forbole/juno/v5/node/config"
 	"github.com/forbole/juno/v5/node/local"
 	"github.com/forbole/juno/v5/node/remote"
+	"github.com/forbole/juno/v5/types/params"
 )
 
-func BuildNode(cfg nodeconfig.Config, encodingConfig *params.EncodingConfig) (node.Node, error) {
+func BuildNode(cfg nodeconfig.Config, encodingConfig params.EncodingConfig) (node.Node, error) {
 	switch cfg.Type {
 	case nodeconfig.TypeRemote:
 		return remote.NewNode(cfg.Details.(*remote.Details), encodingConfig.Codec)

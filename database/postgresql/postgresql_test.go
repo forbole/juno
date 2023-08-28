@@ -8,13 +8,13 @@ import (
 	"strings"
 	"testing"
 
-	"cosmossdk.io/simapp/params"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/forbole/juno/v5/database"
 	databaseconfig "github.com/forbole/juno/v5/database/config"
 	postgres "github.com/forbole/juno/v5/database/postgresql"
 	"github.com/forbole/juno/v5/logging"
+	"github.com/forbole/juno/v5/types/params"
 )
 
 func TestDatabaseTestSuite(t *testing.T) {
@@ -36,7 +36,7 @@ func (suite *DbTestSuite) SetupTest() {
 		WithURL("postgres://bdjuno:password@localhost:6433/bdjuno?sslmode=disable&search_path=public")
 
 	// Build the database
-	db, err := postgres.Builder(database.NewContext(dbCfg, &codec, logging.DefaultLogger()))
+	db, err := postgres.Builder(database.NewContext(dbCfg, codec, logging.DefaultLogger()))
 	suite.Require().NoError(err)
 
 	bigDipperDb, ok := (db).(*postgres.Database)

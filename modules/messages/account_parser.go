@@ -6,6 +6,7 @@ import (
 	"github.com/cosmos/gogoproto/proto"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/forbole/juno/v5/types"
 )
 
