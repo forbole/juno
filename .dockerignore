@@ -1,7 +1,10 @@
-Dockerfile
-Vagrantfile
-
-build/
+.docs
+.github
+build
+tools
+.gitignore
+.golangci.yaml
+.mergify.yml
 config.yaml
 coverage.txt
-firebase-config.json
+README.md
