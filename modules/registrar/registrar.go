@@ -1,10 +1,10 @@
 package registrar
 
 import (
-	"cosmossdk.io/simapp/params"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/forbole/juno/v5/node"
+	"github.com/forbole/juno/v5/types/params"
 
 	"github.com/forbole/juno/v5/modules/telemetry"
 
@@ -24,7 +24,7 @@ import (
 type Context struct {
 	JunoConfig     config.Config
 	SDKConfig      *sdk.Config
-	EncodingConfig *params.EncodingConfig
+	EncodingConfig params.EncodingConfig
 	Database       database.Database
 	Proxy          node.Node
 	Logger         logging.Logger
@@ -32,7 +32,7 @@ type Context struct {
 
 // NewContext allows to build a new Context instance
 func NewContext(
-	parsingConfig config.Config, sdkConfig *sdk.Config, encodingConfig *params.EncodingConfig,
+	parsingConfig config.Config, sdkConfig *sdk.Config, encodingConfig params.EncodingConfig,
 	database database.Database, proxy node.Node, logger logging.Logger,
 ) Context {
 	return Context{

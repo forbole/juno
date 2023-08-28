@@ -29,14 +29,14 @@ func GetParserContext(cfg config.Config, parseConfig *Config) (*parser.Context, 
 	}
 
 	// Get the db
-	databaseCtx := database.NewContext(cfg.Database, &encodingConfig, parseConfig.GetLogger())
+	databaseCtx := database.NewContext(cfg.Database, encodingConfig, parseConfig.GetLogger())
 	db, err := parseConfig.GetDBBuilder()(databaseCtx)
 	if err != nil {
 		return nil, err
 	}
 
 	// Init the client
-	cp, err := nodebuilder.BuildNode(cfg.Node, &encodingConfig)
+	cp, err := nodebuilder.BuildNode(cfg.Node, encodingConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start client: %s", err)
 	}
@@ -53,11 +53,11 @@ func GetParserContext(cfg config.Config, parseConfig *Config) (*parser.Context, 
 	}
 
 	// Get the modules
-	context := modsregistrar.NewContext(cfg, sdkConfig, &encodingConfig, db, cp, parseConfig.GetLogger())
+	context := modsregistrar.NewContext(cfg, sdkConfig, encodingConfig, db, cp, parseConfig.GetLogger())
 	mods := parseConfig.GetRegistrar().BuildModules(context)
 	registeredModules := modsregistrar.GetModules(mods, cfg.Chain.Modules, parseConfig.GetLogger())
 
-	return parser.NewContext(&encodingConfig, cp, db, parseConfig.GetLogger(), registeredModules), nil
+	return parser.NewContext(encodingConfig, cp, db, parseConfig.GetLogger(), registeredModules), nil
 }
 
 // getConfig returns the SDK Config instance as well as if it's sealed or not
