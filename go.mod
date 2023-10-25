@@ -18,7 +18,7 @@ require (
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/viper v1.15.0
 	github.com/stretchr/testify v1.8.4
-	google.golang.org/grpc v1.56.2
+	google.golang.org/grpc v1.56.3
 	gopkg.in/yaml.v3 v3.0.1
 )
 
