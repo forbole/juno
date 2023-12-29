@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/cheqd/cheqd-node v1.4.4
 	github.com/cosmos/cosmos-sdk v0.46.10
-	github.com/cosmos/ibc-go/v5 v5.1.0
+	github.com/cosmos/ibc-go/v6 v6.1.1
 	github.com/go-co-op/gocron v1.13.0
 	github.com/gogo/protobuf v1.3.3
 	github.com/golangci/golangci-lint v1.50.1
