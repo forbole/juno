@@ -1,8 +1,11 @@
 package messages
 
 import (
+	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	channeltypes "github.com/cosmos/ibc-go/v5/modules/core/04-channel/types"
 	"github.com/gogo/protobuf/proto"
 
 	didtypes "github.com/cheqd/cheqd-node/x/did/types"
@@ -18,7 +21,7 @@ func HandleMsg(
 ) error {
 
 	// Get the involved addresses
-	addresses, err := parseAddresses(cdc, msg)
+	addresses, err := parseAddresses(tx)
 	if err != nil {
 		return err
 	}
@@ -29,7 +32,7 @@ func HandleMsg(
 		return err
 	}
 
-	// Handle involved addresses for Cheqd' did and resource module 
+	// Handle involved addresses for Cheqd' did and resource module
 	var involvedAddresses []string
 	switch msg.(type) {
 	case *didtypes.MsgCreateDidDoc:
@@ -70,6 +73,18 @@ func HandleMsg(
 			proto.MessageName(msg),
 			string(bz),
 			involvedAddresses,
+			tx.Height,
+		))
+	// Handle MsgRecvPacket data object
+	case *channeltypes.MsgRecvPacket:
+		trimMessageString := TrimLastChar(string(bz))
+		trimDataString := string(msg.(*channeltypes.MsgRecvPacket).Packet.Data)[1:]
+		return db.SaveMessage(types.NewMessage(
+			tx.TxHash,
+			index,
+			proto.MessageName(msg),
+			fmt.Sprintf("%s,%s", trimMessageString, trimDataString),
+			addresses,
 			tx.Height,
 		))
 	}

@@ -11,6 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/simapp/params"
 
 	"github.com/cosmos/cosmos-sdk/store"
+	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/spf13/viper"
 	cfg "github.com/tendermint/tendermint/config"
@@ -20,7 +21,6 @@ import (
 	tmstore "github.com/tendermint/tendermint/store"
 	db "github.com/tendermint/tm-db"
 
-	storetypes "github.com/cosmos/cosmos-sdk/store/types"
 	"github.com/forbole/juno/v4/node"
 )
 
