@@ -46,7 +46,7 @@ func Builder(ctx *database.Context) (database.Database, error) {
 	postgresDb.SetMaxIdleConns(ctx.Cfg.MaxIdleConnections)
 
 	return &Database{
-		Cdc:   ctx.EncodingConfig.Marshaler,
+		Cdc:   ctx.EncodingConfig.Codec,
 		Amino: ctx.EncodingConfig.Amino,
 
 		SQL:    postgresDb,
