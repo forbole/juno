@@ -31,8 +31,8 @@ package local
 // 	"github.com/cosmos/cosmos-sdk/types/tx"
 // 	"github.com/spf13/viper"
 
-// 	"github.com/forbole/juno/v4/node"
-// 	"github.com/forbole/juno/v4/types"
+// 	"github.com/forbole/juno/v5/node"
+// 	"github.com/forbole/juno/v5/types"
 
 // 	"path"
 // 	"time"

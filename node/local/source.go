@@ -21,7 +21,7 @@ package local
 // 	"github.com/spf13/viper"
 // 	db "github.com/cometbft/cometbft-db"
 
-// 	"github.com/forbole/juno/v4/node"
+// 	"github.com/forbole/juno/v5/node"
 // )
 
 // var (

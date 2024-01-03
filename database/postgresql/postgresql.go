@@ -9,15 +9,15 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/jmoiron/sqlx"
 
-	"github.com/forbole/juno/v4/logging"
+	"github.com/forbole/juno/v5/logging"
 
 	"github.com/lib/pq"
 
-	"github.com/forbole/juno/v4/database"
-	"github.com/forbole/juno/v4/types"
-	"github.com/forbole/juno/v4/types/config"
-	"github.com/forbole/juno/v4/types/env"
-	"github.com/forbole/juno/v4/types/utils"
+	"github.com/forbole/juno/v5/database"
+	"github.com/forbole/juno/v5/types"
+	"github.com/forbole/juno/v5/types/config"
+	"github.com/forbole/juno/v5/types/env"
+	"github.com/forbole/juno/v5/types/utils"
 )
 
 // Builder creates a database connection with the given database connection info

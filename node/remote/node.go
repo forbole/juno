@@ -17,11 +17,11 @@ import (
 	constypes "github.com/cometbft/cometbft/consensus/types"
 	tmjson "github.com/cometbft/cometbft/libs/json"
 
-	"github.com/forbole/juno/v4/node"
+	"github.com/forbole/juno/v5/node"
 
 	"github.com/cosmos/cosmos-sdk/types/tx"
 
-	"github.com/forbole/juno/v4/types"
+	"github.com/forbole/juno/v5/types"
 
 	httpclient "github.com/cometbft/cometbft/rpc/client/http"
 	tmctypes "github.com/cometbft/cometbft/rpc/core/types"

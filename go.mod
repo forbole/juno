@@ -1,6 +1,6 @@
-module github.com/forbole/juno/v4
+module github.com/forbole/juno/v5
 
-go 1.18
+go 1.19
 
 require (
 	github.com/cometbft/cometbft v0.38.2

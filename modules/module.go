@@ -11,7 +11,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/go-co-op/gocron"
 
-	"github.com/forbole/juno/v4/types"
+	"github.com/forbole/juno/v5/types"
 )
 
 // Module represents a generic module without any particular handling of data
