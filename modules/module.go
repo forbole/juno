@@ -6,11 +6,11 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/x/authz"
 
+	tmctypes "github.com/cometbft/cometbft/rpc/core/types"
+	tmtypes "github.com/cometbft/cometbft/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/forbole/juno/v5/types"
 	"github.com/go-co-op/gocron"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
-	tmtypes "github.com/tendermint/tendermint/types"
 )
 
 // Module represents a generic module without any particular handling of data

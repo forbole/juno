@@ -1,8 +1,8 @@
 package types
 
 import (
-	"cosmossdk.io/simapp"
-	simappparams "cosmossdk.io/simapp/params"
+	"github.com/cosmos/cosmos-sdk/simapp"
+	simappparams "github.com/cosmos/cosmos-sdk/simapp/params"
 	"github.com/cosmos/cosmos-sdk/std"
 
 	"github.com/forbole/juno/v5/logging"

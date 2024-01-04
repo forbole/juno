@@ -7,7 +7,6 @@ import (
 
 	"github.com/forbole/juno/v5/node"
 	nodeconfig "github.com/forbole/juno/v5/node/config"
-	"github.com/forbole/juno/v5/node/local"
 	"github.com/forbole/juno/v5/node/remote"
 )
 
@@ -16,7 +15,7 @@ func BuildNode(cfg nodeconfig.Config, encodingConfig *params.EncodingConfig) (no
 	case nodeconfig.TypeRemote:
 		return remote.NewNode(cfg.Details.(*remote.Details), encodingConfig.Marshaler)
 	case nodeconfig.TypeLocal:
-		return local.NewNode(cfg.Details.(*local.Details), encodingConfig.TxConfig, encodingConfig.Marshaler)
+		return nil, fmt.Errorf("local node is currently not supported")
 	case nodeconfig.TypeNone:
 		return nil, nil
 
