@@ -1,8 +1,8 @@
 package logging
 
 import (
+	tmctypes "github.com/cometbft/cometbft/rpc/core/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	"github.com/forbole/juno/v5/modules"
 	"github.com/forbole/juno/v5/types"
