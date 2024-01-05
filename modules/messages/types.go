@@ -37,13 +37,13 @@ func parseAddressesFromEvents(tx *types.Tx) []string {
 	for _, event := range tx.Events {
 		for _, attribute := range event.Attributes {
 			// Try parsing the address as a validator address
-			validatorAddress, _ := sdk.ValAddressFromBech32(attribute.Value)
+			validatorAddress, _ := sdk.ValAddressFromBech32(string(attribute.Value))
 			if validatorAddress != nil {
 				addresses = append(addresses, validatorAddress.String())
 			}
 
 			// Try parsing the address as an account address
-			accountAddress, err := sdk.AccAddressFromBech32(attribute.Value)
+			accountAddress, err := sdk.AccAddressFromBech32(string(attribute.Value))
 			if err != nil {
 				// Skip if the address is not an account address
 				continue
