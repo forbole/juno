@@ -203,7 +203,8 @@ func (cp *Node) BlockResults(height int64) (*tmctypes.ResultBlockResults, error)
 
 // Tx implements node.Node
 func (cp *Node) Tx(hash string) (*types.Tx, error) {
-	res, err := cp.txServiceClient.GetTx(context.Background(), &tx.GetTxRequest{Hash: hash})
+	maxSizeOption := grpc.MaxCallRecvMsgSize(32 * 10e6)
+	res, err := cp.txServiceClient.GetTx(context.Background(), &tx.GetTxRequest{Hash: hash}, maxSizeOption)
 	if err != nil {
 		return nil, err
 	}
