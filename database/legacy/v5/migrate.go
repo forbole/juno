@@ -3,7 +3,6 @@ package v5
 import (
 	"fmt"
 
-	"github.com/cosmos/gogoproto/proto"
 	dbtypes "github.com/forbole/juno/v5/database/migrate/utils"
 	msg "github.com/forbole/juno/v5/modules/messages"
 	"github.com/forbole/juno/v5/types"
@@ -21,7 +20,7 @@ func (db *Migrator) Migrate() error {
 		err = db.migrateMsgTypes(types.NewMessageType(
 			msgType.Type,
 			msg.GetModuleNameFromTypeURL(msgType.Type),
-			msg.GetMsgFromTypeURL(proto.MessageType(msgType.Type).String()),
+			msg.GetMsgFromTypeURL(msgType.Type),
 			msgType.Height))
 
 		if err != nil {

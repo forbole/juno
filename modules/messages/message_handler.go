@@ -31,13 +31,11 @@ func HandleMsg(
 		return err
 	}
 
-	msgLabel := GetMsgFromTypeURL(proto.MessageType(proto.MessageName(msg)).String())
-
 	// Save message type
 	err = db.SaveMessageType(types.NewMessageType(
 		proto.MessageName(msg),
 		GetModuleNameFromTypeURL(proto.MessageName(msg)),
-		msgLabel,
+		GetMsgFromTypeURL(proto.MessageName(msg)),
 		tx.Height))
 
 	if err != nil {
@@ -87,7 +85,7 @@ func GetModuleNameFromTypeURL(input string) string {
 func GetMsgFromTypeURL(input string) string {
 	messageName := strings.Split(input, ".")
 	if len(messageName) > 1 {
-		return messageName[1] // e.g. "*types.MsgSend" => "MsgSend"
+		return messageName[len(messageName)-1] // e.g. "cosmos.bank.v1beta1.MsgSend" => "MsgSend"
 	}
 	return ""
 }
