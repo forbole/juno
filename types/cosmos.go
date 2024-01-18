@@ -153,3 +153,25 @@ func NewMessage(txHash string, index int, msgType string, value string, addresse
 		Height:    height,
 	}
 }
+
+// -------------------------------------------------------------------------------------------------------------------
+
+// MessageType represents the data of a single message type
+type MessageType struct {
+	Index  int
+	Type   string
+	Module string
+	Label  string
+	Height int64
+}
+
+// NewMessageType allows to build a new MessageType instance
+func NewMessageType(index int, msgType string, module string, label string, height int64) *MessageType {
+	return &MessageType{
+		Index:  index,
+		Type:   msgType,
+		Module: module,
+		Label:  label,
+		Height: height,
+	}
+}

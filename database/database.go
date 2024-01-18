@@ -51,6 +51,10 @@ type Database interface {
 	// An error is returned if the operation fails.
 	SaveMessage(msg *types.Message) error
 
+	// SaveMessageType stores a single message type.
+	// An error is returned if the operation fails.
+	SaveMessageType(msg *types.MessageType) error
+
 	// Close closes the connection to the database
 	Close()
 }

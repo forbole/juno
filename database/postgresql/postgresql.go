@@ -314,6 +314,17 @@ ON CONFLICT (transaction_hash, index, partition_id) DO UPDATE
 	return err
 }
 
+// SaveMessageType stores the given message type inside the database
+func (db *Database) SaveMessageType(msg *types.MessageType) error {
+	stmt := `
+INSERT INTO message_type(index, type, module, label, height) 
+VALUES ($1, $2, $3, $4, $5) 
+ON CONFLICT (type) DO NOTHING`
+
+	_, err := db.SQL.Exec(stmt, msg.Index, msg.Type, msg.Module, msg.Label, msg.Height)
+	return err
+}
+
 // Close implements database.Database
 func (db *Database) Close() {
 	err := db.SQL.Close()

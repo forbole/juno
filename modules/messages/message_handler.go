@@ -2,6 +2,7 @@ package messages
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -30,6 +31,19 @@ func HandleMsg(
 		return err
 	}
 
+	msgLabel := GetMsgFromTypeURL(proto.MessageType(proto.MessageName(msg)).String())
+
+	// Save message type
+	err = db.SaveMessageType(types.NewMessageType(index,
+		proto.MessageName(msg),
+		GetModuleNameFromTypeURL(proto.MessageName(msg)),
+		msgLabel,
+		tx.Height))
+
+	if err != nil {
+		return err
+	}
+
 	// Handle MsgRecvPacket data object
 	if msgIBC, ok := msg.(*channeltypes.MsgRecvPacket); ok {
 		trimMessageString := TrimLastChar(string(bz))
@@ -52,4 +66,28 @@ func HandleMsg(
 		addresses,
 		tx.Height,
 	))
+}
+
+func GetModuleNameFromTypeURL(input string) string {
+	moduleName := strings.Split(input, ".")
+	if len(moduleName) > 1 {
+		if strings.Contains(moduleName[0], "cosmos") {
+			return moduleName[1] // e.g. "cosmos.bank.v1beta1.MsgSend" => "bank"
+		} else if strings.Contains(moduleName[0], "ibc") {
+			return fmt.Sprintf("%s %s %s", moduleName[0], moduleName[1], moduleName[2]) // e.g. "ibc.core.client.v1.MsgUpdateClient" => "ibc core client"
+		} else {
+			return fmt.Sprintf("%s %s", moduleName[0], moduleName[1]) // e.g. "cosmwasm.wasm.v1.MsgExecuteContract" => "cosmwasm wasm"
+		}
+
+	}
+
+	return ""
+}
+
+func GetMsgFromTypeURL(input string) string {
+	messageName := strings.Split(input, ".")
+	if len(messageName) > 1 {
+		return messageName[1] // e.g. "*types.MsgSend" => "MsgSend"
+	}
+	return ""
 }

@@ -59,11 +59,23 @@ CREATE INDEX transaction_hash_index ON transaction (hash);
 CREATE INDEX transaction_height_index ON transaction (height);
 CREATE INDEX transaction_partition_id_index ON transaction (partition_id);
 
+CREATE TABLE message_type
+(
+    index     BIGINT NOT NULL,
+    type      TEXT   NOT NULL UNIQUE,
+    module    TEXT   NOT NULL,
+    label     TEXT   NOT NULL,
+    height    BIGINT NOT NULL
+);
+CREATE INDEX message_type_module_index ON message_type (module);
+CREATE INDEX message_type_type_index ON message_type (type);
+
+
 CREATE TABLE message
 (
     transaction_hash            TEXT   NOT NULL,
     index                       BIGINT NOT NULL,
-    type                        TEXT   NOT NULL,
+    type                        TEXT   NOT NULL REFERENCES message_type(type),
     value                       JSONB  NOT NULL,
     involved_accounts_addresses TEXT[] NOT NULL,
 
