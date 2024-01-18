@@ -34,7 +34,7 @@ func HandleMsg(
 	msgLabel := GetMsgFromTypeURL(proto.MessageType(proto.MessageName(msg)).String())
 
 	// Save message type
-	err = db.SaveMessageType(types.NewMessageType(index,
+	err = db.SaveMessageType(types.NewMessageType(
 		proto.MessageName(msg),
 		GetModuleNameFromTypeURL(proto.MessageName(msg)),
 		msgLabel,

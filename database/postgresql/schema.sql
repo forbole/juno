@@ -61,7 +61,6 @@ CREATE INDEX transaction_partition_id_index ON transaction (partition_id);
 
 CREATE TABLE message_type
 (
-    index     BIGINT NOT NULL,
     type      TEXT   NOT NULL UNIQUE,
     module    TEXT   NOT NULL,
     label     TEXT   NOT NULL,
