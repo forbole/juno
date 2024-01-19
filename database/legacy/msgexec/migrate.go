@@ -32,10 +32,10 @@ func (db *Migrator) Migrate() error {
 			return fmt.Errorf("error while getting transaction row: %s", err)
 		}
 
-		// if tx.Success == "false" {
-		// 	skipped++
-		// 	continue
-		// }
+		if tx.Success == "false" {
+			skipped++
+			continue
+		}
 
 		var msgs sdk.ABCIMessageLogs
 		err = json.Unmarshal([]byte(tx.Logs), &msgs)
