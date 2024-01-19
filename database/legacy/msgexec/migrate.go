@@ -32,10 +32,10 @@ func (db *Migrator) Migrate() error {
 			return fmt.Errorf("error while getting transaction row: %s", err)
 		}
 
-		if tx.Success == "false" {
-			skipped++
-			continue
-		}
+		// if tx.Success == "false" {
+		// 	skipped++
+		// 	continue
+		// }
 
 		var msgs sdk.ABCIMessageLogs
 		err = json.Unmarshal([]byte(tx.Logs), &msgs)
@@ -73,13 +73,16 @@ func (db *Migrator) Migrate() error {
 		fmt.Printf("\n ADDRESSES BEFORE %s", msgType.InvolvedAccountsAddresses)
 		fmt.Printf("\n ADDRESSES AFTER %s \n", involvedAddresses)
 
-		return db.updateInvolvedAddressesInsideMessageTable(types.NewMessage(msgType.TransactionHash,
+		err = db.updateInvolvedAddressesInsideMessageTable(types.NewMessage(msgType.TransactionHash,
 			int(msgType.Index),
 			msgType.Type,
 			msgType.Value,
 			involvedAddresses,
 			msgType.Height), msgType.PartitionID)
 
+		if err != nil {
+			return fmt.Errorf("error while storing message: %s", err)
+		}
 	}
 
 	fmt.Printf("\n TOTAL SKIPPED %d \n", skipped)
