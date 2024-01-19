@@ -32,57 +32,57 @@ func (db *Migrator) Migrate() error {
 			return fmt.Errorf("error while getting transaction row: %s", err)
 		}
 
-		if tx.Success == "false" {
-			skipped++
-			continue
-		}
+		if tx.Success == "true" {
+			var msgs sdk.ABCIMessageLogs
+			err = json.Unmarshal([]byte(tx.Logs), &msgs)
+			if err != nil {
+				return fmt.Errorf("error while unmarshaling messages: %s", err)
+			}
 
-		var msgs sdk.ABCIMessageLogs
-		err = json.Unmarshal([]byte(tx.Logs), &msgs)
-		if err != nil {
-			return fmt.Errorf("error while unmarshaling messages: %s", err)
-		}
+			var addresses []string
 
-		var addresses []string
+			for _, msg1 := range msgs {
+				for _, event := range msg1.Events {
+					for _, attribute := range event.Attributes {
+						// Try parsing the address as a validator address
+						validatorAddress, err := sdk.ValAddressFromBech32(attribute.Value)
+						if err != nil {
+							fmt.Printf("\t error %s \n ", err)
+						}
+						if validatorAddress != nil {
+							addresses = append(addresses, validatorAddress.String())
+						}
 
-		for _, msg1 := range msgs {
-			for _, event := range msg1.Events {
-				for _, attribute := range event.Attributes {
-					// Try parsing the address as a validator address
-					validatorAddress, err := sdk.ValAddressFromBech32(attribute.Value)
-					if err != nil {
-						fmt.Printf("\t error %s \n ", err)
+						// Try parsing the address as an account address
+						accountAddress, err := sdk.AccAddressFromBech32(attribute.Value)
+						if err != nil {
+							// Skip if the address is not an account address
+							continue
+						}
+
+						addresses = append(addresses, accountAddress.String())
 					}
-					if validatorAddress != nil {
-						addresses = append(addresses, validatorAddress.String())
-					}
-
-					// Try parsing the address as an account address
-					accountAddress, err := sdk.AccAddressFromBech32(attribute.Value)
-					if err != nil {
-						// Skip if the address is not an account address
-						continue
-					}
-
-					addresses = append(addresses, accountAddress.String())
 				}
 			}
+			involvedAddresses := db.removeDuplicates(addresses)
+
+			fmt.Printf("\n ADDRESSES BEFORE %s", msgType.InvolvedAccountsAddresses)
+			fmt.Printf("\n ADDRESSES AFTER %s \n", involvedAddresses)
+
+			err = db.updateInvolvedAddressesInsideMessageTable(types.NewMessage(msgType.TransactionHash,
+				int(msgType.Index),
+				msgType.Type,
+				msgType.Value,
+				involvedAddresses,
+				msgType.Height), msgType.PartitionID)
+
+			if err != nil {
+				return fmt.Errorf("error while storing message: %s", err)
+			}
+		} else {
+			skipped++
 		}
-		involvedAddresses := db.removeDuplicates(addresses)
 
-		fmt.Printf("\n ADDRESSES BEFORE %s", msgType.InvolvedAccountsAddresses)
-		fmt.Printf("\n ADDRESSES AFTER %s \n", involvedAddresses)
-
-		err = db.updateInvolvedAddressesInsideMessageTable(types.NewMessage(msgType.TransactionHash,
-			int(msgType.Index),
-			msgType.Type,
-			msgType.Value,
-			involvedAddresses,
-			msgType.Height), msgType.PartitionID)
-
-		if err != nil {
-			return fmt.Errorf("error while storing message: %s", err)
-		}
 	}
 
 	fmt.Printf("\n TOTAL SKIPPED %d \n", skipped)
