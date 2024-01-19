@@ -1,4 +1,4 @@
-package v4
+package utils
 
 import (
 	databaseconfig "github.com/forbole/juno/v5/database/config"
