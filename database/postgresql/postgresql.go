@@ -8,9 +8,8 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/forbole/juno/v5/logging"
-
-	"github.com/cosmos/cosmos-sdk/simapp/params"
 	"github.com/lib/pq"
 
 	"github.com/forbole/juno/v5/database"
@@ -46,7 +45,7 @@ func Builder(ctx *database.Context) (database.Database, error) {
 	postgresDb.SetMaxIdleConns(ctx.Cfg.MaxIdleConnections)
 
 	return &Database{
-		Cdc:   ctx.EncodingConfig.Codec,
+		Cdc:   ctx.EncodingConfig.Marshaler,
 		Amino: ctx.EncodingConfig.Amino,
 
 		SQL:    postgresDb,
