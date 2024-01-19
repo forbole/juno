@@ -48,9 +48,6 @@ func (db *Migrator) Migrate() error {
 		for _, msg1 := range msgs {
 			for _, event := range msg1.Events {
 				for _, attribute := range event.Attributes {
-					fmt.Printf("\t attribute %v\n", attribute)
-					fmt.Printf("\t attribute value %v\n", attribute.Value)
-
 					// Try parsing the address as a validator address
 					validatorAddress, err := sdk.ValAddressFromBech32(attribute.Value)
 					if err != nil {
