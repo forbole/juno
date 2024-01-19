@@ -19,6 +19,7 @@ func (db *Migrator) Migrate() error {
 		return fmt.Errorf("error while getting message types rows: %s", err)
 	}
 
+	var skipped = 0
 	// Migrate the transactions
 	log.Info().Msg("migrating transactions")
 	log.Debug().Int("tx count", len(msgTypes)).Msg("processing total transactions")
@@ -32,43 +33,48 @@ func (db *Migrator) Migrate() error {
 		}
 
 		if tx.Success == "false" {
+			skipped++
 			continue
 		}
 
-		// Unmarshal messages
-		// var msgs []map[string]interface{}
-		var msgs []sdk.Event
+		var msgs sdk.ABCIMessageLogs
 		err = json.Unmarshal([]byte(tx.Logs), &msgs)
 		if err != nil {
 			return fmt.Errorf("error while unmarshaling messages: %s", err)
 		}
 
-		// sss := msgs.ToABCIEvents()
 		var addresses []string
 
-		for _, event := range msgs {
-			for _, attribute := range event.Attributes {
-				// Try parsing the address as a validator address
-				validatorAddress, _ := sdk.ValAddressFromBech32(attribute.Value)
-				if validatorAddress != nil {
-					addresses = append(addresses, validatorAddress.String())
-				}
+		for _, msg1 := range msgs {
+			for _, event := range msg1.Events {
+				for _, attribute := range event.Attributes {
+					fmt.Printf("\t attribute %v\n", attribute)
+					fmt.Printf("\t attribute value %v\n", attribute.Value)
 
-				// Try parsing the address as an account address
-				accountAddress, err := sdk.AccAddressFromBech32(attribute.Value)
-				if err != nil {
-					// Skip if the address is not an account address
-					continue
-				}
+					// Try parsing the address as a validator address
+					validatorAddress, err := sdk.ValAddressFromBech32(attribute.Value)
+					if err != nil {
+						fmt.Printf("\t error %s \n ", err)
+					}
+					if validatorAddress != nil {
+						addresses = append(addresses, validatorAddress.String())
+					}
 
-				addresses = append(addresses, accountAddress.String())
+					// Try parsing the address as an account address
+					accountAddress, err := sdk.AccAddressFromBech32(attribute.Value)
+					if err != nil {
+						// Skip if the address is not an account address
+						continue
+					}
+
+					addresses = append(addresses, accountAddress.String())
+				}
 			}
-
 		}
 		involvedAddresses := db.removeDuplicates(addresses)
 
 		fmt.Printf("\n ADDRESSES BEFORE %s", msgType.InvolvedAccountsAddresses)
-		fmt.Printf("\n ADDRESSES AFTER %s \n\n", involvedAddresses)
+		fmt.Printf("\n ADDRESSES AFTER %s \n", involvedAddresses)
 
 		return db.updateInvolvedAddressesInsideMessageTable(types.NewMessage(msgType.TransactionHash,
 			int(msgType.Index),
@@ -78,6 +84,8 @@ func (db *Migrator) Migrate() error {
 			msgType.Height), msgType.PartitionID)
 
 	}
+
+	fmt.Printf("\n TOTAL SKIPPED %d \n", skipped)
 
 	return nil
 
