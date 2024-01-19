@@ -9,6 +9,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	dbtypes "github.com/forbole/juno/v5/database/migrate/utils"
+	msgmodule "github.com/forbole/juno/v5/modules/messages"
 	"github.com/forbole/juno/v5/types"
 )
 
@@ -25,18 +26,18 @@ func (db *Migrator) Migrate() error {
 	log.Debug().Int("tx count", len(msgTypes)).Msg("processing total transactions")
 
 	for _, msgType := range msgTypes {
-		log.Debug().Str("tx hash", msgType.TransactionHash).Msg("migrating transaction....")
+		log.Debug().Str("tx hash", msgType.TransactionHash).Msg("getting transaction....")
 
 		tx, err := db.getMsgExecTransactionsFromDatabase(msgType.TransactionHash)
 		if err != nil {
-			return fmt.Errorf("error while getting transaction row: %s", err)
+			return fmt.Errorf("error while getting transaction %s: %s", msgType.TransactionHash, err)
 		}
 
 		if tx.Success == "true" {
 			var msgs sdk.ABCIMessageLogs
 			err = json.Unmarshal([]byte(tx.Logs), &msgs)
 			if err != nil {
-				return fmt.Errorf("error while unmarshaling messages: %s", err)
+				return fmt.Errorf("error while unmarshaling tx logs: %s", err)
 			}
 
 			var addresses []string
@@ -45,10 +46,7 @@ func (db *Migrator) Migrate() error {
 				for _, event := range msg1.Events {
 					for _, attribute := range event.Attributes {
 						// Try parsing the address as a validator address
-						validatorAddress, err := sdk.ValAddressFromBech32(attribute.Value)
-						if err != nil {
-							fmt.Printf("\t error %s \n ", err)
-						}
+						validatorAddress, _ := sdk.ValAddressFromBech32(attribute.Value)
 						if validatorAddress != nil {
 							addresses = append(addresses, validatorAddress.String())
 						}
@@ -64,12 +62,12 @@ func (db *Migrator) Migrate() error {
 					}
 				}
 			}
-			involvedAddresses := db.removeDuplicates(addresses)
+			involvedAddresses := msgmodule.RemoveDuplicates(addresses)
 
 			fmt.Printf("\n ADDRESSES BEFORE %s", msgType.InvolvedAccountsAddresses)
 			fmt.Printf("\n ADDRESSES AFTER %s \n", involvedAddresses)
 
-			err = db.updateInvolvedAddressesInsideMessageTable(types.NewMessage(msgType.TransactionHash,
+			err = db.updateMessage(types.NewMessage(msgType.TransactionHash,
 				int(msgType.Index),
 				msgType.Type,
 				msgType.Value,
@@ -77,7 +75,7 @@ func (db *Migrator) Migrate() error {
 				msgType.Height), msgType.PartitionID)
 
 			if err != nil {
-				return fmt.Errorf("error while storing message: %s", err)
+				return fmt.Errorf("error while storing updated message: %s", err)
 			}
 		} else {
 			skipped++
@@ -114,21 +112,8 @@ func (db *Migrator) getMsgExecTransactionsFromDatabase(txHash string) (dbtypes.T
 	return rows[0], nil
 }
 
-// function to remove duplicate values
-func (db *Migrator) removeDuplicates(s []string) []string {
-	bucket := make(map[string]bool)
-	var result []string
-	for _, str := range s {
-		if _, ok := bucket[str]; !ok {
-			bucket[str] = true
-			result = append(result, str)
-		}
-	}
-	return result
-}
-
-// migrateMsgTypes stores the given message type inside the database
-func (db *Migrator) updateInvolvedAddressesInsideMessageTable(msg *types.Message, partitionID int64) error {
+// updateMessage stores updated message inside the database
+func (db *Migrator) updateMessage(msg *types.Message, partitionID int64) error {
 	stmt := `
 INSERT INTO message(transaction_hash, index, type, value, involved_accounts_addresses, height, partition_id) 
 VALUES ($1, $2, $3, $4, $5, $6, $7) 
