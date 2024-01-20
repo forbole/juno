@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/forbole/juno/v5/cmd/migrate/msgexec"
 	parsecmdtypes "github.com/forbole/juno/v5/cmd/parse/types"
-
 	"github.com/spf13/cobra"
 
 	v4 "github.com/forbole/juno/v5/cmd/migrate/v4"
@@ -15,7 +15,8 @@ type Migrator func(parseCfg *parsecmdtypes.Config) error
 
 var (
 	migrations = map[string]Migrator{
-		"v4": v4.RunMigration,
+		"v4":      v4.RunMigration,
+		"msgexec": msgexec.RunMigration,
 	}
 )
 

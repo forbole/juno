@@ -20,7 +20,7 @@ func DefaultMessagesParser(tx *types.Tx) ([]string, error) {
 }
 
 // function to remove duplicate values
-func removeDuplicates(s []string) []string {
+func RemoveDuplicates(s []string) []string {
 	bucket := make(map[string]bool)
 	var result []string
 	for _, str := range s {
@@ -54,5 +54,5 @@ func parseAddressesFromEvents(tx *types.Tx) []string {
 
 	}
 
-	return removeDuplicates(addresses)
+	return RemoveDuplicates(addresses)
 }
