@@ -42,8 +42,8 @@ func (db *Migrator) Migrate() error {
 
 			var addresses []string
 
-			for _, msg1 := range msgs {
-				for _, event := range msg1.Events {
+			for _, msg := range msgs {
+				for _, event := range msg.Events {
 					for _, attribute := range event.Attributes {
 						// Try parsing the address as a validator address
 						validatorAddress, _ := sdk.ValAddressFromBech32(attribute.Value)
