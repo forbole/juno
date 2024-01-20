@@ -13,6 +13,7 @@ type TransactionRow struct {
 	GasUsed     string `db:"gas_used"`
 	RawLog      string `db:"raw_log"`
 	Logs        string `db:"logs"`
+	PartitionID int64  `db:"partition_id"`
 }
 
 type MessageRow struct {
