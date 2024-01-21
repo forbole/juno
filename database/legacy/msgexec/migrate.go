@@ -25,8 +25,9 @@ func (db *Migrator) Migrate() error {
 	log.Info().Msg("** migrating transactions **")
 	log.Debug().Int("tx count", len(msgTypes)).Msg("processing total transactions")
 
-	for _, msgType := range msgTypes {
+	for i, msgType := range msgTypes {
 		log.Debug().Str("tx hash", msgType.TransactionHash).Msg("getting transaction....")
+		fmt.Printf("\n processing %d/%d transaction \n", i, len(msgTypes))
 
 		tx, err := db.getMsgExecTransactionsFromDatabase(msgType.TransactionHash)
 		if err != nil {
@@ -93,7 +94,7 @@ func (db *Migrator) Migrate() error {
 func (db *Migrator) getAllMsgExecStoredInDatabase() ([]dbtypes.MessageRow, error) {
 	const msgType = "cosmos.authz.v1beta1.MsgExec"
 	var rows []dbtypes.MessageRow
-	err := db.SQL.Select(&rows, `SELECT * FROM message WHERE type = $1`, msgType)
+	err := db.SQL.Select(&rows, `SELECT * FROM message WHERE type = $1 AND height > $2`, msgType, 14600000)
 	if err != nil {
 		return nil, err
 	}
