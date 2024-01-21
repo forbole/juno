@@ -97,7 +97,7 @@ func (db *Migrator) Migrate() error {
 func (db *Migrator) getAllMsgExecStoredInDatabase() ([]dbtypes.MessageRow, error) {
 	const msgType = "cosmos.authz.v1beta1.MsgExec"
 	var rows []dbtypes.MessageRow
-	err := db.SQL.Select(&rows, `SELECT * FROM message WHERE type = $1 AND height < $2`, msgType, 14600000)
+	err := db.SQL.Select(&rows, `SELECT * FROM message WHERE type = $1 AND height < $2 ORDER BY height ASC`, msgType, 14600000)
 	if err != nil {
 		return nil, err
 	}
