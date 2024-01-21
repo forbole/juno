@@ -38,7 +38,8 @@ func (db *Migrator) Migrate() error {
 			var msgs sdk.ABCIMessageLogs
 			err = json.Unmarshal([]byte(tx.Logs), &msgs)
 			if err != nil {
-				return fmt.Errorf("error while unmarshaling tx logs: %s", err)
+				skipped++
+				continue
 			}
 
 			var addresses []string
@@ -76,7 +77,9 @@ func (db *Migrator) Migrate() error {
 				msgType.Height), msgType.PartitionID)
 
 			if err != nil {
-				return fmt.Errorf("error while storing updated message: %s", err)
+				fmt.Printf("error while storing updated message: %s", err)
+				skipped++
+				continue
 			}
 		} else {
 			skipped++
@@ -94,7 +97,7 @@ func (db *Migrator) Migrate() error {
 func (db *Migrator) getAllMsgExecStoredInDatabase() ([]dbtypes.MessageRow, error) {
 	const msgType = "cosmos.authz.v1beta1.MsgExec"
 	var rows []dbtypes.MessageRow
-	err := db.SQL.Select(&rows, `SELECT * FROM message WHERE type = $1 AND height > $2`, msgType, 14600000)
+	err := db.SQL.Select(&rows, `SELECT * FROM message WHERE type = $1 height < $2`, msgType, 14600000)
 	if err != nil {
 		return nil, err
 	}
