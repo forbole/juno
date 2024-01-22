@@ -5,6 +5,7 @@ import (
 	"os"
 
 	parsecmdtypes "github.com/forbole/juno/v5/cmd/parse/types"
+	utils "github.com/forbole/juno/v5/cmd/migrate/utils"
 
 	"gopkg.in/yaml.v3"
 
@@ -40,10 +41,10 @@ func RunMigration(parseConfig *parsecmdtypes.Config) error {
 	return nil
 }
 
-func migrateConfig() (Config, error) {
+func migrateConfig() (utils.Config, error) {
 	cfg, err := v3.GetConfig()
 	if err != nil {
-		return Config{}, fmt.Errorf("error while reading v3 config: %s", err)
+		return utils.Config{}, fmt.Errorf("error while reading v3 config: %s", err)
 	}
 
 	sslMode := cfg.Database.SSLMode
@@ -56,7 +57,7 @@ func migrateConfig() (Config, error) {
 		schema = "public"
 	}
 
-	return Config{
+	return utils.Config{
 		Node:  cfg.Node,
 		Chain: cfg.Chain,
 		Database: databaseconfig.Config{
