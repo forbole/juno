@@ -13,4 +13,15 @@ type TransactionRow struct {
 	GasUsed     string `db:"gas_used"`
 	RawLog      string `db:"raw_log"`
 	Logs        string `db:"logs"`
+	PartitionID int64  `db:"partition_id"`
+}
+
+type MessageRow struct {
+	TransactionHash           string `db:"transaction_hash"`
+	Index                     int64  `db:"index"`
+	Type                      string `db:"type"`
+	Value                     string `db:"value"`
+	InvolvedAccountsAddresses string `db:"involved_accounts_addresses"`
+	Height                    int64  `db:"height"`
+	PartitionID               int64  `db:"partition_id"`
 }
