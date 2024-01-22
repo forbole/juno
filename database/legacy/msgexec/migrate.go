@@ -10,7 +10,6 @@ import (
 	"github.com/rs/zerolog/log"
 
 	dbtypes "github.com/forbole/juno/v5/database/migrate/utils"
-	msgmodule "github.com/forbole/juno/v5/modules/messages"
 	"github.com/forbole/juno/v5/types"
 )
 
@@ -54,7 +53,7 @@ func (db *Migrator) Migrate() error {
 					}
 				}
 			}
-			involvedAddresses := msgmodule.RemoveDuplicates(addresses)
+			involvedAddresses := db.removeDuplicates(addresses)
 
 			fmt.Printf("\n ADDRESSES BEFORE %s", msgType.InvolvedAccountsAddresses)
 			fmt.Printf("\n ADDRESSES AFTER %s \n", involvedAddresses)
@@ -120,4 +119,17 @@ ON CONFLICT (transaction_hash, index, partition_id) DO UPDATE
 	_, err := db.SQL.Exec(stmt, msg.TxHash, msg.Index, msg.Type, msg.Value, pq.Array(msg.Addresses), msg.Height, partitionID)
 	return err
 
+}
+
+// function to remove duplicate values
+func (db *Migrator) removeDuplicates(s []string) []string {
+	bucket := make(map[string]bool)
+	var result []string
+	for _, str := range s {
+		if _, ok := bucket[str]; !ok {
+			bucket[str] = true
+			result = append(result, str)
+		}
+	}
+	return result
 }
