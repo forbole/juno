@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+	"unicode/utf8"
 
 	"github.com/cosmos/cosmos-sdk/x/authz"
 
@@ -324,11 +325,34 @@ func (w Worker) handleMessage(index int, msg sdk.Msg, tx *types.Tx) {
 	}
 }
 
+func escapeNonUTF8Characters(v string) string {
+	var retV string
+	for i, w := 0, 0; i < len(v); i += w {
+		if v[i] != '\x00' {
+			r, width := utf8.DecodeRuneInString(v[i:])
+
+			if r != utf8.RuneError {
+				retV += v[i : i+width]
+				w = width
+				continue
+			}
+		}
+
+		retV += fmt.Sprintf(`\x%X`, v[i])
+		w = 1
+	}
+
+	return retV
+}
+
 // ExportTxs accepts a slice of transactions and persists then inside the database.
 // An error is returned if the write fails.
 func (w Worker) ExportTxs(txs []*types.Tx) error {
 	// handle all transactions inside the block
 	for _, tx := range txs {
+		// non-utf8 characters are not accepted by postgres
+		tx.RawLog = escapeNonUTF8Characters(tx.RawLog)
+
 		// save the transaction
 		err := w.saveTx(tx)
 		if err != nil {
