@@ -9,7 +9,7 @@ import (
 
 var _ database.Migrator = &Migrator{}
 
-// Migrator represents the database migrator that should be used to migrate from v2 of the database to v3
+// Migrator represents the database migrator that should be used to migrate from v4 of the database to v5
 type Migrator struct {
 	SQL *sqlx.DB
 }
