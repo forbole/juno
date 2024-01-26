@@ -109,3 +109,14 @@ CREATE TABLE pruning
 (
     last_pruned_height BIGINT NOT NULL
 )
+
+CREATE FUNCTION messages_by_type(
+  types text [],
+  "limit" bigint DEFAULT 100,
+  "offset" bigint DEFAULT 0) 
+  RETURNS SETOF message AS 
+$$ 
+SELECT * FROM message
+WHERE (cardinality(types) = 0 OR type = ANY (types))
+ORDER BY height DESC LIMIT "limit" OFFSET "offset" 
+$$ LANGUAGE sql STABLE;

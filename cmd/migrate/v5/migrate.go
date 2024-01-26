@@ -11,7 +11,7 @@ import (
 	"github.com/forbole/juno/v5/database/postgresql"
 )
 
-// RunMigration runs the migrations from v4 to v5
+// RunMigration runs the migrations to v5
 func RunMigration(parseConfig *parse.Config) error {
 	cfg, err := GetConfig()
 	if err != nil {
