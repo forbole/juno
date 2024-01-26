@@ -1,4 +1,5 @@
 ## Unreleased
+- ([\#105](https://github.com/forbole/juno/pull/105)) Stored messages types inside new `message_type` table, added new `messages_by_type` function and added v5 migrator that allows to parse all msg types already stored in db
 
 ### Changes
 - ([\#100](https://github.com/forbole/juno/pull/100)) improve account relationship mapping
