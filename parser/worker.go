@@ -327,16 +327,28 @@ func (w Worker) handleMessage(index int, msg sdk.Msg, tx *types.Tx) {
 // ExportTxs accepts a slice of transactions and persists then inside the database.
 // An error is returned if the write fails.
 func (w Worker) ExportTxs(txs []*types.Tx) error {
-	// handle all transactions inside the block
+	// Handle all transactions inside the block
 	for _, tx := range txs {
-		// save the transaction
-		err := w.saveTx(tx)
+		econdedTx, err := w.node.TxEncoder(tx.Tx)
+		if err != nil {
+			return fmt.Errorf("error when econding tx %s", err)
+		}
+		decodedTx, err := w.node.TxDecoder(econdedTx)
+		if err != nil {
+			return fmt.Errorf("error when decoding tx %s", err)
+		}
+		txtx := types.Tx{
+			Tx:         decodedTx,
+			TxResponse: tx.TxResponse,
+		}
+		fmt.Printf("\n\n decodedTx %v \n\n ", decodedTx)
+		// Save the transaction
+		err = w.saveTx(&txtx)
 		if err != nil {
 			return fmt.Errorf("error while storing txs: %s", err)
 		}
-
-		// call the tx handlers
-		w.handleTx(tx)
+		// Call the tx handlers
+		go w.handleTx(tx)
 
 		// handle all messages contained inside the transaction
 		sdkMsgs := make([]sdk.Msg, len(tx.Body.Messages))
