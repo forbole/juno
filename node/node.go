@@ -5,7 +5,7 @@ import (
 
 	constypes "github.com/cometbft/cometbft/consensus/types"
 	tmctypes "github.com/cometbft/cometbft/rpc/core/types"
-
+"github.com/cosmos/cosmos-sdk/types/tx"
 	"github.com/forbole/juno/v5/types"
 )
 
@@ -42,6 +42,14 @@ type Node interface {
 	// in the sdk.TxResponse format which internally contains an sdk.Tx. An error is
 	// returned if any query fails.
 	Txs(block *tmctypes.ResultBlock) ([]*types.Tx, error)
+
+	// TxDecoder decodes transaction bytes into sdk.Tx format. An error is
+	// returned if the query fails.
+	TxDecoder(txBytes []byte) (*tx.Tx, error)
+
+	// TxEncoder encodes the transaction from sdk.Tx format to []byte format.
+	// An error is returned if the query fails.
+	TxEncoder(txToEncode *tx.Tx) ([]byte, error)
 
 	// TxSearch defines a method to search for a paginated set of transactions by DeliverTx event search criteria.
 	TxSearch(query string, page *int, perPage *int, orderBy string) (*tmctypes.ResultTxSearch, error)

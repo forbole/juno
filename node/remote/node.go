@@ -269,3 +269,23 @@ func (cp *Node) Stop() {
 		panic(fmt.Errorf("error while closing gRPC connection: %s", err))
 	}
 }
+
+// TxDecoder implements node.Node
+func (cp *Node) TxDecoder(txBytes []byte) (*tx.Tx, error) {
+	res, err := cp.txServiceClient.TxDecode(context.Background(), &tx.TxDecodeRequest{TxBytes: txBytes})
+	if err != nil {
+		return nil, err
+	}
+
+	return res.Tx, nil
+}
+
+// TxEncoder implements node.Node
+func (cp *Node) TxEncoder(txToEncode *tx.Tx) ([]byte, error) {
+	res, err := cp.txServiceClient.TxEncode(context.Background(), &tx.TxEncodeRequest{Tx: txToEncode})
+	if err != nil {
+		return nil, err
+	}
+
+	return res.TxBytes, nil
+}

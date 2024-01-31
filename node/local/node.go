@@ -542,3 +542,24 @@ func (cp *Node) SubscribeNewBlocks(subscriber string) (<-chan tmctypes.ResultEve
 // Stop implements node.Node
 func (cp *Node) Stop() {
 }
+
+
+// TxDecoder implements node.Node
+func (cp *Node) TxDecoder(txBytes []byte) (*tx.Tx, error) {
+	res, err := cp.TxDecoder(txBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+// TxEncoder implements node.Node
+func (cp *Node) TxEncoder(txToEncode *tx.Tx) ([]byte, error) {
+	res, err := cp.TxEncoder(txToEncode)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
