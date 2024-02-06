@@ -87,7 +87,7 @@ func NewTxBodyFromSdkTxBody(cdc codec.Codec, body *tx.TxBody) *types.TxBody {
 	}
 	return &types.TxBody{
 		TxBody:        body,
-		TimeoutHeight: uint64(body.TimeoutHeight),
+		TimeoutHeight: body.TimeoutHeight,
 		Messages:      messages,
 	}
 }
@@ -111,7 +111,7 @@ func NewSignerInfoFromSdkSignerInfo(cdc codec.Codec, signerInfo *tx.SignerInfo) 
 	return &types.SignerInfo{
 		PublicKey: cdc.MustMarshalJSON(signerInfo.PublicKey),
 		ModeInfo:  cdc.MustMarshalJSON(signerInfo.ModeInfo),
-		Sequence:  uint64(signerInfo.Sequence),
+		Sequence:  signerInfo.Sequence,
 	}
 }
 
@@ -119,6 +119,6 @@ func NewSignerInfoFromSdkSignerInfo(cdc codec.Codec, signerInfo *tx.SignerInfo) 
 func NewFeeFromSdkFee(fee *tx.Fee) *types.Fee {
 	return &types.Fee{
 		Fee:      fee,
-		GasLimit: uint64(fee.GasLimit),
+		GasLimit: fee.GasLimit,
 	}
 }

@@ -232,32 +232,14 @@ type Message interface {
 }
 
 // UnmarshalMessage can be used to unmarshal a Message instance from a JSON representation.
-func UnmarshalMessage(i int, rawMsg json.RawMessage) (Message, error) {
-	var temp struct {
-		Type string `json:"@type"`
-	}
-
-	err := json.Unmarshal(rawMsg, &temp)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal Message: %v", err)
-	}
-
-	msg, err := unmarshalMessageWithType(i, temp.Type, rawMsg)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create message: %v", err)
-	}
-
-	return msg, nil
-}
-
-func unmarshalMessageWithType(index int, msgType string, rawMsg json.RawMessage) (Message, error) {
+func UnmarshalMessage(index int, rawMsg json.RawMessage) (Message, error) {
 	var msg StandardMessage
 	err := json.Unmarshal(rawMsg, &msg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal StandardMessage: %v", err)
 	}
+
 	msg.Index = index
-	msg.Bytes = rawMsg
 	return &msg, nil
 }
 
