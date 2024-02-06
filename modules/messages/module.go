@@ -2,7 +2,6 @@ package messages
 
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/forbole/juno/v5/database"
 	"github.com/forbole/juno/v5/modules"
@@ -33,6 +32,6 @@ func (m *Module) Name() string {
 }
 
 // HandleMsg implements modules.MessageModule
-func (m *Module) HandleMsg(index int, msg sdk.Msg, tx *types.Tx) error {
+func (m *Module) HandleMsg(index int, msg types.Message, tx *types.Transaction) error {
 	return HandleMsg(index, msg, tx, m.parser, m.cdc, m.db)
 }

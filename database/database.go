@@ -33,7 +33,7 @@ type Database interface {
 
 	// SaveTx will be called to save each transaction contained inside a block.
 	// An error is returned if the operation fails.
-	SaveTx(tx *types.Tx) error
+	SaveTx(tx *types.Transaction) error
 
 	// HasValidator returns true if a given validator by consensus address exists.
 	// An error is returned if the operation fails.
@@ -49,7 +49,7 @@ type Database interface {
 
 	// SaveMessage stores a single message.
 	// An error is returned if the operation fails.
-	SaveMessage(msg *types.Message) error
+	SaveMessage(height int64, txHash string, msg types.Message, addresses []string) error
 
 	// Close closes the connection to the database
 	Close()

@@ -4,10 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/cosmos/gogoproto/proto"
-
 	tmctypes "github.com/cometbft/cometbft/rpc/core/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
@@ -102,7 +99,7 @@ func (d *defaultLogger) EventsError(module modules.Module, block *tmctypes.Resul
 }
 
 // TxError implements Logger
-func (d *defaultLogger) TxError(module modules.Module, tx *types.Tx, err error) {
+func (d *defaultLogger) TxError(module modules.Module, tx *types.Transaction, err error) {
 	d.Error("error while handling transaction",
 		"err", err,
 		LogKeyModule, module.Name(),
@@ -112,13 +109,13 @@ func (d *defaultLogger) TxError(module modules.Module, tx *types.Tx, err error) 
 }
 
 // MsgError implements Logger
-func (d *defaultLogger) MsgError(module modules.Module, tx *types.Tx, msg sdk.Msg, err error) {
+func (d *defaultLogger) MsgError(module modules.Module, tx *types.Transaction, msg types.Message, err error) {
 	d.Error("error while handling message",
 		"err", err,
 		LogKeyModule, module.Name(),
 		LogKeyHeight, tx.Height,
 		LogKeyTxHash, tx.TxHash,
-		LogKeyMsgType, proto.MessageName(msg),
+		LogKeyMsgType, msg.GetType(),
 	)
 }
 

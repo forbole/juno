@@ -16,7 +16,7 @@ func TrimLastChar(s string) string {
 
 // JoinMessageParsers joins together all the given parsers, calling them in order
 func JoinMessageParsers(parsers ...MessageAddressesParser) MessageAddressesParser {
-	return func(tx *types.Tx) ([]string, error) {
+	return func(tx *types.Transaction) ([]string, error) {
 		for _, parser := range parsers {
 			// Try getting the addresses
 			addresses, _ := parser(tx)

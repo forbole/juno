@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	cfg "github.com/cometbft/cometbft/config"
 	cs "github.com/cometbft/cometbft/consensus"
@@ -387,7 +386,7 @@ func (cp *Node) BlockResults(height int64) (*tmctypes.ResultBlockResults, error)
 }
 
 // Tx implements node.Node
-func (cp *Node) Tx(hash string) (*types.Tx, error) {
+func (cp *Node) Tx(hash string) (*types.Transaction, error) {
 	// if index is disabled, return error
 	if _, ok := cp.txIndexer.(*null.TxIndex); ok {
 		return nil, fmt.Errorf("transaction indexing is disabled")
@@ -433,16 +432,8 @@ func (cp *Node) Tx(hash string) (*types.Tx, error) {
 		return nil, fmt.Errorf("expected %T, got %T", tx.Tx{}, txResponse.Tx.GetCachedValue())
 	}
 
-	// Decode messages
-	for _, msg := range protoTx.Body.Messages {
-		var stdMsg sdk.Msg
-		err = cp.codec.UnpackAny(msg, &stdMsg)
-		if err != nil {
-			return nil, fmt.Errorf("error while unpacking message: %s", err)
-		}
-	}
-
-	convTx, err := types.NewTx(txResponse, protoTx)
+	tx := NewTxFromSdkTx(cp.codec, protoTx)
+	convTx, err := types.NewTransaction(NewTxResponseFromSdkTxResponse(txResponse, tx), tx)
 	if err != nil {
 		return nil, fmt.Errorf("error converting transaction: %s", err.Error())
 	}
@@ -451,8 +442,8 @@ func (cp *Node) Tx(hash string) (*types.Tx, error) {
 }
 
 // Txs implements node.Node
-func (cp *Node) Txs(block *tmctypes.ResultBlock) ([]*types.Tx, error) {
-	txResponses := make([]*types.Tx, len(block.Block.Txs))
+func (cp *Node) Txs(block *tmctypes.ResultBlock) ([]*types.Transaction, error) {
+	txResponses := make([]*types.Transaction, len(block.Block.Txs))
 	for i, tmTx := range block.Block.Txs {
 		txResponse, err := cp.Tx(fmt.Sprintf("%X", tmTx.Hash()))
 		if err != nil {
