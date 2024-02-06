@@ -211,8 +211,8 @@ type AuthInfo struct {
 // SignerInfo represents the data of a single transaction signer info.
 // It embeds the Cosmos SignerInfo type, but it overrides the PublicKey and Sequence fields with a custom type.
 type SignerInfo struct {
-	*tx.SignerInfo
 	PublicKey json.RawMessage `json:"public_key,omitempty"`
+	ModeInfo  json.RawMessage `json:"mode_info,omitempty"`
 	Sequence  uint64          `json:"sequence,string,omitempty"`
 }
 

@@ -109,9 +109,9 @@ func NewAuthInfoFromSdkAuthInfo(cdc codec.Codec, authInfo *tx.AuthInfo) *types.A
 // NewSignerInfoFromSdkSignerInfo allows to build a new SignerInfo instance from the given tx.SignerInfo
 func NewSignerInfoFromSdkSignerInfo(cdc codec.Codec, signerInfo *tx.SignerInfo) *types.SignerInfo {
 	return &types.SignerInfo{
-		SignerInfo: signerInfo,
-		PublicKey:  cdc.MustMarshalJSON(signerInfo.PublicKey),
-		Sequence:   uint64(signerInfo.Sequence),
+		PublicKey: cdc.MustMarshalJSON(signerInfo.PublicKey),
+		ModeInfo:  cdc.MustMarshalJSON(signerInfo.ModeInfo),
+		Sequence:  uint64(signerInfo.Sequence),
 	}
 }
 

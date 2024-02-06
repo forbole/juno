@@ -3,6 +3,7 @@ package postgresql
 import (
 	"database/sql"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -205,7 +206,7 @@ ON CONFLICT (hash, partition_id) DO UPDATE
 
 	var sigInfos = make([]string, len(tx.AuthInfo.SignerInfos))
 	for index, info := range tx.AuthInfo.SignerInfos {
-		bz, err := db.Cdc.MarshalJSON(info)
+		bz, err := json.Marshal(info)
 		if err != nil {
 			return err
 		}
