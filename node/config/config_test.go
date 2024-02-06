@@ -24,6 +24,9 @@ config:
   grpc:
     insecure: true
     address: "http://localhost:9090"
+
+  api:
+    address: "http://localhost:1317"
 `
 
 	var config nodeconfig.Config
@@ -72,6 +75,9 @@ config:
 				Address:  "http://localhost:9090",
 				Insecure: true,
 			},
+			API: &remote.APIConfig{
+				Address: "http://localhost:1317",
+			},
 		},
 	}
 	bz, err = yaml.Marshal(&config)
@@ -87,6 +93,8 @@ config:
     grpc:
         address: http://localhost:9090
         insecure: true
+    api:
+        address: http://localhost:1317
 `
 	require.Equal(t, strings.TrimLeft(expected, "\n"), string(bz))
 }
