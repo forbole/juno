@@ -37,7 +37,7 @@ will be replaced with the data downloaded from the node.
 				return err
 			}
 
-			workerCtx := parser.NewContext(parseCtx.EncodingConfig, parseCtx.Node, parseCtx.Database, parseCtx.Logger, parseCtx.Modules)
+			workerCtx := parser.NewContext(parseCtx.Node, parseCtx.Database, parseCtx.Logger, parseCtx.Modules)
 			worker := parser.NewWorker(workerCtx, nil, 0)
 
 			// Get the flag values

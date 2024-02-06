@@ -29,7 +29,7 @@ func newMissingCmd(parseConfig *parsecmdtypes.Config) *cobra.Command {
 				return err
 			}
 
-			workerCtx := parser.NewContext(parseCtx.EncodingConfig, parseCtx.Node, parseCtx.Database, parseCtx.Logger, parseCtx.Modules)
+			workerCtx := parser.NewContext(parseCtx.Node, parseCtx.Database, parseCtx.Logger, parseCtx.Modules)
 			worker := parser.NewWorker(workerCtx, nil, 0)
 
 			dbLastHeight, err := parseCtx.Database.GetLastBlockHeight()

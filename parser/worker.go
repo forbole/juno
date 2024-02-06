@@ -7,8 +7,6 @@ import (
 
 	"github.com/forbole/juno/v5/logging"
 
-	"github.com/cosmos/cosmos-sdk/codec"
-
 	"github.com/forbole/juno/v5/database"
 	"github.com/forbole/juno/v5/types/config"
 
@@ -29,7 +27,6 @@ type Worker struct {
 	index int
 
 	queue   types.HeightQueue
-	codec   codec.Codec
 	modules []modules.Module
 
 	node   node.Node
@@ -41,7 +38,6 @@ type Worker struct {
 func NewWorker(ctx *Context, queue types.HeightQueue, index int) Worker {
 	return Worker{
 		index:   index,
-		codec:   ctx.EncodingConfig.Codec,
 		node:    ctx.Node,
 		queue:   queue,
 		db:      ctx.Database,

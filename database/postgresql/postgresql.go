@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/jmoiron/sqlx"
 
 	"github.com/forbole/juno/v5/logging"
@@ -47,9 +46,6 @@ func Builder(ctx *database.Context) (database.Database, error) {
 	postgresDb.SetMaxIdleConns(ctx.Cfg.MaxIdleConnections)
 
 	return &Database{
-		Cdc:   ctx.EncodingConfig.Codec,
-		Amino: ctx.EncodingConfig.Amino,
-
 		SQL:    postgresDb,
 		Logger: ctx.Logger,
 	}, nil
@@ -61,9 +57,6 @@ var _ database.Database = &Database{}
 // Database defines a wrapper around a SQL database and implements functionality
 // for data aggregation and exporting.
 type Database struct {
-	Cdc   codec.Codec
-	Amino *codec.LegacyAmino
-
 	SQL    *sqlx.DB
 	Logger logging.Logger
 }
@@ -199,7 +192,7 @@ ON CONFLICT (hash, partition_id) DO UPDATE
 	}
 	msgsBz := fmt.Sprintf("[%s]", strings.Join(msgs, ","))
 
-	feeBz, err := db.Cdc.MarshalJSON(tx.AuthInfo.Fee)
+	feeBz, err := json.Marshal(tx.AuthInfo.Fee)
 	if err != nil {
 		return fmt.Errorf("failed to JSON encode tx fee: %s", err)
 	}
@@ -214,7 +207,7 @@ ON CONFLICT (hash, partition_id) DO UPDATE
 	}
 	sigInfoBz := fmt.Sprintf("[%s]", strings.Join(sigInfos, ","))
 
-	logsBz, err := db.Amino.MarshalJSON(tx.Logs)
+	logsBz, err := json.Marshal(tx.Logs)
 	if err != nil {
 		return err
 	}

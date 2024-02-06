@@ -31,9 +31,6 @@ var (
 // setupCfg method will be used to customize the SDK configuration. If you don't want any customization
 // you can use the config.DefaultConfigSetup variable.
 //
-// encodingConfigBuilder is used to provide a codec that will later be used to deserialize the
-// transaction messages. Make sure you register all the types you need properly.
-//
 // dbBuilder is used to provide the database that will be used to save the data. If you don't have any
 // particular need, you can use the Create variable to build a default database instance.
 func BuildDefaultExecutor(config *Config) cli.Executor {

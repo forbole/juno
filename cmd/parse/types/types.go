@@ -1,11 +1,8 @@
 package types
 
 import (
-	"github.com/cosmos/cosmos-sdk/std"
-
 	"github.com/forbole/juno/v5/logging"
 	"github.com/forbole/juno/v5/types/config"
-	"github.com/forbole/juno/v5/types/params"
 
 	"github.com/forbole/juno/v5/database"
 	"github.com/forbole/juno/v5/database/builder"
@@ -14,12 +11,11 @@ import (
 
 // Config contains all the configuration for the "parse" command
 type Config struct {
-	registrar             registrar.Registrar
-	configParser          config.Parser
-	encodingConfigBuilder EncodingConfigBuilder
-	setupCfg              SdkConfigSetup
-	buildDb               database.Builder
-	logger                logging.Logger
+	registrar    registrar.Registrar
+	configParser config.Parser
+	setupCfg     SdkConfigSetup
+	buildDb      database.Builder
+	logger       logging.Logger
 }
 
 // NewConfig allows to build a new Config instance
@@ -53,27 +49,6 @@ func (cfg *Config) GetConfigParser() config.Parser {
 		return config.DefaultConfigParser
 	}
 	return cfg.configParser
-}
-
-// WithEncodingConfigBuilder sets the configurations builder to be used
-func (cfg *Config) WithEncodingConfigBuilder(b EncodingConfigBuilder) *Config {
-	cfg.encodingConfigBuilder = b
-	return cfg
-}
-
-// GetEncodingConfigBuilder returns the encoding config builder to be used
-func (cfg *Config) GetEncodingConfigBuilder() EncodingConfigBuilder {
-	if cfg.encodingConfigBuilder == nil {
-		return func() params.EncodingConfig {
-			encodingConfig := params.MakeTestEncodingConfig()
-			std.RegisterLegacyAminoCodec(encodingConfig.Amino)
-			std.RegisterInterfaces(encodingConfig.InterfaceRegistry)
-			ModuleBasics.RegisterLegacyAminoCodec(encodingConfig.Amino)
-			ModuleBasics.RegisterInterfaces(encodingConfig.InterfaceRegistry)
-			return encodingConfig
-		}
-	}
-	return cfg.encodingConfigBuilder
 }
 
 // WithSetupConfig sets the SDK setup configurator to be used

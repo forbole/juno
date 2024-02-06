@@ -1,8 +1,6 @@
 package messages
 
 import (
-	"github.com/cosmos/cosmos-sdk/codec"
-
 	"github.com/forbole/juno/v5/database"
 	"github.com/forbole/juno/v5/modules"
 	"github.com/forbole/juno/v5/types"
@@ -14,14 +12,12 @@ var _ modules.Module = &Module{}
 type Module struct {
 	parser MessageAddressesParser
 
-	cdc codec.Codec
-	db  database.Database
+	db database.Database
 }
 
-func NewModule(parser MessageAddressesParser, cdc codec.Codec, db database.Database) *Module {
+func NewModule(parser MessageAddressesParser, db database.Database) *Module {
 	return &Module{
 		parser: parser,
-		cdc:    cdc,
 		db:     db,
 	}
 }
@@ -33,5 +29,5 @@ func (m *Module) Name() string {
 
 // HandleMsg implements modules.MessageModule
 func (m *Module) HandleMsg(index int, msg types.Message, tx *types.Transaction) error {
-	return HandleMsg(index, msg, tx, m.parser, m.cdc, m.db)
+	return HandleMsg(index, msg, tx, m.parser, m.db)
 }

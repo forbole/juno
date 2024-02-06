@@ -2,7 +2,6 @@ package database
 
 import (
 	"github.com/forbole/juno/v5/logging"
-	"github.com/forbole/juno/v5/types/params"
 
 	databaseconfig "github.com/forbole/juno/v5/database/config"
 
@@ -69,17 +68,15 @@ type PruningDb interface {
 
 // Context contains the data that might be used to build a Database instance
 type Context struct {
-	Cfg            databaseconfig.Config
-	EncodingConfig params.EncodingConfig
-	Logger         logging.Logger
+	Cfg    databaseconfig.Config
+	Logger logging.Logger
 }
 
 // NewContext allows to build a new Context instance
-func NewContext(cfg databaseconfig.Config, encodingConfig params.EncodingConfig, logger logging.Logger) *Context {
+func NewContext(cfg databaseconfig.Config, logger logging.Logger) *Context {
 	return &Context{
-		Cfg:            cfg,
-		EncodingConfig: encodingConfig,
-		Logger:         logger,
+		Cfg:    cfg,
+		Logger: logger,
 	}
 }
 

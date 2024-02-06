@@ -21,7 +21,6 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/forbole/juno/v5/node"
-	"github.com/forbole/juno/v5/types/params"
 )
 
 var (
@@ -34,8 +33,7 @@ type Source struct {
 
 	StoreDB db.DB
 
-	Codec       codec.Codec
-	LegacyAmino *codec.LegacyAmino
+	Codec codec.Codec
 
 	BlockStore *tmstore.BlockStore
 	Logger     log.Logger
@@ -43,7 +41,7 @@ type Source struct {
 }
 
 // NewSource returns a new Source instance
-func NewSource(home string, encodingConfig params.EncodingConfig) (*Source, error) {
+func NewSource(home string, codec codec.Codec) (*Source, error) {
 	levelDB, err := db.NewGoLevelDB("application", path.Join(home, "data"))
 	if err != nil {
 		return nil, err
@@ -62,8 +60,7 @@ func NewSource(home string, encodingConfig params.EncodingConfig) (*Source, erro
 	return &Source{
 		StoreDB: levelDB,
 
-		Codec:       encodingConfig.Codec,
-		LegacyAmino: encodingConfig.Amino,
+		Codec: codec,
 
 		BlockStore: tmstore.NewBlockStore(blockStoreDB),
 		Logger:     log.NewTMLogger(log.NewSyncWriter(os.Stdout)).With("module", "explorer"),

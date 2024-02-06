@@ -12,8 +12,6 @@ import (
 
 	tmtypes "github.com/cometbft/cometbft/types"
 
-	"github.com/cosmos/cosmos-sdk/codec"
-
 	constypes "github.com/cometbft/cometbft/consensus/types"
 	tmjson "github.com/cometbft/cometbft/libs/json"
 
@@ -34,13 +32,12 @@ var (
 // chain SDK REST client that allows for essential data queries.
 type Node struct {
 	ctx          context.Context
-	codec        codec.Codec
 	client       *httpclient.HTTP
 	txServiceAPI string
 }
 
 // NewNode allows to build a new Node instance
-func NewNode(cfg *Details, codec codec.Codec) (*Node, error) {
+func NewNode(cfg *Details) (*Node, error) {
 	httpClient, err := jsonrpcclient.DefaultHTTPClient(cfg.RPC.Address)
 	if err != nil {
 		return nil, err
@@ -64,8 +61,7 @@ func NewNode(cfg *Details, codec codec.Codec) (*Node, error) {
 	}
 
 	return &Node{
-		ctx:   context.Background(),
-		codec: codec,
+		ctx: context.Background(),
 
 		client:       rpcClient,
 		txServiceAPI: cfg.API.Address,
