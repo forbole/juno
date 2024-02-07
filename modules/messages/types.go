@@ -52,7 +52,6 @@ func parseAddressesFromEvents(tx *types.Transaction) []string {
 
 			addresses = append(addresses, accountAddress.String())
 		}
-
 	}
 
 	return removeDuplicates(addresses)

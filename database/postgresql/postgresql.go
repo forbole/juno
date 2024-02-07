@@ -297,10 +297,10 @@ VALUES ($1, $2, $3, $4, $5, $6, $7)
 ON CONFLICT (transaction_hash, index, partition_id) DO UPDATE 
 	SET height = excluded.height, 
 		type = excluded.type,
-		value = excluded.value
+		value = excluded.value,
 		involved_accounts_addresses = excluded.involved_accounts_addresses`
 
-	_, err := db.SQL.Exec(stmt, txHash, msg.GetIndex(), msg.GetType(), msg.GetBytes(), addresses, height, partitionID)
+	_, err := db.SQL.Exec(stmt, txHash, msg.GetIndex(), msg.GetType(), msg.GetBytes(), pq.Array(addresses), height, partitionID)
 	return err
 }
 
