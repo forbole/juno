@@ -7,6 +7,7 @@ import (
 	loggingconfig "github.com/forbole/juno/v5/logging/config"
 	nodeconfig "github.com/forbole/juno/v5/node/config"
 	parserconfig "github.com/forbole/juno/v5/parser/config"
+	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -49,7 +50,7 @@ func DefaultConfig() Config {
 }
 
 func (c Config) GetBytes() ([]byte, error) {
-	return c.bytes, nil
+	return yaml.Marshal(c)
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
