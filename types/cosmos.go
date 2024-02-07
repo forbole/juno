@@ -248,7 +248,6 @@ func UnmarshalMessage(index int, rawMsg json.RawMessage) (Message, error) {
 // StandardMessage represents the data of a single transaction message.
 // It contains the raw bytes of the message, plus the type of the message. This is done in order to be able to
 // support any kind of message agnosticly while still being able to decode the message bytes into a concrete type.
-// It also contains
 type StandardMessage struct {
 	Index int
 	Type  string `json:"@type"`
