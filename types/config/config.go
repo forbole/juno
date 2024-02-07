@@ -3,6 +3,8 @@ package config
 import (
 	"strings"
 
+	"gopkg.in/yaml.v3"
+
 	databaseconfig "github.com/forbole/juno/v4/database/config"
 	loggingconfig "github.com/forbole/juno/v4/logging/config"
 	nodeconfig "github.com/forbole/juno/v4/node/config"
@@ -41,11 +43,19 @@ func NewConfig(
 }
 
 func DefaultConfig() Config {
-	return NewConfig(
+	cfg := NewConfig(
 		nodeconfig.DefaultConfig(),
 		DefaultChainConfig(), databaseconfig.DefaultDatabaseConfig(),
 		parserconfig.DefaultParsingConfig(), loggingconfig.DefaultLoggingConfig(),
 	)
+
+	bz, err := yaml.Marshal(cfg)
+	if err != nil {
+		panic(err)
+	}
+
+	cfg.bytes = bz
+	return cfg
 }
 
 func (c Config) GetBytes() ([]byte, error) {
