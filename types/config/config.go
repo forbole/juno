@@ -42,15 +42,23 @@ func NewConfig(
 }
 
 func DefaultConfig() Config {
-	return NewConfig(
+	cfg := NewConfig(
 		nodeconfig.DefaultConfig(),
 		DefaultChainConfig(), databaseconfig.DefaultDatabaseConfig(),
 		parserconfig.DefaultParsingConfig(), loggingconfig.DefaultLoggingConfig(),
 	)
+
+	bz, err := yaml.Marshal(cfg)
+	if err != nil {
+		panic(err)
+	}
+
+	cfg.bytes = bz
+	return cfg
 }
 
 func (c Config) GetBytes() ([]byte, error) {
-	return yaml.Marshal(c)
+	return c.bytes, nil
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
