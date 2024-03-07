@@ -1,5 +1,4 @@
 ## v5.3.0
-
 ### Changes
 - ([\#100](https://github.com/forbole/juno/pull/100)) Improved account relationship mapping
 - ([\#108](https://github.com/forbole/juno/pull/108)) Fixed `init` command creating empty config file
