@@ -23,7 +23,7 @@ func DefaultMessagesParser(tx *types.Transaction) ([]string, error) {
 // function to remove duplicate values
 func removeDuplicates(s []string) []string {
 	bucket := make(map[string]bool)
-	var result []string
+	result := []string{}
 	for _, str := range s {
 		if _, ok := bucket[str]; !ok {
 			bucket[str] = true
@@ -33,8 +33,8 @@ func removeDuplicates(s []string) []string {
 	return result
 }
 
-func parseAddressesFromEvents(tx *types.Transaction) []string {
-	var addresses []string
+func parseAddressesFromEvents(tx *types.Tx) []string {
+	addresses := []string{}
 	for _, event := range tx.Events {
 		for _, attribute := range event.Attributes {
 			// Try parsing the address as a validator address
