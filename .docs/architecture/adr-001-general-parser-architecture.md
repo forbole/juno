@@ -161,9 +161,9 @@ type Scheduler interface {
 }
 ```
 
-### Modules
+### Module
 
-The Modules interface serves as the foundation for defining and extending functionality within Juno's parser architecture.
+The Module interface serves as the foundation for defining and extending functionality within Juno's parser architecture.
 
 Within Juno, a fundamental module called BlockModule is provided, dedicated to handling blocks.
 
