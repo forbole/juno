@@ -105,10 +105,13 @@ The Node interface serves as an abstraction layer for interacting with RPC serve
 ```go
 type Node interface {
     // LatestBlock retrieves the latest block from the connected node.
-    LatestBlock() Block
+    LatestBlock() (Block, error)
+
+    // Block retrieves the block by the given height
+    Block(height uint64) (Block, error)
 
     // SubscribeBlocks returns a channel to subscribe to new blocks from the connected node.
-    SubscribeBlocks() <-chan Block
+    SubscribeBlocks() (<-chan Block, error)
 }
 ```
 
@@ -119,7 +122,7 @@ The Database interface encapsulates the necessary operations for interacting wit
 ```go
 type Database interface {
     // SaveBlock saves a block into the database.
-    SaveBlock() error
+    SaveBlock(block Block) error
 
     // LatestBlock returns the latest block from the database.
     LatestBlock() (Block, error)
