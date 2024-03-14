@@ -53,7 +53,7 @@ type Context interface {
 The Block interface serves as a representation of the aggregation of operations on the blockchain and is the fundamental element transferred within the queue for parsing by workers within Juno.
 
 ```go
-type Block[T any] interface {
+type Block interface {
     // Height returns the height of the block.
     Height() uint64
 
@@ -65,9 +65,6 @@ type Block[T any] interface {
 
     // Proposer returns the address of the block proposer.
     Proposer() string
-
-    // Value returns the content of the block.
-    Value() T
 }
 ```
 
