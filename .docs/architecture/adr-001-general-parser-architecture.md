@@ -136,7 +136,7 @@ The Worker interface defines the functionality for parsing blocks from the queue
 ```go
 type Worker interface {
     // Start starts the worker to parse blocks from the queue.
-    Start(ctx Context, queue BlockQueue)
+    Start(ctx Context, queue BlockQueue, extensions ...func(block Block) error)
 }
 ```
 
@@ -155,6 +155,9 @@ type PeriodicOperationsModule interface {
 type Scheduler interface {
     // Register registers a periodic operations module.
     Register(module PeriodicOperationsModule)
+
+    // RegisterTask register a periodic task to scheduler.
+    RegisterTask(task func(), duration time.Duration)
 
     // Start starts the scheduler.
     Start(ctx Context)
