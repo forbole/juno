@@ -186,10 +186,11 @@ Currently, we utilize the additional operation module to host a Prometheus serve
 
 ```go
 type AdditionalOperationModule interface {
-    // RegisterAdditionalOperation allows to register the operation that will be run on a periodic basis.
-	// The given scheduler can be used to define the periodicity of each task.
-	// NOTE. This method will only be run ONCE during the module initialization.
-    RegisterAdditionalOperation(operator AdditionalOperator) error
+    // RunAdditionalOperations runs all the additional operations required by the module.
+	// This is the perfect place where to initialize all the operations that subscribe to websockets or other
+	// external sources.
+	// NOTE. This method will only be run ONCE before starting the parsing of the blocks.
+    RunAdditionalOperations() error
 }
 
 type AdditionalOperator interface {
