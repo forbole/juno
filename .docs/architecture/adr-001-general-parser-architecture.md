@@ -136,7 +136,7 @@ The Worker interface defines the functionality for parsing blocks from the queue
 ```go
 type Worker interface {
     // Start starts the worker to parse blocks from the queue.
-    Start(ctx Context, queue BlockQueue, extensions ...func(block Block) error)
+    Start(ctx Context, queue BlockQueue)
 }
 ```
 
