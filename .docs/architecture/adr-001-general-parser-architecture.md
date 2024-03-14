@@ -53,7 +53,7 @@ type Context interface {
 The Block interface serves as a representation of the aggregation of operations on the blockchain and is the fundamental element transferred within the queue for parsing by workers within Juno.
 
 ```go
-type Block[T: any] interface {
+type Block[T any] interface {
     // Height returns the height of the block.
     Height() uint64
 
@@ -106,7 +106,7 @@ type BlockQueue interface {
 The Node interface serves as an abstraction layer for interacting with RPC servers or other clients to obtain block data efficiently.
 
 ```go
-type Client interface {
+type Node interface {
     // LatestBlock retrieves the latest block from the connected node.
     LatestBlock() Block
 
