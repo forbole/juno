@@ -1,33 +1,48 @@
 package parser
 
 import (
-	"github.com/forbole/juno/v5/logging"
-	"github.com/forbole/juno/v5/node"
-	"github.com/forbole/juno/v5/types/params"
+	"golang.org/x/net/context"
 
-	"github.com/forbole/juno/v5/database"
-	"github.com/forbole/juno/v5/modules"
+	"github.com/forbole/juno/v5/interfaces"
 )
+
+var _ interfaces.Context = &Context{}
 
 // Context represents the context that is shared among different workers
 type Context struct {
-	EncodingConfig params.EncodingConfig
-	Node           node.Node
-	Database       database.Database
-	Logger         logging.Logger
-	Modules        []modules.Module
+	context.Context
+	node     interfaces.BlockNode
+	database interfaces.WorkerRepository
+	logger   interfaces.Logger
+	modules  []interfaces.Module
+}
+
+func (c *Context) WorkerRepository() interfaces.WorkerRepository {
+	return c.database
+}
+
+func (c *Context) BlockNode() interfaces.BlockNode {
+	return c.node
+}
+
+func (c *Context) Modules() []interfaces.Module {
+	return c.modules
+}
+
+func (c *Context) Logger() interfaces.Logger {
+	return c.logger
 }
 
 // NewContext builds a new Context instance
 func NewContext(
-	encodingConfig params.EncodingConfig, proxy node.Node, db database.Database,
-	logger logging.Logger, modules []modules.Module,
+	ctx context.Context, proxy interfaces.BlockNode, db interfaces.WorkerRepository,
+	logger interfaces.Logger, modules []interfaces.Module,
 ) *Context {
 	return &Context{
-		EncodingConfig: encodingConfig,
-		Node:           proxy,
-		Database:       db,
-		Modules:        modules,
-		Logger:         logger,
+		Context:  ctx,
+		node:     proxy,
+		database: db,
+		modules:  modules,
+		logger:   logger,
 	}
 }

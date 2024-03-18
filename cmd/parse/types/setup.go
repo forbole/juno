@@ -4,20 +4,28 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/forbole/juno/v5/parser"
-
-	nodebuilder "github.com/forbole/juno/v5/node/builder"
-	"github.com/forbole/juno/v5/types/config"
-
-	"github.com/forbole/juno/v5/database"
+	"github.com/forbole/juno/v5/database/postgresql"
+	"github.com/forbole/juno/v5/interfaces"
+	"github.com/forbole/juno/v5/node"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	nodebuilder "github.com/forbole/juno/v5/node/builder"
+	"github.com/forbole/juno/v5/types/config"
+	"github.com/forbole/juno/v5/types/params"
 
 	modsregistrar "github.com/forbole/juno/v5/modules/registrar"
 )
 
-// GetParserContext setups all the things that can be used to later parse the chain state
-func GetParserContext(cfg config.Config, parseConfig *Config) (*parser.Context, error) {
+type Infrastructures struct {
+	Database       *postgresql.Database
+	EncodingConfig params.EncodingConfig
+	Node           node.Node
+	Logger         interfaces.Logger
+	Modules        interfaces.Modules
+}
+
+// GetInfrastructures setups all the things that can be used to later parse the chain state
+func GetInfrastructures(cfg config.Config, parseConfig *Config) (*Infrastructures, error) {
 	// Build the codec
 	encodingConfig := parseConfig.GetEncodingConfigBuilder()()
 
@@ -29,8 +37,8 @@ func GetParserContext(cfg config.Config, parseConfig *Config) (*parser.Context, 
 	}
 
 	// Get the db
-	databaseCtx := database.NewContext(cfg.Database, encodingConfig, parseConfig.GetLogger())
-	db, err := parseConfig.GetDBBuilder()(databaseCtx)
+	databaseCtx := postgresql.NewContext(cfg.Database, encodingConfig, parseConfig.GetLogger())
+	db, err := postgresql.Builder(databaseCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -53,11 +61,17 @@ func GetParserContext(cfg config.Config, parseConfig *Config) (*parser.Context, 
 	}
 
 	// Get the modules
-	context := modsregistrar.NewContext(cfg, sdkConfig, encodingConfig, db, cp, parseConfig.GetLogger())
-	mods := parseConfig.GetRegistrar().BuildModules(context)
+	modContext := modsregistrar.NewContext(cfg, sdkConfig, encodingConfig, db, cp, parseConfig.GetLogger())
+	mods := parseConfig.GetRegistrar().BuildModules(modContext)
 	registeredModules := modsregistrar.GetModules(mods, cfg.Chain.Modules, parseConfig.GetLogger())
 
-	return parser.NewContext(encodingConfig, cp, db, parseConfig.GetLogger(), registeredModules), nil
+	return &Infrastructures{
+		EncodingConfig: encodingConfig,
+		Node:           cp,
+		Database:       db,
+		Logger:         parseConfig.GetLogger(),
+		Modules:        registeredModules,
+	}, nil
 }
 
 // getConfig returns the SDK Config instance as well as if it's sealed or not

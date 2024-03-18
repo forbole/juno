@@ -10,8 +10,8 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/forbole/juno/v5/database"
 	databaseconfig "github.com/forbole/juno/v5/database/config"
+	"github.com/forbole/juno/v5/database/postgresql"
 	postgres "github.com/forbole/juno/v5/database/postgresql"
 	"github.com/forbole/juno/v5/logging"
 	"github.com/forbole/juno/v5/types/params"
@@ -36,18 +36,15 @@ func (suite *DbTestSuite) SetupTest() {
 		WithURL("postgres://bdjuno:password@localhost:6433/bdjuno?sslmode=disable&search_path=public")
 
 	// Build the database
-	db, err := postgres.Builder(database.NewContext(dbCfg, codec, logging.DefaultLogger()))
+	db, err := postgres.Builder(postgresql.NewContext(dbCfg, codec, logging.DefaultLogger()))
 	suite.Require().NoError(err)
 
-	bigDipperDb, ok := (db).(*postgres.Database)
-	suite.Require().True(ok)
-
 	// Delete the public schema
-	_, err = bigDipperDb.SQL.Exec(`DROP SCHEMA public CASCADE;`)
+	_, err = db.SQL.Exec(`DROP SCHEMA public CASCADE;`)
 	suite.Require().NoError(err)
 
 	// Re-create the schema
-	_, err = bigDipperDb.SQL.Exec(`CREATE SCHEMA public;`)
+	_, err = db.SQL.Exec(`CREATE SCHEMA public;`)
 	suite.Require().NoError(err)
 
 	dirPath := path.Join(".")
@@ -65,10 +62,10 @@ func (suite *DbTestSuite) SetupTest() {
 		commentsRegExp := regexp.MustCompile(`/\*.*\*/`)
 		requests := strings.Split(string(file), ";")
 		for _, request := range requests {
-			_, err := bigDipperDb.SQL.Exec(commentsRegExp.ReplaceAllString(request, ""))
+			_, err := db.SQL.Exec(commentsRegExp.ReplaceAllString(request, ""))
 			suite.Require().NoError(err)
 		}
 	}
 
-	suite.database = bigDipperDb
+	suite.database = db
 }

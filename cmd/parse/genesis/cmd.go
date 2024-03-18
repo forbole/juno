@@ -5,9 +5,8 @@ import (
 
 	parsecmdtypes "github.com/forbole/juno/v5/cmd/parse/types"
 
-	"github.com/forbole/juno/v5/modules"
+	"github.com/forbole/juno/v5/modules/cosmos"
 	nodeconfig "github.com/forbole/juno/v5/node/config"
-	"github.com/forbole/juno/v5/types/utils"
 )
 
 const (
@@ -33,8 +32,8 @@ file itself and not the on-chain data.`,
 			// Set the node to be of type None so that the node won't be built
 			cfg.Node.Type = nodeconfig.TypeNone
 
-			// Build the parsing context
-			parseCtx, err := parsecmdtypes.GetParserContext(cfg, parseConfig)
+			// Build the parsing infrastructures
+			infrastructures, err := parsecmdtypes.GetInfrastructures(cfg, parseConfig)
 			if err != nil {
 				return err
 			}
@@ -47,18 +46,18 @@ file itself and not the on-chain data.`,
 			}
 
 			// Read the genesis file
-			genDoc, err := utils.ReadGenesisFileGenesisDoc(genesisFilePath)
+			genDoc, err := cosmos.ReadGenesisFileGenesisDoc(genesisFilePath)
 			if err != nil {
 				return err
 			}
 
-			genState, err := utils.GetGenesisState(genDoc)
+			genState, err := cosmos.GetGenesisState(genDoc)
 			if err != nil {
 				return err
 			}
 
-			for _, module := range parseCtx.Modules {
-				if module, ok := module.(modules.GenesisModule); ok {
+			for _, module := range infrastructures.Modules {
+				if module, ok := module.(cosmos.GenesisModule); ok {
 					err = module.HandleGenesis(genDoc, genState)
 					if err != nil {
 						return err

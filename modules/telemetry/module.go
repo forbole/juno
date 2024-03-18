@@ -1,7 +1,7 @@
 package telemetry
 
 import (
-	"github.com/forbole/juno/v5/modules"
+	"github.com/forbole/juno/v5/interfaces"
 	"github.com/forbole/juno/v5/types/config"
 )
 
@@ -10,8 +10,8 @@ const (
 )
 
 var (
-	_ modules.Module                     = &Module{}
-	_ modules.AdditionalOperationsModule = &Module{}
+	_ interfaces.Module                     = &Module{}
+	_ interfaces.AdditionalOperationsModule = &Module{}
 )
 
 // Module represents the telemetry module

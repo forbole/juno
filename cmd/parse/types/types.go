@@ -7,8 +7,7 @@ import (
 	"github.com/forbole/juno/v5/types/config"
 	"github.com/forbole/juno/v5/types/params"
 
-	"github.com/forbole/juno/v5/database"
-	"github.com/forbole/juno/v5/database/builder"
+	"github.com/forbole/juno/v5/interfaces"
 	"github.com/forbole/juno/v5/modules/registrar"
 )
 
@@ -18,8 +17,7 @@ type Config struct {
 	configParser          config.Parser
 	encodingConfigBuilder EncodingConfigBuilder
 	setupCfg              SdkConfigSetup
-	buildDb               database.Builder
-	logger                logging.Logger
+	logger                interfaces.Logger
 }
 
 // NewConfig allows to build a new Config instance
@@ -90,28 +88,14 @@ func (cfg *Config) GetSetupConfig() SdkConfigSetup {
 	return cfg.setupCfg
 }
 
-// WithDBBuilder sets the database builder to be used
-func (cfg *Config) WithDBBuilder(b database.Builder) *Config {
-	cfg.buildDb = b
-	return cfg
-}
-
-// GetDBBuilder returns the database builder to be used
-func (cfg *Config) GetDBBuilder() database.Builder {
-	if cfg.buildDb == nil {
-		return builder.Builder
-	}
-	return cfg.buildDb
-}
-
 // WithLogger sets the logger to be used while parsing the data
-func (cfg *Config) WithLogger(logger logging.Logger) *Config {
+func (cfg *Config) WithLogger(logger interfaces.Logger) *Config {
 	cfg.logger = logger
 	return cfg
 }
 
 // GetLogger returns the logger to be used when parsing the data
-func (cfg *Config) GetLogger() logging.Logger {
+func (cfg *Config) GetLogger() interfaces.Logger {
 	if cfg.logger == nil {
 		return logging.DefaultLogger()
 	}

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	tmctypes "github.com/cometbft/cometbft/rpc/core/types"
+	"github.com/forbole/juno/v5/interfaces"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/tx"
@@ -48,27 +49,55 @@ func NewCommitSig(validatorAddress string, votingPower, proposerPriority, height
 
 // -------------------------------------------------------------------------------------------------------------------
 
+var _ interfaces.Block = &Block{}
+
 // Block contains the data of a single chain block
 type Block struct {
-	Height          int64
-	Hash            string
-	TxNum           int
-	TotalGas        uint64
-	ProposerAddress string
-	Timestamp       time.Time
+	height    int64
+	hash      string
+	TxNum     int
+	TotalGas  uint64
+	proposer  string
+	timestamp time.Time
+	value     interface{}
+}
+
+// Height returns the height of the block
+func (b Block) Height() int64 {
+	return b.height
+}
+
+// Hash returns the hash of the block
+func (b Block) Hash() string {
+	return b.hash
+}
+
+// Timestamp returns the timestamp of the block
+func (b Block) Timestamp() time.Time {
+	return b.timestamp
+}
+
+// Proposer returns the address of the block proposer
+func (b Block) Proposer() string {
+	return b.proposer
+}
+
+func (b Block) Value() interface{} {
+	return b.value
 }
 
 // NewBlock allows to build a new Block instance
 func NewBlock(
-	height int64, hash string, txNum int, totalGas uint64, proposerAddress string, timestamp time.Time,
+	height int64, hash string, txNum int, totalGas uint64, proposerAddress string, timestamp time.Time, value interface{},
 ) *Block {
 	return &Block{
-		Height:          height,
-		Hash:            hash,
-		TxNum:           txNum,
-		TotalGas:        totalGas,
-		ProposerAddress: proposerAddress,
-		Timestamp:       timestamp,
+		height:    height,
+		hash:      hash,
+		TxNum:     txNum,
+		TotalGas:  totalGas,
+		proposer:  proposerAddress,
+		timestamp: timestamp,
+		value:     value,
 	}
 }
 
@@ -81,6 +110,7 @@ func NewBlockFromTmBlock(blk *tmctypes.ResultBlock, totalGas uint64) *Block {
 		totalGas,
 		ConvertValidatorAddressToBech32String(blk.Block.ProposerAddress),
 		blk.Block.Time,
+		blk,
 	)
 }
 

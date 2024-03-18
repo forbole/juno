@@ -1,4 +1,4 @@
-package parser
+package cosmos
 
 import (
 	tmctypes "github.com/cometbft/cometbft/rpc/core/types"

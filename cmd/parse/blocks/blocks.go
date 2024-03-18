@@ -1,6 +1,7 @@
 package blocks
 
 import (
+	"context"
 	"fmt"
 
 	parsecmdtypes "github.com/forbole/juno/v5/cmd/parse/types"
@@ -15,7 +16,6 @@ import (
 )
 
 const (
-	flagForce = "force"
 	flagStart = "start"
 	flagEnd   = "end"
 )
@@ -28,24 +28,18 @@ func newAllCmd(parseConfig *parsecmdtypes.Config) *cobra.Command {
 		Long: fmt.Sprintf(`Refetch all the blocks in the specified range and stores them inside the database. 
 You can specify a custom blocks range by using the %s and %s flags. 
 By default, all the blocks fetched from the node will not be stored inside the database if they are already present. 
-You can override this behaviour using the %s flag. If this is set, even the blocks already present inside the database 
-will be replaced with the data downloaded from the node.
-`, flagStart, flagEnd, flagForce),
+`, flagStart, flagEnd),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			parseCtx, err := parsecmdtypes.GetParserContext(config.Cfg, parseConfig)
+			infrastructures, err := parsecmdtypes.GetInfrastructures(config.Cfg, parseConfig)
 			if err != nil {
 				return err
 			}
 
-			workerCtx := parser.NewContext(parseCtx.EncodingConfig, parseCtx.Node, parseCtx.Database, parseCtx.Logger, parseCtx.Modules)
-			worker := parser.NewWorker(workerCtx, nil, 0)
-
 			// Get the flag values
 			start, _ := cmd.Flags().GetInt64(flagStart)
 			end, _ := cmd.Flags().GetInt64(flagEnd)
-			force, _ := cmd.Flags().GetBool(flagForce)
 
-			lastDbBlockHeight, err := parseCtx.Database.GetLastBlockHeight()
+			lastDbBlockHeight, err := infrastructures.Database.GetLastBlockHeight()
 			if err != nil {
 				return err
 			}
@@ -53,31 +47,36 @@ will be replaced with the data downloaded from the node.
 			// Compare start height from config file and last block height in database
 			// and set higher block as start height
 			startHeight := utils.MaxInt64(config.Cfg.Parser.StartHeight, lastDbBlockHeight)
-
 			if start > 0 {
 				startHeight = start
 			}
 
 			// Get the end height, default to the node latest height; use flagEnd if set
-			endHeight, err := parseCtx.Node.LatestHeight()
+			endBlock, err := infrastructures.Node.LatestBlock()
 			if err != nil {
 				return fmt.Errorf("error while getting chain latest block height: %s", err)
 			}
+			endHeight := endBlock.Height()
 			if end > 0 {
 				endHeight = end
 			}
 
 			log.Info().Int64("start height", startHeight).Int64("end height", endHeight).
 				Msg("getting blocks and transactions")
+
+			// Setup Worker and its context
+			ctx := parser.NewContext(context.Background(), infrastructures.Node, infrastructures.Database, infrastructures.Logger, infrastructures.Modules)
+			worker := parser.NewWorker(0)
+
 			for k := startHeight; k <= endHeight; k++ {
-				if force {
-					err = worker.Process(k)
-				} else {
-					err = worker.ProcessIfNotExists(k)
+				block, err := ctx.BlockNode().Block(k)
+				if err != nil {
+					return fmt.Errorf("error while fetching block %d: %s", k, err)
 				}
 
+				err = worker.Process(ctx, block)
 				if err != nil {
-					return fmt.Errorf("error while re-fetching block %d: %s", k, err)
+					return fmt.Errorf("error while processing block %d: %s", k, err)
 				}
 			}
 
@@ -85,7 +84,6 @@ will be replaced with the data downloaded from the node.
 		},
 	}
 
-	cmd.Flags().Bool(flagForce, false, "Whether or not to overwrite any existing ones in database (default false)")
 	cmd.Flags().Int64(flagStart, 0, "Height from which to start getting missing blocks. If 0, the start height inside the config will be used instead")
 	cmd.Flags().Int64(flagEnd, 0, "Height at which to finish getting missing. If 0, the latest height available inside the node will be used instead")
 

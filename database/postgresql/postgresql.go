@@ -1,7 +1,6 @@
 package postgresql
 
 import (
-	"database/sql"
 	"encoding/base64"
 	"fmt"
 	"strings"
@@ -9,21 +8,38 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/jmoiron/sqlx"
 
-	"github.com/forbole/juno/v5/logging"
-
 	"github.com/lib/pq"
 
-	"github.com/forbole/juno/v5/database"
+	"github.com/forbole/juno/v5/interfaces"
 	"github.com/forbole/juno/v5/types"
 	"github.com/forbole/juno/v5/types/config"
 	"github.com/forbole/juno/v5/types/env"
+	"github.com/forbole/juno/v5/types/params"
 	"github.com/forbole/juno/v5/types/utils"
+
+	databaseconfig "github.com/forbole/juno/v5/database/config"
 )
+
+// Context contains the data that might be used to build a Database instance
+type Context struct {
+	Cfg            databaseconfig.Config
+	EncodingConfig params.EncodingConfig
+	Logger         interfaces.Logger
+}
+
+// NewContext allows to build a new Context instance
+func NewContext(cfg databaseconfig.Config, encodingConfig params.EncodingConfig, logger interfaces.Logger) *Context {
+	return &Context{
+		Cfg:            cfg,
+		EncodingConfig: encodingConfig,
+		Logger:         logger,
+	}
+}
 
 // Builder creates a database connection with the given database connection info
 // from config. It returns a database connection handle or an error if the
 // connection fails.
-func Builder(ctx *database.Context) (database.Database, error) {
+func Builder(ctx *Context) (*Database, error) {
 	dbURI := utils.GetEnvOr(env.DatabaseURI, ctx.Cfg.URL)
 	dbEnableSSL := utils.GetEnvOr(env.DatabaseSSLModeEnable, ctx.Cfg.SSLModeEnable)
 
@@ -55,7 +71,7 @@ func Builder(ctx *database.Context) (database.Database, error) {
 }
 
 // type check to ensure interface is properly implemented
-var _ database.Database = &Database{}
+var _ interfaces.WorkerRepository = &Database{}
 
 // Database defines a wrapper around a SQL database and implements functionality
 // for data aggregation and exporting.
@@ -64,7 +80,7 @@ type Database struct {
 	Amino *codec.LegacyAmino
 
 	SQL    *sqlx.DB
-	Logger logging.Logger
+	Logger interfaces.Logger
 }
 
 // CreatePartitionIfNotExists creates a new partition having the given partition id if not existing
@@ -93,6 +109,22 @@ func (db *Database) HasBlock(height int64) (bool, error) {
 	var res bool
 	err := db.SQL.QueryRow(`SELECT EXISTS(SELECT 1 FROM block WHERE height = $1);`, height).Scan(&res)
 	return res, err
+}
+
+func (db *Database) LatestBlock() (interfaces.Block, error) {
+	stmt := `SELECT height FROM block ORDER BY height DESC LIMIT 1;`
+
+	var block types.Block
+	err := db.SQL.QueryRow(stmt).Scan(&block)
+	if err != nil {
+		if strings.Contains(err.Error(), "no rows in result set") {
+			// If no rows stored in block table, return empty
+			return block, nil
+		}
+		return block, fmt.Errorf("error while getting last block block, error: %s", err)
+	}
+
+	return block, nil
 }
 
 // GetLastBlockHeight returns the last block height stored inside the database
@@ -129,14 +161,13 @@ func (db *Database) GetMissingHeights(startHeight, endHeight int64) []int64 {
 }
 
 // SaveBlock implements database.Database
-func (db *Database) SaveBlock(block *types.Block) error {
+func (db *Database) SaveBlock(block interfaces.Block) error {
 	sqlStatement := `
 INSERT INTO block (height, hash, num_txs, total_gas, proposer_address, timestamp)
 VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING`
 
-	proposerAddress := sql.NullString{Valid: len(block.ProposerAddress) != 0, String: block.ProposerAddress}
 	_, err := db.SQL.Exec(sqlStatement,
-		block.Height, block.Hash, block.TxNum, block.TotalGas, proposerAddress, block.Timestamp,
+		block.Height(), block.Hash(), block.(*types.Block).TxNum, block.(*types.Block).TotalGas, block.Proposer(), block.Timestamp(),
 	)
 	return err
 }
@@ -196,7 +227,7 @@ ON CONFLICT (hash, partition_id) DO UPDATE
 	for index, msg := range tx.Body.Messages {
 		bz, err := db.Cdc.MarshalJSON(msg)
 		if err != nil {
-			return err
+			return nil
 		}
 		msgs[index] = string(bz)
 	}

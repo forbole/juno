@@ -8,7 +8,6 @@ require (
 	github.com/cosmos/cosmos-sdk v0.47.4
 	github.com/cosmos/gogoproto v1.4.10
 	github.com/cosmos/ibc-go/v7 v7.0.1
-	github.com/go-co-op/gocron v1.13.0
 	github.com/golangci/golangci-lint v1.52.2
 	github.com/gorilla/mux v1.8.0
 	github.com/jmoiron/sqlx v1.3.5
@@ -18,6 +17,7 @@ require (
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/viper v1.15.0
 	github.com/stretchr/testify v1.8.4
+	golang.org/x/net v0.17.0
 	google.golang.org/grpc v1.56.3
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -224,7 +224,6 @@ require (
 	github.com/quasilyte/stdinfo v0.0.0-20220114132959-f7386bf02567 // indirect
 	github.com/rakyll/statik v0.1.7 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
-	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/rs/cors v1.8.3 // indirect
 	github.com/ryancurrah/gomodguard v1.3.0 // indirect
 	github.com/ryanrolds/sqlclosecheck v0.4.0 // indirect
@@ -277,7 +276,6 @@ require (
 	golang.org/x/exp v0.0.0-20230515195305-f3d0a9c9a5cc // indirect
 	golang.org/x/exp/typeparams v0.0.0-20230224173230-c95f2b4c22f2 // indirect
 	golang.org/x/mod v0.9.0 // indirect
-	golang.org/x/net v0.17.0 // indirect
 	golang.org/x/oauth2 v0.8.0 // indirect
 	golang.org/x/sync v0.2.0 // indirect
 	golang.org/x/sys v0.15.0 // indirect

@@ -4,22 +4,23 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/forbole/juno/v5/database"
-	"github.com/forbole/juno/v5/modules"
+	"github.com/forbole/juno/v5/interfaces"
+	"github.com/forbole/juno/v5/modules/cosmos"
 	"github.com/forbole/juno/v5/types"
 )
 
-var _ modules.Module = &Module{}
+var _ interfaces.Module = &Module{}
+var _ cosmos.MessageModule = &Module{}
 
 // Module represents the module allowing to store messages properly inside a dedicated table
 type Module struct {
 	parser MessageAddressesParser
 
 	cdc codec.Codec
-	db  database.Database
+	db  MessageRepository
 }
 
-func NewModule(parser MessageAddressesParser, cdc codec.Codec, db database.Database) *Module {
+func NewModule(parser MessageAddressesParser, cdc codec.Codec, db MessageRepository) *Module {
 	return &Module{
 		parser: parser,
 		cdc:    cdc,

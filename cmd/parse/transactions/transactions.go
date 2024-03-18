@@ -4,12 +4,12 @@ import (
 	"fmt"
 
 	parsecmdtypes "github.com/forbole/juno/v5/cmd/parse/types"
+	"github.com/forbole/juno/v5/modules/cosmos"
 
 	"github.com/rs/zerolog/log"
 
 	"github.com/spf13/cobra"
 
-	"github.com/forbole/juno/v5/parser"
 	"github.com/forbole/juno/v5/types/config"
 )
 
@@ -27,13 +27,20 @@ func newTransactionsCmd(parseConfig *parsecmdtypes.Config) *cobra.Command {
 You can specify a custom height range by using the %s and %s flags. 
 `, flagStart, flagEnd),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			parseCtx, err := parsecmdtypes.GetParserContext(config.Cfg, parseConfig)
+			infrastructures, err := parsecmdtypes.GetInfrastructures(config.Cfg, parseConfig)
 			if err != nil {
 				return err
 			}
 
-			workerCtx := parser.NewContext(parseCtx.EncodingConfig, parseCtx.Node, parseCtx.Database, parseCtx.Logger, parseCtx.Modules)
-			worker := parser.NewWorker(workerCtx, nil, 0)
+			module, found := infrastructures.Modules.FindByName("cosmos")
+			if !found {
+				return fmt.Errorf("cosmos module not found")
+			}
+
+			cosmosModule, ok := module.(*cosmos.Module)
+			if !ok {
+				return fmt.Errorf("unexpected module type")
+			}
 
 			// Get the flag values
 			start, _ := cmd.Flags().GetInt64(flagStart)
@@ -46,10 +53,12 @@ You can specify a custom height range by using the %s and %s flags.
 			}
 
 			// Get the end height, default to the node latest height; use flagEnd if set
-			endHeight, err := parseCtx.Node.LatestHeight()
+			endBlock, err := infrastructures.Node.LatestBlock()
 			if err != nil {
 				return fmt.Errorf("error while getting chain latest block height: %s", err)
 			}
+
+			endHeight := endBlock.Height()
 			if end > 0 {
 				endHeight = end
 			}
@@ -58,7 +67,7 @@ You can specify a custom height range by using the %s and %s flags.
 				Msg("getting transactions...")
 			for k := startHeight; k <= endHeight; k++ {
 				log.Info().Int64("height", k).Msg("processing transactions...")
-				err = worker.ProcessTransactions(k)
+				err = cosmosModule.ProcessTransactions(k)
 				if err != nil {
 					return fmt.Errorf("error while re-fetching transactions of height %d: %s", k, err)
 				}

@@ -3,35 +3,29 @@ package pruning
 import (
 	"fmt"
 
-	tmctypes "github.com/cometbft/cometbft/rpc/core/types"
-
-	"github.com/forbole/juno/v5/database"
-	"github.com/forbole/juno/v5/types"
+	"github.com/forbole/juno/v5/interfaces"
 )
+
+var _ interfaces.BlockModule = &Module{}
 
 // HandleBlock implements modules.BlockModule
 func (m *Module) HandleBlock(
-	block *tmctypes.ResultBlock, _ *tmctypes.ResultBlockResults, _ []*types.Tx, _ *tmctypes.ResultValidators,
+	block interfaces.Block,
 ) error {
-	if block.Block.Height%m.cfg.Interval != 0 {
+	if block.Height()%m.cfg.Interval != 0 {
 		// Not an interval height, so just skip
 		return nil
 	}
 
-	pruningDb, ok := m.db.(database.PruningDb)
-	if !ok {
-		return fmt.Errorf("pruning is enabled, but your database does not implement PruningDb")
-	}
-
 	// Get last pruned height
-	var height, err = pruningDb.GetLastPruned()
+	var height, err = m.db.GetLastPruned()
 	if err != nil {
 		return err
 	}
 
 	// Iterate from last pruned height until (current block height - keep recent) to
 	// avoid pruning the recent blocks that should be kept
-	for ; height < block.Block.Height-m.cfg.KeepRecent; height++ {
+	for ; height < block.Height()-m.cfg.KeepRecent; height++ {
 
 		if height%m.cfg.KeepRecent == 0 {
 			// The height should be kept, so just skip
@@ -40,11 +34,11 @@ func (m *Module) HandleBlock(
 
 		// Prune the height
 		m.logger.Debug("pruning", "module", "pruning", "height", height)
-		err = pruningDb.Prune(height)
+		err = m.db.Prune(height)
 		if err != nil {
 			return fmt.Errorf("error while pruning height %d: %s", height, err.Error())
 		}
 	}
 
-	return pruningDb.StoreLastPruned(height)
+	return m.db.StoreLastPruned(height)
 }

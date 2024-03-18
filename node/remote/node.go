@@ -16,16 +16,16 @@ import (
 
 	constypes "github.com/cometbft/cometbft/consensus/types"
 	tmjson "github.com/cometbft/cometbft/libs/json"
-
-	"github.com/forbole/juno/v5/node"
+	tmctypes "github.com/cometbft/cometbft/rpc/core/types"
 
 	"github.com/cosmos/cosmos-sdk/types/tx"
 
+	"github.com/forbole/juno/v5/node"
 	"github.com/forbole/juno/v5/types"
 
 	httpclient "github.com/cometbft/cometbft/rpc/client/http"
-	tmctypes "github.com/cometbft/cometbft/rpc/core/types"
 	jsonrpcclient "github.com/cometbft/cometbft/rpc/jsonrpc/client"
+	interfaces "github.com/forbole/juno/v5/interfaces"
 )
 
 var (
@@ -40,6 +40,8 @@ type Node struct {
 	client          *httpclient.HTTP
 	txServiceClient tx.ServiceClient
 	grpcConnection  *grpc.ClientConn
+
+	logger interfaces.Logger
 }
 
 // NewNode allows to build a new Node instance
@@ -191,8 +193,8 @@ func (cp *Node) Validators(height int64) (*tmctypes.ResultValidators, error) {
 	return vals, nil
 }
 
-// Block implements node.Node
-func (cp *Node) Block(height int64) (*tmctypes.ResultBlock, error) {
+// ResultBlock implements node.Node
+func (cp *Node) ResultBlock(height int64) (*tmctypes.ResultBlock, error) {
 	return cp.client.Block(cp.ctx, &height)
 }
 
@@ -255,6 +257,62 @@ func (cp *Node) SubscribeEvents(subscriber, query string) (<-chan tmctypes.Resul
 // SubscribeNewBlocks implements node.Node
 func (cp *Node) SubscribeNewBlocks(subscriber string) (<-chan tmctypes.ResultEvent, context.CancelFunc, error) {
 	return cp.SubscribeEvents(subscriber, "tm.event = 'NewBlock'")
+}
+
+func (cp *Node) Block(height int64) (interfaces.Block, error) {
+	block, err := cp.client.Block(cp.ctx, &height)
+	if err != nil {
+		return nil, err
+	}
+
+	return types.NewBlockFromTmBlock(block, 0), nil
+}
+
+func (cp *Node) LatestBlock() (interfaces.Block, error) {
+	height, err := cp.LatestHeight()
+	if err != nil {
+		return nil, err
+	}
+
+	return cp.Block(height)
+}
+
+func (cp *Node) SubscribeBlocks() <-chan interfaces.Block {
+	blockCh := make(chan interfaces.Block)
+
+	go func() {
+		start, err := cp.LatestHeight()
+		if err != nil {
+			cp.logger.Error("error while getting latest height", "err", err)
+		}
+
+		for {
+			select {
+			case <-cp.ctx.Done():
+				return
+			default:
+				latestHeight, err := cp.LatestHeight()
+				if err != nil {
+					cp.logger.Error("error while getting latest height", "err", err)
+					time.Sleep(2 * time.Second)
+					continue
+				}
+				for start <= latestHeight {
+					block, err := cp.Block(start)
+					if err != nil {
+						fmt.Println(err)
+						time.Sleep(2 * time.Second)
+						continue
+					}
+
+					blockCh <- block
+					start++
+				}
+			}
+		}
+	}()
+
+	return blockCh
 }
 
 // Stop implements node.Node

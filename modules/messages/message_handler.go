@@ -8,14 +8,13 @@ import (
 	"github.com/cosmos/gogoproto/proto"
 	channeltypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
 
-	"github.com/forbole/juno/v5/database"
 	"github.com/forbole/juno/v5/types"
 )
 
 // HandleMsg represents a message handler that stores the given message inside the proper database table
 func HandleMsg(
 	index int, msg sdk.Msg, tx *types.Tx,
-	parseAddresses MessageAddressesParser, cdc codec.Codec, db database.Database,
+	parseAddresses MessageAddressesParser, cdc codec.Codec, db MessageRepository,
 ) error {
 
 	// Get the involved addresses
@@ -27,7 +26,7 @@ func HandleMsg(
 	// Marshal the value properly
 	bz, err := cdc.MarshalJSON(msg)
 	if err != nil {
-		return err
+		return nil
 	}
 
 	// Handle MsgRecvPacket data object

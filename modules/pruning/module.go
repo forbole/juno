@@ -3,27 +3,23 @@ package pruning
 import (
 	"github.com/forbole/juno/v5/types/config"
 
-	"github.com/forbole/juno/v5/logging"
-
-	"github.com/forbole/juno/v5/database"
-	"github.com/forbole/juno/v5/modules"
+	"github.com/forbole/juno/v5/interfaces"
 )
 
 var (
-	_ modules.Module                     = &Module{}
-	_ modules.BlockModule                = &Module{}
-	_ modules.AdditionalOperationsModule = &Module{}
+	_ interfaces.Module                     = &Module{}
+	_ interfaces.AdditionalOperationsModule = &Module{}
 )
 
 // Module represents the pruning module allowing to clean the database periodically
 type Module struct {
 	cfg    *Config
-	db     database.Database
-	logger logging.Logger
+	db     PruningRepository
+	logger interfaces.Logger
 }
 
 // NewModule builds a new Module instance
-func NewModule(cfg config.Config, db database.Database, logger logging.Logger) *Module {
+func NewModule(cfg config.Config, db PruningRepository, logger interfaces.Logger) *Module {
 	bz, err := cfg.GetBytes()
 	if err != nil {
 		panic(err)

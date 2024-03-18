@@ -33,6 +33,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/tx"
 	"github.com/spf13/viper"
 
+	"github.com/forbole/juno/v5/interfaces"
 	"github.com/forbole/juno/v5/node"
 	"github.com/forbole/juno/v5/types"
 
@@ -350,7 +351,7 @@ func (cp *Node) Validators(height int64) (*tmctypes.ResultValidators, error) {
 }
 
 // Block implements node.Node
-func (cp *Node) Block(height int64) (*tmctypes.ResultBlock, error) {
+func (cp *Node) ResultBlock(height int64) (*tmctypes.ResultBlock, error) {
 	height, err := cp.getHeight(cp.blockStore.Height(), &height)
 	if err != nil {
 		return nil, err
@@ -418,7 +419,7 @@ func (cp *Node) Tx(hash string) (*types.Tx, error) {
 		Tx:       r.Tx,
 	}
 
-	resBlock, err := cp.Block(resTx.Height)
+	resBlock, err := cp.ResultBlock(resTx.Height)
 	if err != nil {
 		return nil, err
 	}
@@ -537,6 +538,63 @@ func (cp *Node) SubscribeEvents(subscriber, query string) (<-chan tmctypes.Resul
 // SubscribeNewBlocks implements node.Node
 func (cp *Node) SubscribeNewBlocks(subscriber string) (<-chan tmctypes.ResultEvent, context.CancelFunc, error) {
 	return cp.SubscribeEvents(subscriber, "tm.event = 'NewBlock'")
+}
+
+func (cp *Node) LatestBlock() (interfaces.Block, error) {
+	height, err := cp.LatestHeight()
+	if err != nil {
+		return nil, err
+	}
+
+	return cp.Block(height)
+}
+
+// Block implements node.Node
+func (cp *Node) Block(height int64) (interfaces.Block, error) {
+	block, err := cp.ResultBlock(height)
+	if err != nil {
+		return nil, err
+	}
+
+	return types.NewBlockFromTmBlock(block, 0), nil
+}
+
+func (cp *Node) SubscribeBlocks() <-chan interfaces.Block {
+	blockCh := make(chan interfaces.Block)
+
+	go func() {
+		start, err := cp.LatestHeight()
+		if err != nil {
+			panic(fmt.Errorf("error while getting latest height: %s", err))
+		}
+
+		for {
+			select {
+			case <-cp.ctx.Done():
+				return
+			default:
+				latestHeight, err := cp.LatestHeight()
+				if err != nil {
+					fmt.Println(err)
+					time.Sleep(5 * time.Second)
+					continue
+				}
+				for start <= latestHeight {
+					block, err := cp.Block(start)
+					if err != nil {
+						fmt.Println(err)
+						time.Sleep(5 * time.Second)
+						continue
+					}
+
+					blockCh <- block
+					start++
+				}
+			}
+		}
+	}()
+
+	return blockCh
 }
 
 // Stop implements node.Node

@@ -1,11 +1,9 @@
-package utils
+package cosmos
 
 import (
 	"encoding/json"
 	"fmt"
 	"strings"
-
-	"github.com/forbole/juno/v5/node"
 
 	tmjson "github.com/cometbft/cometbft/libs/json"
 	tmos "github.com/cometbft/cometbft/libs/os"
@@ -39,7 +37,7 @@ func GetGenesisState(doc *tmtypes.GenesisDoc) (map[string]json.RawMessage, error
 }
 
 // GetGenesisDocAndState reads the genesis from node or file and returns genesis doc and state
-func GetGenesisDocAndState(genesisPath string, node node.Node) (*tmtypes.GenesisDoc, map[string]json.RawMessage, error) {
+func GetGenesisDocAndState(genesisPath string, node Source) (*tmtypes.GenesisDoc, map[string]json.RawMessage, error) {
 	var genesisDoc *tmtypes.GenesisDoc
 	if strings.TrimSpace(genesisPath) != "" {
 		genDoc, err := ReadGenesisFileGenesisDoc(genesisPath)

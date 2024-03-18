@@ -1,22 +1,23 @@
 package start
 
 import (
+	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
-	"time"
 
 	parsecmdtypes "github.com/forbole/juno/v5/cmd/parse/types"
-	"github.com/forbole/juno/v5/modules"
-	"github.com/forbole/juno/v5/types/utils"
+	"github.com/forbole/juno/v5/interfaces"
 
 	"github.com/forbole/juno/v5/logging"
 
 	"github.com/forbole/juno/v5/types/config"
+	"github.com/forbole/juno/v5/types/utils"
 
-	"github.com/go-co-op/gocron"
-
+	"github.com/forbole/juno/v5/enqueuer"
+	"github.com/forbole/juno/v5/operator"
 	"github.com/forbole/juno/v5/parser"
 	"github.com/forbole/juno/v5/types"
 
@@ -34,176 +35,81 @@ func NewStartCmd(cmdCfg *parsecmdtypes.Config) *cobra.Command {
 		Short:   "Start parsing the blockchain data",
 		PreRunE: parsecmdtypes.ReadConfigPreRunE(cmdCfg),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			context, err := parsecmdtypes.GetParserContext(config.Cfg, cmdCfg)
+			infrastructures, err := parsecmdtypes.GetInfrastructures(config.Cfg, cmdCfg)
 			if err != nil {
 				return err
 			}
 
-			// Run all the additional operations
-			for _, module := range context.Modules {
-				if module, ok := module.(modules.AdditionalOperationsModule); ok {
-					err = module.RunAdditionalOperations()
-					if err != nil {
-						return err
-					}
+			ctx := parser.NewContext(context.Background(), infrastructures.Node, infrastructures.Database, infrastructures.Logger, infrastructures.Modules)
+
+			// Register all the additional operations modules
+			operator := operator.NewAdditionalOperator()
+			for _, module := range ctx.Modules() {
+				if module, ok := module.(interfaces.AdditionalOperationsModule); ok {
+					operator.Register(module)
 				}
 			}
+			if err := operator.Start(); err != nil {
+				return err
+			}
 
-			return startParsing(context)
+			// Listen for and trap any OS signal to gracefully shutdown and exit
+			trapSignal(infrastructures)
+			waitGroup.Add(1)
+
+			cfg := config.Cfg.Parser
+			logging.StartHeight.Add(float64(cfg.StartHeight))
+			if err := startParsing(ctx, cfg.StartHeight, cfg.Workers, cfg.ParseOldBlocks, cfg.ParseNewBlocks); err != nil {
+				return err
+			}
+
+			// Block main process (signal capture will call WaitGroup's Done)
+			waitGroup.Wait()
+			return nil
 		},
 	}
 }
 
 // startParsing represents the function that should be called when the parse command is executed
-func startParsing(ctx *parser.Context) error {
-	// Get the config
-	cfg := config.Cfg.Parser
-	logging.StartHeight.Add(float64(cfg.StartHeight))
-
-	// Start periodic operations
-	scheduler := gocron.NewScheduler(time.UTC)
-	for _, module := range ctx.Modules {
-		if module, ok := module.(modules.PeriodicOperationsModule); ok {
-			err := module.RegisterPeriodicOperations(scheduler)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	scheduler.StartAsync()
-
+func startParsing(ctx interfaces.Context, startHeight int64, workerAmount int64, parseOldBlocks bool, parseNewBlocks bool) error {
 	// Create a queue that will collect, aggregate, and export blocks and metadata
 	exportQueue := types.NewQueue(25)
 
 	// Create workers
-	workers := make([]parser.Worker, cfg.Workers)
+	workers := make([]parser.Worker, workerAmount)
 	for i := range workers {
-		workers[i] = parser.NewWorker(ctx, exportQueue, i)
-	}
-
-	waitGroup.Add(1)
-
-	// Run all the async operations
-	for _, module := range ctx.Modules {
-		if module, ok := module.(modules.AsyncOperationsModule); ok {
-			go module.RunAsyncOperations()
-		}
+		workers[i] = parser.NewWorker(i)
 	}
 
 	// Start each blocking worker in a go-routine where the worker consumes jobs
 	// off of the export queue.
 	for i, w := range workers {
-		ctx.Logger.Debug("starting worker...", "number", i+1)
-		go w.Start()
+		ctx.Logger().Debug("starting worker...", "number", i+1)
+		go w.Start(ctx, exportQueue)
 	}
 
-	// Listen for and trap any OS signal to gracefully shutdown and exit
-	trapSignal(ctx)
-
-	if cfg.ParseGenesis {
-		// Add the genesis to the queue if requested
-		exportQueue <- 0
+	// Start new block enqueuer
+	// NOTE: we start the new block enqueuer before the missing block enqueuer to avoid from missing blocks
+	if parseNewBlocks {
+		go enqueuer.NewNewBlockEnqueuer().ListenAndEnqueueBlocks(ctx, exportQueue)
 	}
 
-	if cfg.ParseOldBlocks {
-		go enqueueMissingBlocks(exportQueue, ctx)
-	}
-
-	if cfg.ParseNewBlocks {
-		go enqueueNewBlocks(exportQueue, ctx)
-	}
-
-	// Block main process (signal capture will call WaitGroup's Done)
-	waitGroup.Wait()
-	return nil
-}
-
-// enqueueMissingBlocks enqueues jobs (block heights) for missed blocks starting
-// at the startHeight up until the latest known height.
-func enqueueMissingBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
-	// Get the config
-	cfg := config.Cfg.Parser
-
-	// Get the latest height
-	latestBlockHeight := mustGetLatestHeight(ctx)
-
-	lastDbBlockHeight, err := ctx.Database.GetLastBlockHeight()
+	// Start missing block enqueuer
+	latestBlock, err := ctx.BlockNode().LatestBlock()
 	if err != nil {
-		ctx.Logger.Error("failed to get last block height from database", "error", err)
+		return fmt.Errorf("error while getting latest block: %s", err)
+	}
+	if parseOldBlocks {
+		start := utils.MaxInt64(1, startHeight)
+		go enqueuer.NewMissingBlockEnqueuer(start, latestBlock.Height()).ListenAndEnqueueBlocks(ctx, exportQueue)
 	}
 
-	// Get the start height, default to the config's height
-	startHeight := cfg.StartHeight
-
-	// Set startHeight to the latest height in database
-	// if is not set inside config.yaml file
-	if startHeight == 0 {
-		startHeight = utils.MaxInt64(1, lastDbBlockHeight)
-	}
-
-	if cfg.FastSync {
-		ctx.Logger.Info("fast sync is enabled, ignoring all previous blocks", "latest_block_height", latestBlockHeight)
-		for _, module := range ctx.Modules {
-			if mod, ok := module.(modules.FastSyncModule); ok {
-				err := mod.DownloadState(latestBlockHeight)
-				if err != nil {
-					ctx.Logger.Error("error while performing fast sync",
-						"err", err,
-						"last_block_height", latestBlockHeight,
-						"module", module.Name(),
-					)
-				}
-			}
-		}
-	} else {
-		ctx.Logger.Info("syncing missing blocks...", "latest_block_height", latestBlockHeight)
-		for _, i := range ctx.Database.GetMissingHeights(startHeight, latestBlockHeight) {
-			ctx.Logger.Debug("enqueueing missing block", "height", i)
-			exportQueue <- i
-		}
-	}
-}
-
-// enqueueNewBlocks enqueues new block heights onto the provided queue.
-func enqueueNewBlocks(exportQueue types.HeightQueue, ctx *parser.Context) {
-	currHeight := mustGetLatestHeight(ctx)
-
-	// Enqueue upcoming heights
-	for {
-		latestBlockHeight := mustGetLatestHeight(ctx)
-
-		// Enqueue all heights from the current height up to the latest height
-		for ; currHeight <= latestBlockHeight; currHeight++ {
-			ctx.Logger.Debug("enqueueing new block", "height", currHeight)
-			exportQueue <- currHeight
-		}
-		time.Sleep(config.GetAvgBlockTime())
-	}
-}
-
-// mustGetLatestHeight tries getting the latest height from the RPC client.
-// If after 50 tries no latest height can be found, it returns 0.
-func mustGetLatestHeight(ctx *parser.Context) int64 {
-	for retryCount := 0; retryCount < 50; retryCount++ {
-		latestBlockHeight, err := ctx.Node.LatestHeight()
-		if err == nil {
-			return latestBlockHeight
-		}
-
-		ctx.Logger.Error("failed to get last block from RPCConfig client",
-			"err", err,
-			"retry interval", config.GetAvgBlockTime(),
-			"retry count", retryCount)
-
-		time.Sleep(config.GetAvgBlockTime())
-	}
-
-	return 0
+	return nil
 }
 
 // trapSignal will listen for any OS signal and invoke Done on the main
 // WaitGroup allowing the main process to gracefully exit.
-func trapSignal(ctx *parser.Context) {
+func trapSignal(ctx *parsecmdtypes.Infrastructures) {
 	var sigCh = make(chan os.Signal, 1)
 
 	signal.Notify(sigCh, syscall.SIGTERM)
@@ -212,8 +118,8 @@ func trapSignal(ctx *parser.Context) {
 	go func() {
 		sig := <-sigCh
 		ctx.Logger.Info("caught signal; shutting down...", "signal", sig.String())
-		defer ctx.Node.Stop()
-		defer ctx.Database.Close()
+		ctx.Database.Close()
+		ctx.Node.Stop()
 		defer waitGroup.Done()
 	}()
 }

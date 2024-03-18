@@ -1,6 +1,7 @@
 package blocks
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 
@@ -24,23 +25,29 @@ func newMissingCmd(parseConfig *parsecmdtypes.Config) *cobra.Command {
 				return fmt.Errorf("make sure the given start height is a positive integer")
 			}
 
-			parseCtx, err := parsecmdtypes.GetParserContext(config.Cfg, parseConfig)
+			infrastructures, err := parsecmdtypes.GetInfrastructures(config.Cfg, parseConfig)
 			if err != nil {
 				return err
 			}
 
-			workerCtx := parser.NewContext(parseCtx.EncodingConfig, parseCtx.Node, parseCtx.Database, parseCtx.Logger, parseCtx.Modules)
-			worker := parser.NewWorker(workerCtx, nil, 0)
-
-			dbLastHeight, err := parseCtx.Database.GetLastBlockHeight()
+			dbLastHeight, err := infrastructures.Database.GetLastBlockHeight()
 			if err != nil {
 				return fmt.Errorf("error while getting DB last block height: %s", err)
 			}
 
-			for _, k := range parseCtx.Database.GetMissingHeights(startHeight, dbLastHeight) {
-				err = worker.Process(k)
+			// Setup the context and the worker
+			ctx := parser.NewContext(context.Background(), infrastructures.Node, infrastructures.Database, infrastructures.Logger, infrastructures.Modules)
+			worker := parser.NewWorker(0)
+
+			for _, height := range infrastructures.Database.GetMissingHeights(startHeight, dbLastHeight) {
+				block, err := infrastructures.Node.Block(height)
 				if err != nil {
-					return fmt.Errorf("error while re-fetching block %d: %s", k, err)
+					return fmt.Errorf("error while fetching block %d: %s", height, err)
+				}
+
+				err = worker.Process(ctx, block)
+				if err != nil {
+					return fmt.Errorf("error while processing block %d: %s", height, err)
 				}
 			}
 
