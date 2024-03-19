@@ -2,7 +2,6 @@ package database
 
 import (
 	"github.com/forbole/juno/v5/logging"
-	"github.com/forbole/juno/v5/types/params"
 
 	databaseconfig "github.com/forbole/juno/v5/database/config"
 
@@ -33,7 +32,7 @@ type Database interface {
 
 	// SaveTx will be called to save each transaction contained inside a block.
 	// An error is returned if the operation fails.
-	SaveTx(tx *types.Tx) error
+	SaveTx(tx *types.Transaction) error
 
 	// HasValidator returns true if a given validator by consensus address exists.
 	// An error is returned if the operation fails.
@@ -49,7 +48,7 @@ type Database interface {
 
 	// SaveMessage stores a single message.
 	// An error is returned if the operation fails.
-	SaveMessage(msg *types.Message) error
+	SaveMessage(height int64, txHash string, msg types.Message, addresses []string) error
 
 	// Close closes the connection to the database
 	Close()
@@ -69,17 +68,15 @@ type PruningDb interface {
 
 // Context contains the data that might be used to build a Database instance
 type Context struct {
-	Cfg            databaseconfig.Config
-	EncodingConfig params.EncodingConfig
-	Logger         logging.Logger
+	Cfg    databaseconfig.Config
+	Logger logging.Logger
 }
 
 // NewContext allows to build a new Context instance
-func NewContext(cfg databaseconfig.Config, encodingConfig params.EncodingConfig, logger logging.Logger) *Context {
+func NewContext(cfg databaseconfig.Config, logger logging.Logger) *Context {
 	return &Context{
-		Cfg:            cfg,
-		EncodingConfig: encodingConfig,
-		Logger:         logger,
+		Cfg:    cfg,
+		Logger: logger,
 	}
 }
 

@@ -3,10 +3,10 @@ package postgresql
 import (
 	"database/sql"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"strings"
 
-	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/jmoiron/sqlx"
 
 	"github.com/forbole/juno/v5/logging"
@@ -46,9 +46,6 @@ func Builder(ctx *database.Context) (database.Database, error) {
 	postgresDb.SetMaxIdleConns(ctx.Cfg.MaxIdleConnections)
 
 	return &Database{
-		Cdc:   ctx.EncodingConfig.Codec,
-		Amino: ctx.EncodingConfig.Amino,
-
 		SQL:    postgresDb,
 		Logger: ctx.Logger,
 	}, nil
@@ -60,9 +57,6 @@ var _ database.Database = &Database{}
 // Database defines a wrapper around a SQL database and implements functionality
 // for data aggregation and exporting.
 type Database struct {
-	Cdc   codec.Codec
-	Amino *codec.LegacyAmino
-
 	SQL    *sqlx.DB
 	Logger logging.Logger
 }
@@ -153,12 +147,12 @@ func (db *Database) GetTotalBlocks() int64 {
 }
 
 // SaveTx implements database.Database
-func (db *Database) SaveTx(tx *types.Tx) error {
+func (db *Database) SaveTx(tx *types.Transaction) error {
 	var partitionID int64
 
 	partitionSize := config.Cfg.Database.PartitionSize
 	if partitionSize > 0 {
-		partitionID = tx.Height / partitionSize
+		partitionID = int64(tx.Height) / partitionSize
 		err := db.CreatePartitionIfNotExists("transaction", partitionID)
 		if err != nil {
 			return err
@@ -169,7 +163,7 @@ func (db *Database) SaveTx(tx *types.Tx) error {
 }
 
 // saveTxInsidePartition stores the given transaction inside the partition having the given id
-func (db *Database) saveTxInsidePartition(tx *types.Tx, partitionID int64) error {
+func (db *Database) saveTxInsidePartition(tx *types.Transaction, partitionID int64) error {
 	sqlStatement := `
 INSERT INTO transaction 
 (hash, height, success, messages, memo, signatures, signer_infos, fee, gas_wanted, gas_used, raw_log, logs, partition_id) 
@@ -194,22 +188,18 @@ ON CONFLICT (hash, partition_id) DO UPDATE
 
 	var msgs = make([]string, len(tx.Body.Messages))
 	for index, msg := range tx.Body.Messages {
-		bz, err := db.Cdc.MarshalJSON(msg)
-		if err != nil {
-			return err
-		}
-		msgs[index] = string(bz)
+		msgs[index] = string(msg.GetBytes())
 	}
 	msgsBz := fmt.Sprintf("[%s]", strings.Join(msgs, ","))
 
-	feeBz, err := db.Cdc.MarshalJSON(tx.AuthInfo.Fee)
+	feeBz, err := json.Marshal(tx.AuthInfo.Fee)
 	if err != nil {
 		return fmt.Errorf("failed to JSON encode tx fee: %s", err)
 	}
 
 	var sigInfos = make([]string, len(tx.AuthInfo.SignerInfos))
 	for index, info := range tx.AuthInfo.SignerInfos {
-		bz, err := db.Cdc.MarshalJSON(info)
+		bz, err := json.Marshal(info)
 		if err != nil {
 			return err
 		}
@@ -217,7 +207,7 @@ ON CONFLICT (hash, partition_id) DO UPDATE
 	}
 	sigInfoBz := fmt.Sprintf("[%s]", strings.Join(sigInfos, ","))
 
-	logsBz, err := db.Amino.MarshalJSON(tx.Logs)
+	logsBz, err := json.Marshal(tx.Logs)
 	if err != nil {
 		return err
 	}
@@ -285,22 +275,22 @@ func (db *Database) SaveCommitSignatures(signatures []*types.CommitSig) error {
 }
 
 // SaveMessage implements database.Database
-func (db *Database) SaveMessage(msg *types.Message) error {
+func (db *Database) SaveMessage(height int64, txHash string, msg types.Message, addresses []string) error {
 	var partitionID int64
 	partitionSize := config.Cfg.Database.PartitionSize
 	if partitionSize > 0 {
-		partitionID = msg.Height / partitionSize
+		partitionID = height / partitionSize
 		err := db.CreatePartitionIfNotExists("message", partitionID)
 		if err != nil {
 			return err
 		}
 	}
 
-	return db.saveMessageInsidePartition(msg, partitionID)
+	return db.saveMessageInsidePartition(height, txHash, addresses, msg, partitionID)
 }
 
 // saveMessageInsidePartition stores the given message inside the partition having the provided id
-func (db *Database) saveMessageInsidePartition(msg *types.Message, partitionID int64) error {
+func (db *Database) saveMessageInsidePartition(height int64, txHash string, addresses []string, msg types.Message, partitionID int64) error {
 	stmt := `
 INSERT INTO message(transaction_hash, index, type, value, involved_accounts_addresses, height, partition_id) 
 VALUES ($1, $2, $3, $4, $5, $6, $7) 
@@ -310,7 +300,7 @@ ON CONFLICT (transaction_hash, index, partition_id) DO UPDATE
 		value = excluded.value,
 		involved_accounts_addresses = excluded.involved_accounts_addresses`
 
-	_, err := db.SQL.Exec(stmt, msg.TxHash, msg.Index, msg.Type, msg.Value, pq.Array(msg.Addresses), msg.Height, partitionID)
+	_, err := db.SQL.Exec(stmt, txHash, msg.GetIndex(), msg.GetType(), msg.GetBytes(), pq.Array(addresses), height, partitionID)
 	return err
 }
 

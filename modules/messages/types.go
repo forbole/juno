@@ -8,7 +8,7 @@ import (
 
 // MessageAddressesParser represents a function that extracts all the
 // involved addresses from a provided message (both accounts and validators)
-type MessageAddressesParser = func(tx *types.Tx) ([]string, error)
+type MessageAddressesParser = func(tx *types.Transaction) ([]string, error)
 
 // CosmosMessageAddressesParser represents a MessageAddressesParser that parses a
 // Chain message and returns all the involved addresses (both accounts and validators)
@@ -16,7 +16,7 @@ var CosmosMessageAddressesParser = DefaultMessagesParser
 
 // DefaultMessagesParser represents the default messages parser that simply returns the list
 // of all the signers of a message
-func DefaultMessagesParser(tx *types.Tx) ([]string, error) {
+func DefaultMessagesParser(tx *types.Transaction) ([]string, error) {
 	return parseAddressesFromEvents(tx), nil
 }
 
@@ -33,7 +33,7 @@ func removeDuplicates(s []string) []string {
 	return result
 }
 
-func parseAddressesFromEvents(tx *types.Tx) []string {
+func parseAddressesFromEvents(tx *types.Transaction) []string {
 	var addresses []string
 	for _, event := range tx.Events {
 		for _, attribute := range event.Attributes {
@@ -52,7 +52,6 @@ func parseAddressesFromEvents(tx *types.Tx) []string {
 
 			addresses = append(addresses, accountAddress.String())
 		}
-
 	}
 
 	return removeDuplicates(addresses)

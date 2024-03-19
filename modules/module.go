@@ -80,7 +80,7 @@ type BlockModule interface {
 	// For each transaction present inside the block, HandleTx will be called as well.
 	// NOTE. The returned error will be logged using the BlockError method. All other modules' handlers
 	// will still be called.
-	HandleBlock(block *tmctypes.ResultBlock, results *tmctypes.ResultBlockResults, txs []*types.Tx, vals *tmctypes.ResultValidators) error
+	HandleBlock(block *tmctypes.ResultBlock, results *tmctypes.ResultBlockResults, txs []*types.Transaction, vals *tmctypes.ResultValidators) error
 }
 
 type TransactionModule interface {
@@ -88,7 +88,7 @@ type TransactionModule interface {
 	// For each message present inside the transaction, HandleMsg will be called as well.
 	// NOTE. The returned error will be logged using the TxError method. All other modules' handlers
 	// will still be called.
-	HandleTx(tx *types.Tx) error
+	HandleTx(tx *types.Transaction) error
 }
 
 type MessageModule interface {
@@ -97,7 +97,7 @@ type MessageModule interface {
 	// are passed as well.
 	// NOTE. The returned error will be logged using the MsgError method. All other modules' handlers
 	// will still be called.
-	HandleMsg(index int, msg sdk.Msg, tx *types.Tx) error
+	HandleMsg(index int, msg types.Message, tx *types.Transaction) error
 }
 
 type AuthzMessageModule interface {
@@ -106,5 +106,5 @@ type AuthzMessageModule interface {
 	// are passed as well.
 	// NOTE. The returned error will be logged using the MsgError method. All other modules' handlers
 	// will still be called.
-	HandleMsgExec(index int, msgExec *authz.MsgExec, authzMsgIndex int, executedMsg sdk.Msg, tx *types.Tx) error
+	HandleMsgExec(index int, msgExec *authz.MsgExec, authzMsgIndex int, executedMsg sdk.Msg, tx *types.Transaction) error
 }

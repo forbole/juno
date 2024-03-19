@@ -3,23 +3,19 @@ package remote
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"time"
 
 	tmtypes "github.com/cometbft/cometbft/types"
 
-	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"google.golang.org/grpc"
-
 	constypes "github.com/cometbft/cometbft/consensus/types"
 	tmjson "github.com/cometbft/cometbft/libs/json"
 
 	"github.com/forbole/juno/v5/node"
-
-	"github.com/cosmos/cosmos-sdk/types/tx"
 
 	"github.com/forbole/juno/v5/types"
 
@@ -35,15 +31,13 @@ var (
 // Node implements a wrapper around both a Tendermint RPCConfig client and a
 // chain SDK REST client that allows for essential data queries.
 type Node struct {
-	ctx             context.Context
-	codec           codec.Codec
-	client          *httpclient.HTTP
-	txServiceClient tx.ServiceClient
-	grpcConnection  *grpc.ClientConn
+	ctx          context.Context
+	client       *httpclient.HTTP
+	txServiceAPI string
 }
 
 // NewNode allows to build a new Node instance
-func NewNode(cfg *Details, codec codec.Codec) (*Node, error) {
+func NewNode(cfg *Details) (*Node, error) {
 	httpClient, err := jsonrpcclient.DefaultHTTPClient(cfg.RPC.Address)
 	if err != nil {
 		return nil, err
@@ -66,18 +60,11 @@ func NewNode(cfg *Details, codec codec.Codec) (*Node, error) {
 		return nil, err
 	}
 
-	grpcConnection, err := CreateGrpcConnection(cfg.GRPC)
-	if err != nil {
-		return nil, err
-	}
-
 	return &Node{
-		ctx:   context.Background(),
-		codec: codec,
+		ctx: context.Background(),
 
-		client:          rpcClient,
-		txServiceClient: tx.NewServiceClient(grpcConnection),
-		grpcConnection:  grpcConnection,
+		client:       rpcClient,
+		txServiceAPI: cfg.API.Address,
 	}, nil
 }
 
@@ -202,22 +189,24 @@ func (cp *Node) BlockResults(height int64) (*tmctypes.ResultBlockResults, error)
 }
 
 // Tx implements node.Node
-func (cp *Node) Tx(hash string) (*types.Tx, error) {
-	res, err := cp.txServiceClient.GetTx(context.Background(), &tx.GetTxRequest{Hash: hash})
+func (cp *Node) Tx(hash string) (*types.Transaction, error) {
+	resp, err := http.Get(fmt.Sprintf("%s/cosmos/tx/v1beta1/txs/%s", cp.txServiceAPI, hash))
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
-	// Decode messages
-	for _, msg := range res.Tx.Body.Messages {
-		var stdMsg sdk.Msg
-		err = cp.codec.UnpackAny(msg, &stdMsg)
-		if err != nil {
-			return nil, fmt.Errorf("error while unpacking message: %s", err)
-		}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("request failed with status code: %d", resp.StatusCode)
 	}
 
-	convTx, err := types.NewTx(res.TxResponse, res.Tx)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error reading response body")
+	}
+
+	var convTx *types.Transaction
+	err = json.Unmarshal(body, &convTx)
 	if err != nil {
 		return nil, fmt.Errorf("error converting transaction: %s", err.Error())
 	}
@@ -226,8 +215,8 @@ func (cp *Node) Tx(hash string) (*types.Tx, error) {
 }
 
 // Txs implements node.Node
-func (cp *Node) Txs(block *tmctypes.ResultBlock) ([]*types.Tx, error) {
-	txResponses := make([]*types.Tx, len(block.Block.Txs))
+func (cp *Node) Txs(block *tmctypes.ResultBlock) ([]*types.Transaction, error) {
+	txResponses := make([]*types.Transaction, len(block.Block.Txs))
 	for i, tmTx := range block.Block.Txs {
 		txResponse, err := cp.Tx(fmt.Sprintf("%X", tmTx.Hash()))
 		if err != nil {
@@ -262,10 +251,5 @@ func (cp *Node) Stop() {
 	err := cp.client.Stop()
 	if err != nil {
 		panic(fmt.Errorf("error while stopping proxy: %s", err))
-	}
-
-	err = cp.grpcConnection.Close()
-	if err != nil {
-		panic(fmt.Errorf("error while closing gRPC connection: %s", err))
 	}
 }

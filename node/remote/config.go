@@ -8,17 +8,19 @@ import (
 type Details struct {
 	RPC  *RPCConfig  `yaml:"rpc"`
 	GRPC *GRPCConfig `yaml:"grpc"`
+	API  *APIConfig  `yaml:"api"`
 }
 
-func NewDetails(rpc *RPCConfig, grpc *GRPCConfig) *Details {
+func NewDetails(rpc *RPCConfig, grpc *GRPCConfig, api *APIConfig) *Details {
 	return &Details{
 		RPC:  rpc,
 		GRPC: grpc,
+		API:  api,
 	}
 }
 
 func DefaultDetails() *Details {
-	return NewDetails(DefaultRPCConfig(), DefaultGrpcConfig())
+	return NewDetails(DefaultRPCConfig(), DefaultGrpcConfig(), DefaultAPIConfig())
 }
 
 // Validate implements node.Details
@@ -76,4 +78,23 @@ func NewGrpcConfig(address string, insecure bool) *GRPCConfig {
 // DefaultGrpcConfig returns the default instance of a GrpcConfig
 func DefaultGrpcConfig() *GRPCConfig {
 	return NewGrpcConfig("localhost:9090", true)
+}
+
+// --------------------------------------------------------------------------------------------------------------------
+
+// APIConfig contains the configuration for the API endpoint
+type APIConfig struct {
+	Address string `yaml:"address"`
+}
+
+// NewAPIConfig allows to build a new APIConfig instance
+func NewAPIConfig(address string) *APIConfig {
+	return &APIConfig{
+		Address: address,
+	}
+}
+
+// DefaultAPIConfig returns the default instance of APIConfig
+func DefaultAPIConfig() *APIConfig {
+	return NewAPIConfig("http://localhost:1317")
 }

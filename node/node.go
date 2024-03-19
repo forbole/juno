@@ -36,12 +36,12 @@ type Node interface {
 	// Tx queries for a transaction from the REST client and decodes it into a sdk.Tx
 	// if the transaction exists. An error is returned if the tx doesn't exist or
 	// decoding fails.
-	Tx(hash string) (*types.Tx, error)
+	Tx(hash string) (*types.Transaction, error)
 
 	// Txs queries for all the transactions in a block. Transactions are returned
 	// in the sdk.TxResponse format which internally contains an sdk.Tx. An error is
 	// returned if any query fails.
-	Txs(block *tmctypes.ResultBlock) ([]*types.Tx, error)
+	Txs(block *tmctypes.ResultBlock) ([]*types.Transaction, error)
 
 	// TxSearch defines a method to search for a paginated set of transactions by DeliverTx event search criteria.
 	TxSearch(query string, page *int, perPage *int, orderBy string) (*tmctypes.ResultTxSearch, error)

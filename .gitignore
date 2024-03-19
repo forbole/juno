@@ -19,3 +19,5 @@ coverage.txt
 # Configuration
 *.toml
 *.yaml
+
+vendor/

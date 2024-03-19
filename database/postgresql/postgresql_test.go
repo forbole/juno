@@ -14,7 +14,6 @@ import (
 	databaseconfig "github.com/forbole/juno/v5/database/config"
 	postgres "github.com/forbole/juno/v5/database/postgresql"
 	"github.com/forbole/juno/v5/logging"
-	"github.com/forbole/juno/v5/types/params"
 )
 
 func TestDatabaseTestSuite(t *testing.T) {
@@ -28,15 +27,12 @@ type DbTestSuite struct {
 }
 
 func (suite *DbTestSuite) SetupTest() {
-	// Create the codec
-	codec := params.MakeTestEncodingConfig()
-
 	// Build the database config
 	dbCfg := databaseconfig.DefaultDatabaseConfig().
 		WithURL("postgres://bdjuno:password@localhost:6433/bdjuno?sslmode=disable&search_path=public")
 
 	// Build the database
-	db, err := postgres.Builder(database.NewContext(dbCfg, codec, logging.DefaultLogger()))
+	db, err := postgres.Builder(database.NewContext(dbCfg, logging.DefaultLogger()))
 	suite.Require().NoError(err)
 
 	bigDipperDb, ok := (db).(*postgres.Database)

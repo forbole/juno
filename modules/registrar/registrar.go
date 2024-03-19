@@ -4,7 +4,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/forbole/juno/v5/node"
-	"github.com/forbole/juno/v5/types/params"
 
 	"github.com/forbole/juno/v5/modules/telemetry"
 
@@ -22,26 +21,24 @@ import (
 
 // Context represents the context of the modules registrar
 type Context struct {
-	JunoConfig     config.Config
-	SDKConfig      *sdk.Config
-	EncodingConfig params.EncodingConfig
-	Database       database.Database
-	Proxy          node.Node
-	Logger         logging.Logger
+	JunoConfig config.Config
+	SDKConfig  *sdk.Config
+	Database   database.Database
+	Proxy      node.Node
+	Logger     logging.Logger
 }
 
 // NewContext allows to build a new Context instance
 func NewContext(
-	parsingConfig config.Config, sdkConfig *sdk.Config, encodingConfig params.EncodingConfig,
+	parsingConfig config.Config, sdkConfig *sdk.Config,
 	database database.Database, proxy node.Node, logger logging.Logger,
 ) Context {
 	return Context{
-		JunoConfig:     parsingConfig,
-		SDKConfig:      sdkConfig,
-		EncodingConfig: encodingConfig,
-		Database:       database,
-		Proxy:          proxy,
-		Logger:         logger,
+		JunoConfig: parsingConfig,
+		SDKConfig:  sdkConfig,
+		Database:   database,
+		Proxy:      proxy,
+		Logger:     logger,
 	}
 }
 
@@ -87,7 +84,7 @@ func NewDefaultRegistrar(parser messages.MessageAddressesParser) *DefaultRegistr
 func (r *DefaultRegistrar) BuildModules(ctx Context) modules.Modules {
 	return modules.Modules{
 		pruning.NewModule(ctx.JunoConfig, ctx.Database, ctx.Logger),
-		messages.NewModule(r.parser, ctx.EncodingConfig.Codec, ctx.Database),
+		messages.NewModule(r.parser, ctx.Database),
 		telemetry.NewModule(ctx.JunoConfig),
 	}
 }
