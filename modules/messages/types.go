@@ -33,7 +33,7 @@ func removeDuplicates(s []string) []string {
 	return result
 }
 
-func parseAddressesFromEvents(tx *types.Tx) []string {
+func parseAddressesFromEvents(tx *types.Transaction) []string {
 	addresses := []string{}
 	for _, event := range tx.Events {
 		for _, attribute := range event.Attributes {
