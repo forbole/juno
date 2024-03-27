@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/cometbft/cometbft v0.37.1
 	github.com/cosmos/cosmos-sdk v0.46.16
-	github.com/cosmos/ibc-go/v5 v5.1.0
+	github.com/cosmos/ibc-go/v6 v6.1.0
 	github.com/go-co-op/gocron v1.13.0
 	github.com/gogo/protobuf v1.3.3
 	github.com/golangci/golangci-lint v1.52.2
@@ -15,7 +15,7 @@ require (
 	github.com/prometheus/client_golang v1.14.0
 	github.com/rs/zerolog v1.29.1
 	github.com/spf13/cobra v1.6.1
-	github.com/spf13/viper v1.13.0
+	github.com/spf13/viper v1.14.0
 	github.com/stretchr/testify v1.8.2
 	google.golang.org/grpc v1.54.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -67,7 +67,7 @@ require (
 	github.com/cockroachdb/apd/v2 v2.0.2 // indirect
 	github.com/confio/ics23/go v0.9.0 // indirect
 	github.com/cosmos/btcutil v1.0.5 // indirect
-	github.com/cosmos/cosmos-proto v1.0.0-alpha7 // indirect
+	github.com/cosmos/cosmos-proto v1.0.0-alpha8 // indirect
 	github.com/cosmos/go-bip39 v1.0.0 // indirect
 	github.com/cosmos/gogoproto v1.4.1 // indirect
 	github.com/cosmos/gorocksdb v1.2.0 // indirect
@@ -224,7 +224,7 @@ require (
 	github.com/sivchari/tenv v1.7.1 // indirect
 	github.com/sonatard/noctx v0.0.2 // indirect
 	github.com/sourcegraph/go-diff v0.7.0 // indirect
-	github.com/spf13/afero v1.8.2 // indirect
+	github.com/spf13/afero v1.9.2 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
