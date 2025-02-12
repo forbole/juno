@@ -382,8 +382,8 @@ func NewModuleWorker(ctx *Context, queue types.HeightQueue, index int, moduleNam
 
 // Process overrides Worker.Process to handle module-specific processing
 func (w ModuleWorker) Process(height int64) error {
-	// For new modules that need initial sync
-	if w.status == "new" || w.status == "syncing" {
+	// For modules that need sync
+	if w.status == "syncing" {
 		// Process the block
 		if err := w.Worker.Process(height); err != nil {
 			return err
