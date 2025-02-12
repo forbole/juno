@@ -10,7 +10,7 @@ import (
 
 // Database represents an abstract database that can be used to save data inside it
 type Database interface {
-	// HasBlock tells whether or not the database has already stored the block having the given height.
+	// HasBlock tells whethe	r or not the database has already stored the block having the given height.
 	// An error is returned if the operation fails.
 	HasBlock(height int64) (bool, error)
 
@@ -52,6 +52,20 @@ type Database interface {
 
 	// Close closes the connection to the database
 	Close()
+
+	// SaveModuleSyncStatus saves the synchronization status of a module.
+	// It takes the module name, the last processed block height, and the current status as parameters.
+	// An error is returned if the operation fails.
+	SaveModuleSyncStatus(moduleName string, lastHeight int64, status string) error
+
+	// GetModuleSyncStatus retrieves the synchronization status of a module.
+	// It returns the last processed block height, the current status, and an error if the operation fails.
+	GetModuleSyncStatus(moduleName string) (lastHeight int64, status string, err error)
+
+	// UpdateModuleSyncStatus updates the synchronization status of a module.
+	// It takes the module name, the new last processed block height, and the updated status as parameters.
+	// An error is returned if the operation fails.
+	UpdateModuleSyncStatus(moduleName string, lastHeight int64, status string) error
 }
 
 // PruningDb represents a database that supports pruning properly
