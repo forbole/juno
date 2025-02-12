@@ -1,8 +1,8 @@
 package messages
 
 import (
-	"github.com/forbole/juno/v6/database"
-	"github.com/forbole/juno/v6/types"
+	"github.com/0xPellNetwork/juno/v6/database"
+	"github.com/0xPellNetwork/juno/v6/types"
 )
 
 // HandleMsg represents a message handler that stores the given message inside the proper database table

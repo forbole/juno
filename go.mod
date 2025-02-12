@@ -1,4 +1,4 @@
-module github.com/forbole/juno/v6
+module github.com/0xPellNetwork/juno/v6
 
 go 1.21
 

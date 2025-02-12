@@ -9,15 +9,15 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
-	"github.com/forbole/juno/v6/logging"
+	"github.com/0xPellNetwork/juno/v6/logging"
 
 	"github.com/lib/pq"
 
-	"github.com/forbole/juno/v6/database"
-	"github.com/forbole/juno/v6/types"
-	"github.com/forbole/juno/v6/types/config"
-	"github.com/forbole/juno/v6/types/env"
-	"github.com/forbole/juno/v6/types/utils"
+	"github.com/0xPellNetwork/juno/v6/database"
+	"github.com/0xPellNetwork/juno/v6/types"
+	"github.com/0xPellNetwork/juno/v6/types/config"
+	"github.com/0xPellNetwork/juno/v6/types/env"
+	"github.com/0xPellNetwork/juno/v6/types/utils"
 )
 
 // Builder creates a database connection with the given database connection info

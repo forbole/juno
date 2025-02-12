@@ -3,7 +3,7 @@ package messages
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/forbole/juno/v6/types"
+	"github.com/0xPellNetwork/juno/v6/types"
 )
 
 // MessageAddressesParser represents a function that extracts all the

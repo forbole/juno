@@ -1,13 +1,13 @@
 package v3
 
 import (
-	loggingconfig "github.com/forbole/juno/v6/logging/config"
-	"github.com/forbole/juno/v6/modules/pruning"
-	"github.com/forbole/juno/v6/modules/telemetry"
-	nodeconfig "github.com/forbole/juno/v6/node/config"
-	parserconfig "github.com/forbole/juno/v6/parser/config"
-	pricefeedconfig "github.com/forbole/juno/v6/pricefeed"
-	"github.com/forbole/juno/v6/types/config"
+	loggingconfig "github.com/0xPellNetwork/juno/v6/logging/config"
+	"github.com/0xPellNetwork/juno/v6/modules/pruning"
+	"github.com/0xPellNetwork/juno/v6/modules/telemetry"
+	nodeconfig "github.com/0xPellNetwork/juno/v6/node/config"
+	parserconfig "github.com/0xPellNetwork/juno/v6/parser/config"
+	pricefeedconfig "github.com/0xPellNetwork/juno/v6/pricefeed"
+	"github.com/0xPellNetwork/juno/v6/types/config"
 )
 
 type Config struct {

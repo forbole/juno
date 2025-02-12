@@ -15,9 +15,9 @@ import (
 	constypes "github.com/cometbft/cometbft/consensus/types"
 	tmjson "github.com/cometbft/cometbft/libs/json"
 
-	"github.com/forbole/juno/v6/node"
+	"github.com/0xPellNetwork/juno/v6/node"
 
-	"github.com/forbole/juno/v6/types"
+	"github.com/0xPellNetwork/juno/v6/types"
 
 	httpclient "github.com/cometbft/cometbft/rpc/client/http"
 	tmctypes "github.com/cometbft/cometbft/rpc/core/types"
