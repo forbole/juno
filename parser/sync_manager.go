@@ -5,7 +5,7 @@ import (
 	"math"
 	"sync"
 
-	"github.com/forbole/juno/v6/database"
+	"github.com/0xPellNetwork/juno/v6/database"
 )
 
 // ModuleSyncManager manages the sync status of modules
