@@ -1,24 +1,26 @@
 package start
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 	"time"
 
-	parsecmdtypes "github.com/forbole/juno/v6/cmd/parse/types"
-	"github.com/forbole/juno/v6/modules"
-	"github.com/forbole/juno/v6/types/utils"
+	parsecmdtypes "github.com/0xPellNetwork/juno/v6/cmd/parse/types"
+	"github.com/0xPellNetwork/juno/v6/modules"
+	"github.com/0xPellNetwork/juno/v6/types/utils"
 
-	"github.com/forbole/juno/v6/logging"
+	"github.com/0xPellNetwork/juno/v6/logging"
 
-	"github.com/forbole/juno/v6/types/config"
+	"github.com/0xPellNetwork/juno/v6/types/config"
 
 	"github.com/go-co-op/gocron"
 
-	"github.com/forbole/juno/v6/parser"
-	"github.com/forbole/juno/v6/types"
+	"github.com/0xPellNetwork/juno/v6/parser"
+	"github.com/0xPellNetwork/juno/v6/types"
 
 	"github.com/spf13/cobra"
 )
@@ -56,64 +58,107 @@ func NewStartCmd(cmdCfg *parsecmdtypes.Config) *cobra.Command {
 
 // startParsing represents the function that should be called when the parse command is executed
 func startParsing(ctx *parser.Context) error {
-	// Get the config
 	cfg := config.Cfg.Parser
 	logging.StartHeight.Add(float64(cfg.StartHeight))
+
+	// Initialize sync manager
+	ctx.SyncManager = parser.NewModuleSyncManager(ctx.Database)
+
+	// Initialize module statuses
+	for _, module := range ctx.Modules {
+		if err := ctx.SyncManager.InitModule(module.Name()); err != nil {
+			return fmt.Errorf("failed to init module status: %s", err)
+		}
+	}
 
 	// Start periodic operations
 	scheduler := gocron.NewScheduler(time.UTC)
 	for _, module := range ctx.Modules {
 		if module, ok := module.(modules.PeriodicOperationsModule); ok {
-			err := module.RegisterPeriodicOperations(scheduler)
-			if err != nil {
+			if err := module.RegisterPeriodicOperations(scheduler); err != nil {
 				return err
 			}
 		}
 	}
 	scheduler.StartAsync()
 
-	// Create a queue that will collect, aggregate, and export blocks and metadata
+	// Add periodic flush to database
+	scheduler.Every(1).Minutes().Do(func() {
+		if err := ctx.SyncManager.FlushToDB(); err != nil {
+			ctx.Logger.Error("failed to flush sync status to database", "error", err)
+		}
+	})
+
+	// Create the main export queue
 	exportQueue := types.NewQueue(25)
 
-	// Create workers
+	// Create workers for modules that need syncing
+	moduleWorkers := make(map[string]parser.ModuleWorker)
+	for _, module := range ctx.Modules {
+		if status, exists := ctx.SyncManager.GetStatus(module.Name()); exists && status.Status == "syncing" {
+			moduleQueue := types.NewQueue(25)
+			worker := parser.NewModuleWorker(ctx, moduleQueue, len(moduleWorkers), module.Name(), status.Status)
+			moduleWorkers[module.Name()] = worker
+
+			// Use local variables to avoid closure issues
+			moduleName := module.Name()
+			go func(w parser.ModuleWorker) {
+				if err := w.Start(); err != nil {
+					if errors.Is(err, types.ErrModuleSynced) {
+						ctx.Logger.Info("module caught up", "module", moduleName)
+					} else {
+						ctx.Logger.Error("module worker error", "module", moduleName, "error", err)
+					}
+				}
+			}(worker)
+		}
+	}
+
+	// Create and start regular workers for synced modules
 	workers := make([]parser.Worker, cfg.Workers)
 	for i := range workers {
 		workers[i] = parser.NewWorker(ctx, exportQueue, i)
+		go workers[i].Start()
 	}
 
 	waitGroup.Add(1)
 
-	// Run all the async operations
+	// Run all async operations
 	for _, module := range ctx.Modules {
 		if module, ok := module.(modules.AsyncOperationsModule); ok {
 			go module.RunAsyncOperations()
 		}
 	}
 
-	// Start each blocking worker in a go-routine where the worker consumes jobs
-	// off of the export queue.
-	for i, w := range workers {
-		ctx.Logger.Debug("starting worker...", "number", i+1)
-		go w.Start()
-	}
-
-	// Listen for and trap any OS signal to gracefully shutdown and exit
+	// Handle signals
 	trapSignal(ctx)
 
 	if cfg.ParseGenesis {
-		// Add the genesis to the queue if requested
 		exportQueue <- 0
 	}
 
 	if cfg.ParseOldBlocks {
 		go enqueueMissingBlocks(exportQueue, ctx)
+		for name, worker := range moduleWorkers {
+			queue := worker.GetQueue()
+			go func(q types.HeightQueue, moduleName string) {
+				ctx.Logger.Info("starting missing blocks sync for module", "module", moduleName)
+				enqueueMissingBlocks(q, ctx)
+			}(queue, name)
+		}
 	}
 
 	if cfg.ParseNewBlocks {
 		go enqueueNewBlocks(exportQueue, ctx)
+		for name, worker := range moduleWorkers {
+			queue := worker.GetQueue()
+			go func(q types.HeightQueue, moduleName string) {
+				ctx.Logger.Info("starting new blocks sync for module", "module", moduleName)
+				enqueueNewBlocks(q, ctx)
+			}(queue, name)
+		}
 	}
 
-	// Block main process (signal capture will call WaitGroup's Done)
 	waitGroup.Wait()
 	return nil
 }
