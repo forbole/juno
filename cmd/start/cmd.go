@@ -97,7 +97,7 @@ func startParsing(ctx *parser.Context) error {
 	for _, module := range ctx.Modules {
 		if status, exists := ctx.SyncManager.GetStatus(module.Name()); exists && status.Status == "syncing" {
 			moduleQueue := types.NewQueue(25)
-			worker := parser.NewModuleWorker(ctx, moduleQueue, len(moduleWorkers), module.Name())
+			worker := parser.NewModuleWorker(ctx, moduleQueue, len(moduleWorkers), module.Name(), status.Status)
 			moduleWorkers[module.Name()] = worker
 
 			// Use local variables to avoid closure issues

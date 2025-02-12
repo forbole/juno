@@ -2,6 +2,7 @@ package parser
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -365,42 +366,55 @@ type ModuleWorker struct {
 	moduleName  string
 	ctx         *Context
 	moduleQueue types.HeightQueue
+	status      string // Track module sync status
 }
 
 // NewModuleWorker creates a new worker for module-specific syncing
-func NewModuleWorker(ctx *Context, queue types.HeightQueue, index int, moduleName string) ModuleWorker {
+func NewModuleWorker(ctx *Context, queue types.HeightQueue, index int, moduleName string, status string) ModuleWorker {
 	return ModuleWorker{
 		Worker:      NewWorker(ctx, queue, index),
 		moduleName:  moduleName,
 		ctx:         ctx,
 		moduleQueue: queue,
+		status:      status,
 	}
 }
 
 // Process overrides Worker.Process to handle module-specific processing
 func (w ModuleWorker) Process(height int64) error {
-	// Process the block
-	if err := w.Worker.Process(height); err != nil {
-		return err
-	}
-
-	// Update height in memory
-	if err := w.ctx.SyncManager.UpdateHeight(w.moduleName, height); err != nil {
-		return fmt.Errorf("failed to update module height: %s", err)
-	}
-
-	// Get minimum height of synced modules
-	minSyncedHeight := w.ctx.SyncManager.GetMinSyncedHeight()
-
-	// If we've caught up with all other modules
-	if height >= minSyncedHeight {
-		if err := w.ctx.SyncManager.UpdateStatus(w.moduleName, height, "synced"); err != nil {
-			return fmt.Errorf("failed to update module sync status to synced: %s", err)
+	// For new modules that need initial sync
+	if w.status == "new" || w.status == "syncing" {
+		// Process the block
+		if err := w.Worker.Process(height); err != nil {
+			return err
 		}
-		return types.ErrModuleSynced
+
+		// Update height in memory
+		if err := w.ctx.SyncManager.UpdateHeight(w.moduleName, height); err != nil {
+			return fmt.Errorf("failed to update module height: %s", err)
+		}
+
+		// Get minimum height of synced modules
+		minSyncedHeight, err := w.ctx.SyncManager.GetMinSyncedHeight()
+		if err != nil {
+			return fmt.Errorf("failed to get minimum synced height: %s", err)
+		}
+
+		// If we've caught up with all other modules
+		if height >= minSyncedHeight {
+			// 状态变更为synced时立即写入数据库
+			if err := w.ctx.SyncManager.UpdateStatusAndFlush(w.moduleName, height, "synced"); err != nil {
+				return fmt.Errorf("failed to update module sync status to synced: %s", err)
+			}
+			w.status = "synced"
+			return types.ErrModuleSynced
+		}
+
+		return nil
 	}
 
-	return nil
+	// For already synced modules, use standard processing
+	return w.Worker.Process(height)
 }
 
 // GetQueue returns the queue associated with the ModuleWorker
@@ -408,13 +422,19 @@ func (w ModuleWorker) GetQueue() types.HeightQueue {
 	return w.moduleQueue
 }
 
-// Start overrides Worker.Start to use moduleQueue instead of Worker's queue
+// Start overrides Worker.Start to handle different module states
 func (w ModuleWorker) Start() error {
 	logging.WorkerCount.Inc()
 	chainID, err := w.node.ChainID()
 	if err != nil {
 		w.logger.Error("error while getting chain ID from the node ", "err", err)
+		return err
 	}
+
+	w.logger.Info("starting module worker",
+		"module", w.moduleName,
+		"status", w.status,
+		"worker_index", w.index)
 
 	// Create a done channel to handle termination
 	done := make(chan struct{})
@@ -424,21 +444,32 @@ func (w ModuleWorker) Start() error {
 	for {
 		select {
 		case height, ok := <-w.moduleQueue:
-			// Check if queue has been closed
 			if !ok {
-				w.logger.Info("module queue closed, stopping worker", "module", w.moduleName)
+				w.logger.Info("module queue closed, stopping worker",
+					"module", w.moduleName)
 				return nil
 			}
 
 			if err := w.ProcessIfNotExists(height); err != nil {
+				if errors.Is(err, types.ErrModuleSynced) {
+					w.logger.Info("module caught up with chain",
+						"module", w.moduleName,
+						"height", height)
+					return nil
+				}
+
 				// re-enqueue any failed job after average block time
 				time.Sleep(config.GetAvgBlockTime())
 
 				select {
 				case w.moduleQueue <- height:
-					w.logger.Error("re-enqueued failed block", "height", height, "err", err)
+					w.logger.Error("re-enqueued failed block",
+						"height", height,
+						"err", err)
 				default:
-					w.logger.Error("failed to re-enqueue block - queue full", "height", height, "err", err)
+					w.logger.Error("failed to re-enqueue block - queue full",
+						"height", height,
+						"err", err)
 				}
 				continue
 			}
@@ -449,7 +480,8 @@ func (w ModuleWorker) Start() error {
 			).Set(float64(height))
 
 		case <-done:
-			w.logger.Info("worker received shutdown signal", "module", w.moduleName)
+			w.logger.Info("worker received shutdown signal",
+				"module", w.moduleName)
 			return nil
 		}
 	}
