@@ -3,7 +3,7 @@ package messages
 import (
 	"unicode/utf8"
 
-	"github.com/forbole/juno/v6/types"
+	"github.com/0xPellNetwork/juno/v6/types"
 )
 
 func TrimLastChar(s string) string {

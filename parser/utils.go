@@ -5,7 +5,7 @@ import (
 	tmtypes "github.com/cometbft/cometbft/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/forbole/juno/v6/types"
+	"github.com/0xPellNetwork/juno/v6/types"
 )
 
 // findValidatorByAddr finds a validator by a consensus address given a set of

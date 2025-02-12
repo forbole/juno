@@ -8,8 +8,8 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"github.com/forbole/juno/v6/modules"
-	"github.com/forbole/juno/v6/types"
+	"github.com/0xPellNetwork/juno/v6/modules"
+	"github.com/0xPellNetwork/juno/v6/types"
 )
 
 var (
