@@ -166,8 +166,8 @@ func (db *Database) SaveTx(tx *types.Transaction) error {
 func (db *Database) saveTxInsidePartition(tx *types.Transaction, partitionID int64) error {
 	sqlStatement := `
 INSERT INTO transaction 
-(hash, height, success, messages, memo, signatures, signer_infos, fee, gas_wanted, gas_used, raw_log, logs, partition_id) 
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
+(hash, height, success, messages, memo, signatures, signer_infos, fee, gas_wanted, gas_used, raw_log, logs, partition_id, events) 
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) 
 ON CONFLICT (hash, partition_id) DO UPDATE 
 	SET height = excluded.height, 
 		success = excluded.success, 
@@ -179,7 +179,8 @@ ON CONFLICT (hash, partition_id) DO UPDATE
 		gas_wanted = excluded.gas_wanted, 
 		gas_used = excluded.gas_used,
 		raw_log = excluded.raw_log, 
-		logs = excluded.logs`
+		logs = excluded.logs,
+		events = excluded.events`
 
 	var sigs = make([]string, len(tx.Signatures))
 	for index, sig := range tx.Signatures {
@@ -212,12 +213,17 @@ ON CONFLICT (hash, partition_id) DO UPDATE
 		return err
 	}
 
+	eventsBz, err := json.Marshal(tx.Events)
+	if err != nil {
+		return err
+	}
+
 	_, err = db.SQL.Exec(sqlStatement,
 		tx.TxHash, tx.Height, tx.Successful(),
 		msgsBz, tx.Body.Memo, pq.Array(sigs),
 		sigInfoBz, string(feeBz),
 		tx.GasWanted, tx.GasUsed, tx.RawLog, string(logsBz),
-		partitionID,
+		partitionID, string(eventsBz),
 	)
 	return err
 }
